@@ -1,0 +1,327 @@
+# Team data for the Sallam Research Lab website.
+# ----------------------------------------------------------------
+# Photos live in assets/img/ — give just the file name here.
+# To add a person, copy an entry in the right section and edit it.
+# Lines starting with "#" are comments and are ignored.
+# ----------------------------------------------------------------
+
+current:
+  - name: Dr. Khaled Sallam
+    role: Lab Director
+    photo: khaled-2026.png
+  - name: Tawhidur Rahman
+    role: Ph.D. Student
+    photo: screen-shot-2024-02-09-at-9-35-33-am.png
+  - name: Lihui Cai
+    role: Ph.D. Student
+    photo: lihuicai-crop.jpg
+  - name: Steven Wilson
+    role: M.Sc. Student
+    photo: steven.jpg
+  - name: Esther Villalobos
+    role: Lab Member          # TODO: confirm Esther's role (she had a photo but no listing on the old site)
+    photo: esther.jpg
+
+visiting:
+  - name: A.M. El-Leathy
+    role: Visiting Professor
+    period: Nov. 2006 – April 2007
+  - name: Bruno Valim Marques Da Silva
+    role: Visiting Ph.D. Student
+    period: Feb. 2021 – Jan. 2022
+    photo: 2021-bruno.jpg
+  - name: Lihui Cai
+    role: Visiting M.Sc. Student
+    period: 2022/2023
+
+# Graduate alumni, newest first. "degree" is shown as a badge.
+# "photo" and "photo_caption" are optional.
+graduate:
+  - name: Bipin Kafle
+    degree: Ph.D.
+    year: 2025
+    date: August 29, 2025
+    thesis: Dynamics of the Apparent Contact Angle on Porous and Dense Cylindrical Surfaces
+    photo: 2025-bipin.jpg
+  - name: Chris Scott
+    degree: M.S.
+    year: 2024
+    date: April 3, 2024
+    thesis: Effect of Injector Intrusion for Aerated Liquid Jets in Supersonic Crossflows
+    photo: chris2024.jpg
+  - name: Saqib Raza
+    degree: M.S.
+    year: 2022
+    date: April 15, 2022
+    thesis: Primary Breakup of Liquid Sheets in Crossflow and Liquid Jets in Gaseous Coflow
+    photo: saqibgrad.jpg
+  - name: Andrew Williamson
+    degree: M.S.
+    year: 2022
+    date: April 15, 2022
+    thesis: Simulation of Combustion Noise of Premixed Flames in OpenFOAM
+    photo: andrew2022.jpg
+  - name: Elo-Oghene Enwa
+    degree: M.S.
+    year: 2021
+    date: July 14, 2021
+    thesis: Solar Thermal Desalination Technology Development
+    note: Co-advised with Dr. P. Bikkina (advisor)
+  - name: Alex Sheridan
+    degree: M.S.
+    year: 2019
+    date: July 16, 2019
+    thesis: The Effects of Injection Angle on the Structure of Choked Gaseous Jets
+    photo: img-7938.jpg
+  - name: Abhijit Choudhari
+    degree: M.S.
+    year: 2016
+    date: November 3, 2016
+    thesis: Simulation of Supersonic Injection of Underexpanded Aerated Liquid Jet
+    photo: 15337611-214382232345271-6499217548154323189-n.jpg
+  - name: Nikolas Davis
+    degree: M.S. Report
+    year: 2016
+    date: August 1, 2016
+    thesis: Cake Fouling Model for a Novel High Speed Dynamic Membrane Filtration System
+  - name: Adam Harrington
+    degree: M.S. Report
+    year: 2015
+    date: May 1, 2015
+    thesis: Solid Particle Seeder Design and PIV of Diffusion Flame
+    photo: img-0669.jpg
+  - name: Adegboyega Adebayo
+    degree: M.S.
+    year: 2014
+    date: July 16, 2014
+    thesis: Drop Size and Velocity Distributions of the Spray of Aerated Injection in Subsonic Crossflow
+  - name: Atanu Banerjee
+    degree: M.S.
+    year: 2013
+    date: Spring 2013
+    thesis: Application of Holographic Particle Image Velocimetry in Bubbly Flow
+    photo: afrl-scope-2013.jpg
+  - name: David Olinger
+    degree: Ph.D.
+    year: 2012
+    date: Spring 2012
+    thesis: 3D Size and Velocity Measurements of Sprays using Digital Holography
+  - name: Saumya Simon
+    degree: M.S.
+    year: 2011
+    date: Fall 2011
+    thesis: Simulation of the Flow of a Single Stranded DNA in a Channel using Dissipative Particle Dynamics
+    photo: saumya.jpg
+  - name: Samuel Ariekela
+    degree: M.S.
+    year: 2011
+    date: Spring 2011
+    thesis: Numerical Investigation of the Hydrodynamic Focusing Phenomena in a Microflow Cytometer
+  - name: Anu Osta
+    degree: Ph.D.
+    year: 2010
+    date: Fall 2010
+    thesis: Effect of Nozzle Length-to-Diameter Ratio on Atomization of Turbulent Liquid Jets
+    photo: anu.jpg
+  - name: Ramanjeet Singh
+    degree: M.S. Report
+    year: 2010
+    date: Fall 2010
+    thesis: Spatial-Calibration of Double-View Holographic Particle Analyzer
+    photo: ramanjeet.jpg
+  - name: Etesh Vaishnav
+    degree: M.S.
+    year: 2010
+    date: Fall 2010
+    thesis: Investigating the Aerodynamic Performance of a Vertical Axis Wind Turbine
+  - name: Khushwant Saini
+    degree: M.S.
+    year: 2010
+    date: Fall 2010
+    thesis: Applying Holographic Particle Image Velocimetry to Sprays
+  - name: Parvez Deshmukh
+    degree: M.S. Report
+    year: 2009
+    date: Fall 2009
+    thesis: Harnessing Wind Energy by a Symmetric Airfoil Rotating around a Fixed Axis
+    photo: parvez.jpg
+  - name: Jaiho Lee
+    degree: Ph.D.
+    year: 2009
+    date: Spring 2009
+    thesis: Digital Holographic Diagnostics of Near-Injector Region
+    photo: jaiho-graduation.jpg
+  - name: Atul Narasimhan
+    degree: M.S.
+    year: 2008
+    date: Fall 2008
+    thesis: Formation of Fibers and Spheres by Electrospinning of Polyethylene Oxide Solution
+  - name: Vimal Joseph
+    degree: M.S. Report
+    year: 2008
+    date: Spring 2008
+    thesis: CFD of Cylindrical and Spherical Wakes
+  - name: Rohit Shukla
+    degree: M.S.
+    year: 2007
+    date: Fall 2007
+    thesis: Effect of Liquid Transparency on Laser-Induced Motion of Drops
+    photo: rohit.jpg
+  - name: Chee-Loon (Kelvin) Ng
+    degree: Ph.D.
+    year: 2006
+    date: Fall 2006
+    thesis: Deformation, Wave Phenomena, and Breakup Outcomes of Round Nonturbulent Liquid Jets in Gaseous Crossflow
+    note: Dr. Sallam's first Ph.D. student
+    photo: dsc02935.jpg
+  - name: Brian Miller
+    degree: M.S.
+    year: 2006
+    date: Fall 2006
+    thesis: Digital Holographic Diagnostics of Aerated-Liquid Jets in a Subsonic Crossflow
+    photo: brian-lab.jpg
+  - name: Todd Crane
+    degree: M.S.
+    year: 2006
+    date: Summer 2006
+    thesis: Jet Breakup and Pinch-off in Liquid-Liquid Systems
+    note: Dr. Sallam's first Tulsa-based graduate student
+    photo: lab-012.jpg
+  - name: Vern Skach
+    degree: M.S. Report
+    year: 2005
+    date: Fall 2005
+    thesis: Design and Construction of a Shock Tube
+  - name: Ram Sankarakrishnan
+    degree: M.S.
+    year: 2005
+    date: Fall 2005
+    thesis: Breakup of Turbulent Round Liquid Jets in Uniform Crossflow
+    note: Dr. Sallam's first graduate student
+    photo: ram-graduate.jpg
+
+# Undergraduate researchers, newest first.
+undergraduate:
+  - name: Samuel Kasuni
+    role: Undergraduate Student
+    period: Spring 2026
+    photo: samuel.jpg
+  - name: Jamin Kreighbaum
+    role: Undergraduate Student
+    period: Spring 2026
+    photo: jamin.jpg
+  - name: Mason Park
+    role: Undergraduate Student
+    period: Fall 2025
+    photo: mason.jpg
+  - name: Omar Elsousi
+    role: Undergraduate Student
+    period: Fall 2025
+  - name: Steven Wilson
+    role: Undergraduate Student
+    period: Fall 2025
+    note: Now an M.Sc. student in the lab
+  - name: Jonathan Merheb
+    role: Undergraduate Visiting Student
+    period: Summer 2022
+    photo: jonathan.jpg
+  - name: Jacob Brown
+    role: Undergraduate Research Scholar
+    period: Fall 2021 – Spring 2022
+    photo: 2021-jacobbrown.jpg
+  - name: Nathan Johnson
+    role: Undergraduate Research Scholar
+    period: Fall 2021 – Spring 2022
+    photo: 2021-johnson-nathan.jpg
+  - name: Erik Perez
+    role: Undergraduate Research Scholar
+    period: Fall 2019 – Spring 2020
+  - name: Christopher Vallery
+    role: Undergraduate Research Scholar
+    period: Fall 2019 – Spring 2020
+  - name: Andrew Williamson
+    role: Undergraduate Research Assistant
+    period: Fall 2018 – Spring 2019
+    note: Later an M.S. student in the lab
+  - name: Saqib Raza
+    role: Undergraduate Research Assistant
+    period: Fall 2017 – Fall 2019
+    note: Later an M.S. student in the lab
+  - name: John Wright
+    role: Undergraduate Research Assistant
+    period: Spring 2018
+  - name: Zach Mandevill
+    role: Undergraduate Research Assistant
+    period: Spring 2018
+  - name: Jubal Kurudamannil
+    role: Freshman Scholar
+    period: Fall 2010
+  - name: Golnaz Bassiri
+    role: Undergraduate Research Assistant
+    period: Summer 2005
+    note: Dr. Sallam's first undergraduate research assistant
+
+# Group photos shown in the "Lab through the years" gallery, newest first.
+group_photos:
+  - file: lab2026.jpg
+    caption: Steven, Tawhidur, Dr. Sallam, and Lihui (Edmond, Oklahoma, 2026)
+  - file: screen-shot-2025-09-19-at-5-59-14-pm.jpg
+    caption: Austin, Omer, Lihui, Bipin, Steven, and Khaled Sallam (Keystone Dam, Oklahoma, 2025)
+  - file: screen-shot-2025-04-19-at-10-11-48-pm.jpg
+    caption: Lihui Cai, Tawhidur Rahman, Khaled Sallam, and Bipin Kafle (Edmond, Oklahoma, 2025)
+  - file: img-8540.jpg
+    caption: Chris Scott, Khaled Sallam, Bipin Kafle, and Tawhidur Rahman (Tulsa, Oklahoma, 2024)
+  - file: 3b8a0693.jpg
+    caption: Bipin Kafle, 2023
+  - file: img-7799.jpg
+    caption: Saqib Raza, Khaled Sallam, and Andrew Williamson (Weatherford, Oklahoma, 2019)
+  - file: img-9647.jpg
+    caption: Andrew Williamson, Khaled Sallam, and Saqib Raza (Salt Lake City, Utah, 2019)
+  - file: img-7804.jpg
+    caption: Symposium poster session           # TODO: add names/year
+  - file: img-7803.jpg
+    caption: Symposium poster session           # TODO: add names/year
+  - file: img-3361.jpg
+    caption: Tawhidur Rahman (March 2024)
+  - file: jonathan-2.jpg
+    caption: Jonathan Merheb
+  - file: afrl-scope-2013.jpg
+    caption: Atanu Banerjee, 2013
+  - file: 15492419-218674258582735-7644865432155305669-n.jpg
+    caption: In the lab                          # TODO: add caption
+  - file: img-0062.jpg
+    caption: Anu Osta, Khaled Sallam, and Jaiho Lee at Argonne National Laboratory
+  - file: img-0014.jpg
+    caption: Anu Osta and Khaled Sallam at Argonne National Laboratory
+  - file: img-0027.jpg
+    caption: Jaiho Lee at Argonne National Laboratory
+  - file: img-0006.jpg
+    caption: (Left) Etesh Vaishnav, “Investigating the Aerodynamic Performance of a Vertical Axis Wind Turbine.” (Right) Khushwant Saini, “Applying Holographic Particle Image Velocimetry to Sprays”
+  - file: anu-2.jpg
+    caption: Anu Osta
+  - file: ilass-museum-111.jpg
+    caption: Jaiho, David, and Anu (Salt Lake City, Utah, 2007)
+  - file: dsc-0005.jpg
+    caption: Anu Osta, Dr. El-Leathy (visiting professor), Jaiho Lee, Rohit Shukla, Brian Miller, Vimal Joseph, and David Olinger
+  - file: group2.jpg
+    caption: Anu Osta, Steve Bogadi, Brian Miller, Khaled Sallam, Todd Crane, Chee-Loon (Kelvin) Ng, Jaiho Lee, and Vimal Joseph (Norman, Oklahoma, 2006)
+  - file: dsc02936.jpg
+    caption: Steven Bogadi
+  - file: dsc02939.jpg
+    caption: Poster presentation                 # TODO: add caption
+  - file: sam-001.jpg
+    caption: In the lab                          # TODO: add caption
+  - file: dsc02703.jpg
+    caption: In the lab                          # TODO: add caption
+  - file: ram-kelvin.jpg
+    caption: Ram and Kelvin (Dr. Sallam's first Ph.D. student)
+  - file: dsc02934.jpg
+    caption: Ram, Dr. Sallam's first graduate student
+  - file: dsc03041.jpg
+    caption: Kelvin, Ram, and Goli, Dr. Sallam's first undergraduate research assistant (Chicago, Illinois, 2005)
+  - file: christina.jpg
+    caption: ""                                   # TODO: add caption (file was named "christina")
+  - file: morgan-wright.jpg
+    caption: ""                                   # TODO: add caption (file was named "morgan-wright")
+  - file: 3b8a0627.jpg
+    caption: In the lab                          # TODO: add caption

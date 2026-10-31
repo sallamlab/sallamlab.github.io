@@ -1,0 +1,44 @@
+---
+layout: default
+title: Publications
+permalink: /publications/
+description: Books, peer-reviewed journal articles, conference papers, and magazine articles by Dr. Khaled A. Sallam and students of the Sallam Research Lab.
+---
+{%- assign pubs = site.data.publications -%}
+<section class="page-hero">
+  <div class="container">
+    <h1>Publications</h1>
+    <p>Student authors advised by Dr. Sallam are <u>underlined</u>; * indicates the corresponding author.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <ul class="pub-nav">
+      <li><a href="#books">Books &amp; chapters ({{ pubs.books | size }})</a></li>
+      <li><a href="#journal">Journal articles ({{ pubs.journal | size }})</a></li>
+      <li><a href="#conference">Conference papers ({{ pubs.conference | size }})</a></li>
+      <li><a href="#magazine">Magazine articles ({{ pubs.magazine | size }})</a></li>
+    </ul>
+
+    <h2 id="books" style="margin-top:32px">Books and book chapters</h2>
+    <ol class="pubs" reversed>
+      {%- for p in pubs.books -%}<li>{{ p.citation }}</li>{%- endfor -%}
+    </ol>
+
+    <h2 id="journal" style="margin-top:40px">Peer-reviewed journal articles</h2>
+    <ol class="pubs" reversed>
+      {%- for p in pubs.journal -%}<li>{{ p.citation }}</li>{%- endfor -%}
+    </ol>
+
+    <h2 id="conference" style="margin-top:40px">Peer-reviewed conference papers</h2>
+    <ol class="pubs" reversed>
+      {%- for p in pubs.conference -%}<li>{{ p.citation }}</li>{%- endfor -%}
+    </ol>
+
+    <h2 id="magazine" style="margin-top:40px">Magazine articles</h2>
+    <ol class="pubs" reversed>
+      {%- for p in pubs.magazine -%}<li>{{ p.citation }}</li>{%- endfor -%}
+    </ol>
+  </div>
+</section>

@@ -1,0 +1,60 @@
+# Research areas shown on the Research page.
+# Each area has a title, a short description, and an image from assets/img/.
+# ----------------------------------------------------------------
+
+areas:
+  - title: Primary breakup of liquid jets in crossflow
+    image: jet.jpg
+    text: >-
+      Turbulent and nonturbulent round liquid jets in gaseous crossflow — deformation, surface
+      waves, bag and shear breakup, and the near-injector spray structure, studied with
+      high-speed imaging and X-ray diagnostics.
+  - title: Liquid sheets and spray drift
+    image: sheet.jpg
+    text: >-
+      Primary breakup of flat-fan liquid sheets in crossflow and the resulting spray drift of
+      agricultural nozzles, including spray-morphing strategies to reduce herbicide drift in
+      crosswinds.
+  - title: Aerated-liquid injection in supersonic crossflow
+    image: aerated.png
+    text: >-
+      Breakup and penetration of aerated (gas-liquid) jets injected into subsonic and supersonic
+      crossflows, relevant to fuel injection in scramjet combustors; experiments conducted with
+      AFRL collaborators.
+  - title: Choked and under-expanded gas jets
+    image: choked-orig.png
+    text: >-
+      Structure of choked gaseous jets and inclined under-expanded supersonic jets, combining
+      experiments with CFD.
+  - title: Digital holographic diagnostics
+    image: holography.png
+    text: >-
+      Single- and double-view digital holography for three-dimensional measurements of drop size
+      and velocity in sprays, bubbly flows, and electrospun polymer jets.
+  - title: Electrospinning of polymer jets
+    image: screen-shot-2019-03-30-at-11-52-02-pm.png
+    text: >-
+      Formation of fibers and beads during electrospinning of polymer solutions, with the jet
+      trajectory tracked by digital holographic microscopy.
+  - title: Combustion and flame noise
+    image: flame1.jpg
+    text: >-
+      PIV of diffusion flames and simulation of combustion noise from confined premixed flames in
+      OpenFOAM, validated against external acoustic sensors.
+  - title: Wetting and droplet dynamics on tubular surfaces
+    image: screen-shot-2024-06-28-at-9-23-48-am.png
+    text: >-
+      Dynamics of the apparent contact angle and droplet spreading on dense and microporous
+      cylindrical surfaces, with applications to membrane distillation and desalination.
+  - title: Energy and water
+    image: screen-shot-2019-03-30-at-11-54-13-pm.jpg
+    text: >-
+      Solar thermal and human-powered desalination, vapor-compression cycle improvements, and
+      techno-economic comparisons of wind, solar, and ocean thermal energy.
+
+# Images that appear in the "From the lab" strip at the bottom of the Research page.
+gallery:
+  - file: screen-shot-2024-06-28-at-9-22-38-am.png
+    caption: Digital holograms of a liquid jet and the reconstructed, binarized images
+  - file: screen-shot-2019-03-30-at-11-51-01-pm.jpg
+    caption: Holographic imaging of bubbles and ligaments in the lab

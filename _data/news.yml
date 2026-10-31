@@ -1,0 +1,253 @@
+# News items, newest first.
+# ----------------------------------------------------------------
+# Each item:
+#   date:   shown as written (e.g. "May 2026", "Nov. 19–20, 2024")
+#   year:   four-digit year, used for grouping
+#   title:  short headline
+#   text:   one or two sentences (simple HTML links allowed, optional)
+#   photos: optional list of { file, caption } — photos live in assets/img/
+#   link:   optional { label, url } shown as a "Read more" button
+# ----------------------------------------------------------------
+
+- date: May 2026
+  year: 2026
+  title: Advisor of the Year and a third straight ASME section award
+  text: >-
+    Dr. Sallam was named Advisor of the Year at the OSU-Tulsa Student Organization Awards, and
+    the OSU-Tulsa student section of ASME received the Student Section Achievement Award for the
+    third consecutive year. 2026 also marks the 25th anniversary of the section, established in
+    March 2001.
+  photos:
+    - file: 1776389679200.jpg
+      caption: Advisor of the Year, OSU-Tulsa Student Organization Awards 2026
+    - file: 1776794412900.jpg
+      caption: ASME Student Section Achievement Award, 2026
+    - file: screen-shot-2026-05-05-at-4-00-05-pm.png
+      caption: "ASME wins again"
+
+- date: February 2026
+  year: 2026
+  title: In memory of Prof. G.M. Faeth (1936–2005)
+  text: >-
+    Remembering Prof. Gerard M. Faeth, Dr. Sallam's Ph.D. advisor.
+  link:
+    label: Tribute to Prof. Faeth (National Academies)
+    url: https://www.nationalacademies.org/read/21785/chapter/22
+  photos:
+    - file: screen-shot-2026-02-07-at-6-11-11-pm.png
+      caption: Prof. G.M. Faeth (1936–2005)
+
+- date: 2025
+  year: 2025
+  title: ASME Mid-Continent Section innovation awards for Steven, Lane, Omar and Tawhid
+  text: >-
+    Steven Wilson, Lane King, and Omar Elsousi won the 2025 Undergraduate Innovation Award, and
+    Tawhidur Rahman won the 2025 Graduate Innovation Award from the ASME Mid-Continent Section.
+    Congratulations!
+  photos:
+    - file: steven-2025.jpg
+      caption: Steven Wilson and Lane King receiving the 2025 Undergraduate Innovation Award (Omar Elsousi not pictured)
+    - file: tawhid-2025.jpg
+      caption: Tawhidur Rahman receiving the 2025 Graduate Innovation Award
+
+- date: February 13, 2025
+  year: 2025
+  title: Dr. Sallam speaks at the ASME Mid-Continent Section monthly seminar
+  text: >-
+    Seminar talk: “Dynamic Manipulation of Apparent Contact Angles to Mitigate Membrane Wetting.”
+  photos:
+    - file: sallam-asme.jpg
+      caption: ASME Mid-Continent Section monthly seminar, February 13, 2025
+
+- date: January 22, 2025
+  year: 2025
+  title: ILASS-Americas webinar on the physics of atomization
+  text: >-
+    Dr. Sallam presented “Aerodynamic Effect on Liquid Breakup” in the ILASS-Americas Webinar
+    Series.
+  photos:
+    - file: screen-shot-2025-01-14-at-10-44-30-am.png
+      caption: ILASS-Americas Webinar Series, January 22, 2025
+
+- date: November 19–20, 2024
+  year: 2024
+  title: Bipin wins the Outstanding Student Water Research Poster Award
+  text: >-
+    Bipin Kafle won the Outstanding Student Water Research Poster Award at the Oklahoma
+    Governor's Water Conference and Research Symposium in Norman.
+  photos:
+    - file: bipin-water.jpg
+      caption: Bipin Kafle with his poster at the Oklahoma Governor's Water Conference
+
+- date: 2024
+  year: 2024
+  title: ASME@OSU-Tulsa named Student Organization of the Year
+  text: >-
+    The ASME student section at OSU-Tulsa, advised by Dr. Sallam, won the Student Organization of
+    the Year Award for 2023/2024.
+  photos:
+    - file: asme-banner-tulsa-2.jpg
+      caption: ASME@OSU-Tulsa, Student Organization of the Year 2023/2024
+
+- date: 2023
+  year: 2023
+  title: Chris Scott wins the ASME Mid-Continent Graduate Technical Innovation Award
+  text: >-
+    Chris Scott received the 2023 Graduate Technical Innovation Award from the ASME Mid-Continent
+    Section for presenting “Effect of Injector Intrusion on Aerated Liquid Injection in Supersonic
+    Crossflow.” At the MAE Symposium, Andrew Williamson's poster was featured on the symposium
+    webpage and Chris was awarded the best oral presentation award.
+  photos:
+    - file: img-8548.jpg
+      caption: Chris Scott's ASME Mid-Continent Section award certificate
+    - file: screen-shot-2023-04-08-at-4-28-24-pm.png
+      caption: 2023 ASME Mid-Continent Section Technical Innovation Award
+    - file: 1681528404688.jpg
+      caption: Poster session at the MAE Symposium
+    - file: 409213446-24436793262602914-9094458785663427812-n.jpg
+      caption: Bipin and Dr. Sallam, Fall 2023
+
+- date: November 10, 2022
+  year: 2022
+  title: Recognition for service to the ASME Mid-Continent Section
+  text: >-
+    Dr. Sallam received a Certificate of Appreciation for his service and contribution to the
+    ASME Mid-Continent Professional Section in 2021/2022.
+  photos:
+    - file: asme-awards.jpg
+      caption: Certificate of Appreciation, ASME Mid-Continent Section
+
+- date: 2022
+  year: 2022
+  title: Bipin Kafle receives the ASME Mid-Continent Graduate Technical Innovation Award
+  text: >-
+    Congratulations to Bipin Kafle, awarded the ASME Mid-Continent Section Graduate Technical
+    Innovation Award for 2021/2022.
+  photos:
+    - file: 2022-bipinaward.jpg
+      caption: Bipin with Dr. Sallam and Dr. Kolla (ASME Mid-Continent Section Chair)
+
+- date: June 2022
+  year: 2022
+  title: Our herbicide-drift research is cited in Adjuvants & Formulations magazine
+  text: >-
+    The lab's work on spray drift of flat-fan nozzles was cited in <i>Adjuvants &amp;
+    Formulations</i> magazine.
+  photos:
+    - file: screen-shot-2022-06-17-at-9-00-33-pm.jpg
+      caption: Adjuvants &amp; Formulations magazine
+    - file: screen-shot-2022-06-17-at-9-00-54-pm.jpg
+      caption: Adjuvants &amp; Formulations magazine
+
+- date: 2022
+  year: 2022
+  title: Alex featured in the newspaper
+  text: Alex Sheridan was featured in a newspaper article.
+  photos:
+    - file: alex.jpg
+      caption: Alex Sheridan in the news
+
+- date: 2022
+  year: 2022
+  title: First place in the Decarbonization Prize
+  text: >-
+    Congratulations to Andrew Williamson and Michael Costa — Baker Hughes judges awarded them
+    first place in the Cowboy Innovations Decarbonization Prize. (Michael missed the event.)
+  link:
+    label: OSU news article
+    url: https://news.okstate.edu/articles/cowboy-innovations/2022/osu_cowboy_innovations_and_baker_hughes_select_contest_winners.html
+  photos:
+    - file: 1st-place-decarb-group-bh-and-ci.jpg
+      caption: Decarbonization Prize award ceremony with Baker Hughes and Cowboy Innovations
+    - file: 270788246-321119880022191-5186904026721802083-n-1.jpg
+      caption: Certificate of Achievement, Cowboy Innovations and Baker Hughes Award
+
+- date: 2021
+  year: 2021
+  title: Dr. Sallam chairs a session at ICLASS 2021
+  text: Dr. Sallam chaired a session at the ICLASS 2021 meeting.
+  link:
+    label: Watch the session (Vimeo)
+    url: https://vimeo.com/596122616
+
+- date: 2021
+  year: 2021
+  title: Andrew wins the ASME Mid-Continent Graduate Technical Innovation Award
+  text: >-
+    Andrew Williamson was announced as the winner of the ASME Mid-Continent Section Graduate
+    Technical Innovation Award for 2020/2021. Congratulations Andrew!
+  photos:
+    - file: andrew.jpg
+      caption: Andrew Williamson
+
+- date: April 3, 2021
+  year: 2021
+  title: Honorable mention at the 40th Oklahoma AIAA/ASME Symposium
+  text: >-
+    Andrew Williamson's presentation “A Novel Compression and Expansion Fusion for Improving Vapor
+    Compression Refrigeration Cycles” received an Honorable Mention from the Selection Committee
+    at the 40th Oklahoma AIAA/ASME Symposium.
+
+- date: 2019
+  year: 2019
+  title: Top-5 finalist in the Collegiate Inventors Competition
+  text: >-
+    Andrew Williamson was selected as a finalist in the National Collegiate Inventors Competition
+    2019.
+  link:
+    label: Collegiate Inventors Competition
+    url: https://www.invent.org/collegiate-inventors
+  photos:
+    - file: andrewlab.jpg
+      caption: Andrew Williamson in the lab
+
+- date: 2019
+  year: 2019
+  title: Second-year Undergraduate Research Scholarship for Saqib
+  text: >-
+    Saqib Raza was awarded a second-year Undergraduate Research Scholarship to work on a spray
+    morphing strategy to eliminate herbicide drift in crosswind.
+  photos:
+    - file: raza.jpg
+      caption: Saqib Raza in the lab
+
+- date: August 8, 2019
+  year: 2019
+  title: Building a hypersonic shock tube
+  text: >-
+    Christopher Vallery was awarded a CEAT Undergraduate Research Scholar (URS-1) Award to build a
+    hypersonic shock tube in Dr. Sallam's lab, advancing hypersonic research at OSU and
+    contributing to the future of the aerospace industry.
+  photos:
+    - file: screen-shot-2019-08-08-at-2-57-05-pm.png
+      caption: Christopher Vallery
+
+- date: July 16, 2019
+  year: 2019
+  title: Successful defense
+  text: >-
+    Proud of Alex Sheridan, who defended his M.Sc. thesis, “The Effects of Injection Angle on the
+    Structure of Choked Gaseous Jets.” He did his experimental work in the lab while working full
+    time and being a new parent. #Be_Like_Alex
+  photos:
+    - file: img-8780.jpg
+      caption: Alex Sheridan in the lab
+
+- date: July 9, 2019
+  year: 2019
+  title: Oklahoma Catalyst Researchers Program award
+  text: >-
+    Andrew Williamson won an Oklahoma Catalyst Researchers Program award ($3,000). The program is
+    hosted at the Tom Love Innovation Hub, University of Oklahoma.
+  photos:
+    - file: 66459507-704830706633752-6458427741304782848-n.jpg
+      caption: Andrew Williamson with the Catalyst award
+
+- date: June 2019
+  year: 2019
+  title: Dr. Sallam named chair of the ASME Mid-Continent Section
+  text: >-
+    OSU-Tulsa news: Dr. Sallam was named chair of the ASME Mid-Continent Section.
+  photos:
+    - file: screen-shot-2019-06-26-at-8-57-39-am.jpg
+      caption: OSU-Tulsa news article

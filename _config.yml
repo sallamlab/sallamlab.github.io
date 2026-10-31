@@ -1,0 +1,54 @@
+# Site settings — edit these to change text that appears on every page.
+# After editing any file on GitHub, the site rebuilds automatically in 1–2 minutes.
+# ----------------------------------------------------------------
+
+title: Sallam Research Lab
+tagline: Thermofluids Laboratory
+description: >-
+  The Sallam Research Lab at Oklahoma State University studies liquid atomization and sprays,
+  supersonic injection, combustion, digital holographic diagnostics, and energy–water systems.
+  Led by Dr. Khaled A. Sallam, School of Mechanical and Aerospace Engineering, OSU-Tulsa.
+
+# Contact and affiliation (shown in the footer and on the home page)
+director: Dr. Khaled A. Sallam
+director_title: Associate Professor and Associate Head, School of Mechanical and Aerospace Engineering
+institution: Oklahoma State University
+campus: OSU-Tulsa, Tulsa, Oklahoma
+email: sallam@okstate.edu
+youtube: https://www.youtube.com/@ProfSallam
+
+# The web address of the site. Leave url empty for a username.github.io/repo site;
+# set it to "https://www.sallamresearchlab.com" once the custom domain is connected.
+url: ""
+# baseurl is the repository name when the site is served at username.github.io/<repo>.
+# Set it to "" when using the custom domain or a <username>.github.io repository.
+baseurl: ""
+
+# Navigation menu, in order.
+nav:
+  - title: Home
+    url: /
+  - title: Team
+    url: /team/
+  - title: Research
+    url: /research/
+  - title: Publications
+    url: /publications/
+  - title: Teaching
+    url: /teaching/
+  - title: News & Links
+    url: /news/
+
+# ---- Technical settings (normally no need to change) ----
+markdown: kramdown
+permalink: pretty
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - README.md
+  - GETTING-STARTED.md
+  - vendor
+  - node_modules
+
+# No remote theme; the site ships its own stylesheet (assets/css/site.css).
+theme: null

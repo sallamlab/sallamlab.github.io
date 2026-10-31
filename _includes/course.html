@@ -1,0 +1,34 @@
+{%- assign c = include.course -%}
+<article class="course" id="{{ c.code | replace: ' ', '-' | downcase }}">
+  <div class="course-head">
+    <span class="course-code">{{ c.code }}</span>
+    <h3>{{ c.title }}</h3>
+  </div>
+  <p>{{ c.description }}</p>
+  {%- if c.prerequisites -%}<p class="prereq"><strong>Prerequisites:</strong> {{ c.prerequisites }}</p>{%- endif -%}
+  {%- if c.resources -%}
+  <ul class="resources">
+    {%- for r in c.resources -%}<li><a href="{{ r.url }}" rel="noopener">{{ r.label }}</a></li>{%- endfor -%}
+  </ul>
+  {%- endif -%}
+  {%- if c.videos -%}
+  {%- assign nvid = 0 -%}
+  {%- for grp in c.videos -%}{%- assign nvid = nvid | plus: grp.items.size -%}{%- endfor -%}
+  <details class="videos">
+    <summary>Lecture videos ({{ nvid }})</summary>
+    {%- for grp in c.videos -%}
+    <div class="video-group">
+      <h4>{{ grp.heading }}</h4>
+      <div class="video-grid">
+        {%- for v in grp.items -%}
+        <figure class="video">
+          <div class="frame"><div class="yt" data-id="{{ v.id }}" role="button" tabindex="0" aria-label="Play: {{ v.title | escape }}"></div></div>
+          <figcaption>{{ v.title }}</figcaption>
+        </figure>
+        {%- endfor -%}
+      </div>
+    </div>
+    {%- endfor -%}
+  </details>
+  {%- endif -%}
+</article>

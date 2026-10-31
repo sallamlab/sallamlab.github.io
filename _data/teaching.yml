@@ -1,0 +1,81 @@
+# Photo galleries and extras for the Teaching page.
+# Photos live in assets/img/ — give just the file name.
+# ----------------------------------------------------------------
+
+asme:
+  intro: >-
+    Dr. Sallam is the faculty advisor of the ASME student section at OSU-Tulsa. The section was
+    named Student Organization of the Year for 2023/2024 and received the ASME Student Section
+    Achievement Award in 2026, its third consecutive year.
+  photos:
+    - file: asme-banner-tulsa.jpg
+      caption: ASME@OSU-Tulsa — 2024 Student Organization of the Year Award
+    - file: 1500x500.jpg
+      caption: ASME@OSU-Tulsa
+    - file: 1700067484661.jpg
+      caption: STEM Symposium demonstration
+    - file: stem3.jpg
+      caption: STEM Symposium, Mechanical and Aerospace Engineering booth
+    - file: stem2.jpg
+      caption: STEM Symposium, Mechanical and Aerospace Engineering booth
+
+visits:
+  intro: >-
+    Students regularly visit industrial facilities around Tulsa to see thermal-fluid systems at
+    full scale.
+  photos:
+    - file: img-8365.jpg
+      caption: Visiting AEP Oologah Power Plant, February 15, 2024
+    - file: img-8369.jpg
+      caption: Control room, Oologah Power Plant, February 15, 2024
+    - file: img-7960.jpg
+      caption: Visiting AAON headquarters, Tulsa, October 5, 2023
+    - file: img-5705.jpg
+      caption: Visiting Tulsa Power Plant, November 2022
+    - file: img-5763.jpg
+      caption: Visiting the Ruhrpumpen Tulsa facility, November 2022
+    - file: westermaninc.jpg
+      caption: Visiting Westerman Inc., Catoosa, OK
+      url: https://westermaninc.com
+    - file: visiting-aaon-2021.jpg
+      caption: Visiting AAON, October 2021
+    - file: img-4362.jpg
+      caption: Visiting the Covanta Tulsa waste-to-energy facility
+      url: https://www.covanta.com/where-we-are/our-facilities/tulsa
+    - file: american.jpg
+      caption: Visiting the American Airlines Tulsa maintenance base
+      url: https://news.aa.com/news/news-details/2020/American-Airlines-Announces-550-Million-Investment-to-its-Tulsa-Maintenance-Base-OPS-INF/default.aspx
+
+facilities:
+  intro: >-
+    Our teaching laboratory includes a hydraulic channel, wind tunnel, and thermal-fluid test
+    benches used in the experimental courses.
+  video_links:
+    - label: Teaching facilities tour (YouTube)
+      url: https://youtu.be/Qubc62nWMOM
+    - label: Teaching facilities tour (Facebook)
+      url: https://www.facebook.com/watch/?v=10156743315751982
+  photos:
+    - file: hydchannel2.jpg
+      caption: Hydraulic channel
+    - file: img-8197.jpg
+      caption: Experimental fluid dynamics lab session
+    - file: img-8221.jpg
+      caption: Experimental fluid dynamics lab session
+    - file: 24879584-379265712523588-4649124083859779295-o.jpg
+      caption: Students working with the flow visualization rig
+    - file: 24799518-379265729190253-8326328874715136504-o.jpg
+      caption: Students working with the wind tunnel
+    - file: 18033341-284044388712388-3195643136915961430-n.jpg
+      caption: Pump teardown
+    - file: 70376526-747566169026872-4046617722711179264-n.jpg
+      caption: Students on campus
+
+combustion_simulator:
+  text: >-
+    A combustion simulator developed by Dr. Sallam's collaborator, Dr. Shubham Srivastava
+    (Rheem Water Heating), is used in the lab for studying mixtures of reacting flows.
+    Contact Dr. Srivastava for access and copyright information.
+  contact_label: Dr. Shubham Srivastava on LinkedIn
+  contact_url: https://www.linkedin.com/in/shubhamsri/
+  image: combustion-simulator.png

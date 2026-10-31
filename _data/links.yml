@@ -1,0 +1,30 @@
+# Links shown on the News & Links page.
+# ----------------------------------------------------------------
+
+osu_labs:
+  heading: Fluid research labs at Oklahoma State University
+  items:
+    - label: Experimental Flow Physics and Acoustics Lab (Prof. Elbing)
+      url: http://www.flowphysicslab.org
+    - label: CFD Lab (Prof. San)
+      url: https://www.cfdlab.org
+    - label: Applied Flow Mechanics Lab (Prof. Santhanakrishnan)
+      url: http://www.appliedfluidslab.org
+    - label: Aerodynamic Research Lab (Prof. Kara)
+      url: https://www.kursatkara.com
+
+useful:
+  heading: Useful links
+  items:
+    - label: Geometric Dimensioning & Tolerancing (GD&T)
+      url: https://youtu.be/G7wnGeR_69k
+    - label: "U. Chicago: The Craft of Writing"
+      url: https://youtu.be/vtIzMaLkCaM
+    - label: "U. Chicago: Writing Beyond the Academy"
+      url: https://youtu.be/aFwVf5a3pZM
+    - label: National Committee for Fluid Mechanics Films
+      url: http://web.mit.edu/hml/ncfmf.html
+    - label: Adam Sandler commencement speech
+      url: https://youtu.be/I_STlnGlrWE
+    - label: "Harvard Business Review: Four Reasons to Keep a Work Diary"
+      url: https://hbr.org/2011/04/four-reasons-to-keep-a-work-di

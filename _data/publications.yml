@@ -1,0 +1,281 @@
+# Publications for the Sallam Research Lab website.
+# ----------------------------------------------------------------
+# HOW TO ADD A PAPER: copy one of the entries below, paste it at the
+# top of the right section (newest first), and edit the text.
+#   - year:     the publication year (used for display only)
+#     citation: the full reference. You may use simple HTML:
+#               <u>…</u> to underline student authors,
+#               <i>…</i> for a journal or book title,
+#               <a href="https://doi.org/…">https://doi.org/…</a> for a DOI link.
+# The "|-" after "citation:" means: the indented text on the following
+# line(s) is taken exactly as written, so quotes and HTML need no escaping.
+# Sections: books, journal, conference, magazine
+# ----------------------------------------------------------------
+books:
+- year: 2023
+  citation: |-
+    K.A. Sallam and S. Srivastava, (2023) <i>An Introduction to Combustion with Applications Using Cantera.</i> Cambridge Scholars Publishing. ISBN: 1-5275-3320-4.
+- year: 2010
+  citation: |-
+    K.A. Sallam, (2010) “Chapter 17: Liquid Fuel Atomization Testing,” In C.E. Baukal (Ed.) <i>Industrial Combustion Testing</i>, (pp. 369-374) CRC Press.
+journal:
+- year: 2025
+  citation: |-
+    <u>Kafle, B.,</u> Sallam, K. A., and Hareland, G. (2025). An economic comparison of wind, solar, and ocean thermal energy in the Federated States of Micronesia. Academia Engineering, 2(2). <a href="https://doi.org/10.20935/AcadEng7722">https://doi.org/10.20935/AcadEng7722</a>.
+- year: 2024
+  citation: |-
+    Ouedraogo AS, Kumar A, Frazier R, Sallam KA. Comparative Life Cycle Assessment of Landfilling with Sustainable Waste Management Methods for Municipal Solid Wastes. Environments. 2024; 11(11):248. <a href="https://doi.org/10.3390/environments11110248">https://doi.org/10.3390/environments11110248</a>.
+- year: 2024
+  citation: |-
+    <u>Bipin Kafle, Bruno V.M. da Silva</u>, Khaled A. Sallam, Temporal variation of droplet spreading on dense and microporous tubular surfaces, International Journal of Heat and Fluid Flow, Volume 110, 2024, 109616, <a href="https://doi.org/10.1016/j.ijheatfluidflow.2024.109616">https://doi.org/10.1016/j.ijheatfluidflow.2024.109616</a>.
+- year: 2023
+  citation: |-
+    <u>A.J. Williamson</u> and K.A. Sallam*, “Improving Vapor Compression Cycle Performance using Compressor-Expander Heat Transfer,” ASHRAE Journal, Volume 65, No. 4, 44-49, April 2023.
+- year: 2023
+  citation: |-
+    <u>M.S. Raza</u> and K.A. Sallam*, “Primary Breakup of Liquid Fan Sheet in Crossflow,” J. Aerosol Science, Volume 169, March 2023, 106135. <a href="https://doi.org/10.1016/j.jaerosci.2022.106135">https://doi.org/10.1016/j.jaerosci.2022.106135</a>, IF: 4.586.
+- year: 2022
+  citation: |-
+    <u>A.J. Williamson</u>, S. Srivastava, and K.A. Sallam*, “Validating Confined Flame Noise Simulation Using External Sensor,” <i>Sensors </i>2022, 22(20), 8039; <a href="https://doi.org/10.3390/s22208039">https://doi.org/10.3390/s22208039</a>, IF: 3.847.
+- year: 2022
+  citation: |-
+    S. Srivastava, <u>A.M. Sheridan</u>, M. Henneke, <u>M.S. Raza,</u> and K.A. Sallam*, “Structure of Choked Gas Jet,” <i>J. Fluids Eng</i>. Oct 2022, 144(10): 101301, <a href="https://doi.org/10.1115/1.4054139">https://doi.org/10.1115/1.4054139</a>.
+- year: 2020
+  citation: |-
+    N. Indrawan*, A. Kumar, M. Moliere, K.A. Sallam, R.L. Huhnke, “Distributed power generation via gasification of biomass and municipal solid waste: A review,” Journal of the Energy Institute (2020), doi: <a href="https://doi.org/10.1016/j.joei.2020.07.001">https://doi.org/10.1016/j.joei.2020.07.001</a>.
+- year: 2017
+  citation: |-
+    <u>J. Lee</u> and K.A. Sallam* (2017), “Column Thickness Variation of 100-mm Liquid Jets in Still Air,” Atomization and Sprays, 17 (1): 1-13.
+- year: 2014
+  citation: |-
+    <u>Lee, J.,</u> and Sallam*, K.A., (2014), “Three Dimensional Trajectory of Electrospun Polymer Solution Jet using Digital Holographic Microscopy,” Polymer Engineering and Science, Vol. 54, No. 8, pp. 1765-1773.
+- year: 2014
+  citation: |-
+    <u>Olinger, D.S.,</u> Sallam*, K.A., Lin, K.-C., and Carter, C.D., (2014) "Digital Holographic Analysis of the Near Field of Aerated-Liquid Jets in Crossflow," Journal of Propulsion and Power, Vol. 30, No. 6, pp. 1636-1645, <a href="https://doi.org/10.2514/1.B34984">https://doi.org/10.2514/1.B34984</a>.
+- year: 2012
+  citation: |-
+    <u>Osta, A.R., Lee, J.,</u> Sallam*, K.A., and Fezzaa, K., (2012), “Study of the Effects of the Injector Length/Diameter ratio on the Surface Properties of Turbulent Liquid Jets in Still Air using X-ray Imaging,” International Journal of Multiphase Flow, Vol. 38, pp. 87–98.
+- year: 2010
+  citation: |-
+    <u>Osta, A.R., </u>and Sallam*, K.A., (2010) “Nozzle-Geometry Effects on the Upwind Surface Properties of Turbulent Liquid Jets in Gaseous Crossflow,” J. Prop. Power, Vol. 26, No. 5, pp. 936-946. <a href="https://doi.org/10.2514/1.49737">https://doi.org/10.2514/1.49737</a>.
+- year: 2009
+  citation: |-
+    <u>Shukla, R.,</u> and Sallam*, K.A., (2009) “Effect of Liquid Transparency on Laser-Induced motion of Drops,” J. Fluids Engineering, Vol. 131, No. 8, 081301-1 – 081301-7. <a href="https://doi.org/10.1115/1.3156000">https://doi.org/10.1115/1.3156000</a>.
+- year: 2009
+  citation: |-
+    <u>Lee, J.,</u> Sallam*, K.A., Lin, K.-C., and Carter, C.D., (2009), “Spray Structure in Near-Injector Region of Aerated Jet in Subsonic Crossflow,” J. Prop. Power, Vol. 25, No. 2, pp. 258-266. <a href="https://doi.org/10.2514/1.36719">https://doi.org/10.2514/1.36719</a>.
+- year: 2009
+  citation: |-
+    <u>Lee, J., Miller, B.,</u> and Sallam*, K.A., (2009), “Demonstration of Digital Holographic Diagnostics for the Breakup of Liquid Jets Using a Commercial-Grade CCD Sensor,” Atom. Sprays, Vol. 19, No. 5, pp. 445-456.
+- year: 2008
+  citation: |-
+    <u>Ng, C.-L., Sankarakrishnan, R.,</u> and Sallam*, K.A., (2008), “Bag Breakup of nonturbulent liquid jets in crossflow,” Int. J. Multiphase Flow, Vol. 34, No. 3, pp. 241-259.
+- year: 2008
+  citation: |-
+    <u>Miller, B.,</u> Sallam*, K.A., Bingabr, M., Lin, K.-C., and Carter, C.D., (2008), “Breakup of Aerated Liquid Jets in Subsonic Crossflow,” J. Prop. Power, Vol. 24, No. 2, pp. 253-258. <a href="https://doi.org/10.2514/1.30390">https://doi.org/10.2514/1.30390</a>.
+- year: 2007
+  citation: |-
+    Lee, K., Aalburg, C., Diez, F.J., Faeth*, G.M., and Sallam, K.A., (2007), “Primary Breakup of Turbulent Round Liquid Jets in Uniform Crossflows,” AIAA Journal, Vol. 45, No. 8, pp. 1907-1916. <a href="https://doi.org/10.2514/1.19397">https://doi.org/10.2514/1.19397</a>.
+- year: 2006
+  citation: |-
+    Sallam*, K.A., Aalburg, C., Faeth, G.M., Lin, K.-C., Carter, C.D., and Jackson, T.A., (2006), “Primary Breakup of Aerated-Liquid Jets in Supersonic Crossflows,” Atomization and Sprays, Vol. 16, No. 6, pp. 657-672.
+- year: 2005
+  citation: |-
+    Aalburg, C., Van Leer, B., Faeth*, G.M., and Sallam, K.A., (2005), “Properties of Nonturbulent Round Liquid Jets in Uniform Gaseous Crossflows,” Atomization and Sprays, Vol. 15 No. 3, pp. 271-294.
+- year: 2004
+  citation: |-
+    Sallam, K.A., Aalburg, C., and Faeth*, G.M., (2004), “Breakup of Round Liquid Jets in Gaseous Crossflows,” AIAA Journal, Vol. 42, No. 12, pp. 2529-2540. <a href="https://doi.org/10.2514/1.3749">https://doi.org/10.2514/1.3749</a>.
+- year: 2003
+  citation: |-
+    Sallam, K.A., and Faeth*, G.M., (2003), “Surface Properties during Turbulent Primary Breakup of free Liquid Jets,” AIAA Journal, Vol. 41, pp. 1514-1524. <a href="https://doi.org/10.2514/2.2102">https://doi.org/10.2514/2.2102</a>.
+- year: 2002
+  citation: |-
+    Sallam, K.A., Dai, Z., and Faeth*, G.M., (2002), “Liquid Breakup at the Surface of Turbulent Round Liquid Jets in Still Gases,” International Journal of Multiphase Flow, Vol. 28, pp. 427-449. <a href="https://doi.org/10.1016/S0301-9322(01)00067-2">https://doi.org/10.1016/S0301-9322(01)00067-2</a>
+- year: 1999
+  citation: |-
+    Sallam, K.A., Dai, Z., and Faeth*, G.M., (1999), "Drop Formation at the Surface of Plane Turbulent Liquid Jets in Still Gases," International Journal of Multiphase Flow, Vol. 25, pp. 1161-1180. <a href="https://doi.org/10.1016/S0301-9322(99)00042-7">https://doi.org/10.1016/S0301-9322(99)00042-7</a>
+conference:
+- year: 2025
+  citation: |-
+    <u>L. Cai, T. Rahman, </u>and K.A. Sallam*, “Optimization of Low-Grade Solar Thermal Desalination Powerplant,” ASME Paper No. IMECE2025-166666, Proceedings of International Mechanical Engineering Congress & Exposition (IMECE), Memphis, TN, November 16-20, 2025.
+- year: 2025
+  citation: |-
+    <u>B. Kafle</u>, and K.A. Sallam*, “Dynamics of Dripping from Tubular Surfaces,” ASME Paper No. IMECE2025-167312, Proceedings of International Mechanical Engineering Congress & Exposition (IMECE), Memphis, TN, November 16-20, 2025.
+- year: 2023
+  citation: |-
+    P. Navitski, J. Izzatillaev, A. Al Dor, I. Esley, <u>J. Merheb</u>, L. Oliveira and K. Sallam, “Utilization of Solar Energy for Water Desalination and Purification Using Solar Concentrator,” Proceedings of ICECAE 2023 (4th International Conference on Energetics, Civil and Agricultural Engineering 2023) Tashkent, Uzbekistan, October 12 - 14, 2023.
+- year: 2023
+  citation: |-
+    K.A. Sallam*, <u>M.S. Raza</u>, “Spray Drift due to Bag Breakup of Fan Sheet,” Proceedings of 33rd Annual Conference on Liquid Atomization and Spray Systems, Albuquerque, NM, May 14–17, 2023.
+- year: 2023
+  citation: |-
+    <u>C.D. Scott,</u> K.A. Sallam*, K.-C. Lin, S.D. Hammack, and C.D. Carter, “Using Holographic Imaging to Study Fuel Injection in High-Speed Flows,” Proceedings of 33rd Annual Conference on Liquid Atomization and Spray Systems, Albuquerque, NM, May 14–17, 2023.
+- year: 2022
+  citation: |-
+    <u>E.-O. Enwa*</u>, S. Pradhan, P.K. Bikkina, and K.A. Sallam, “Preparation of Superhydrophilic Copper and Brass Surfaces using TiO<sub>2</sub> Nanoparticles for Novel Nucleation Boiling Application,” The 19th International Topical Meeting on Nuclear Reactor Thermal Hydraulics (NURETH-19), Brussels, Belgium, March 6 - 11, 2022.
+- year: 2021
+  citation: |-
+    <u>M.S. Raza,</u> A. Valiaev, and K.A. Sallam*, “Air-Assisted Atomization of Beveled Needle Point Injector,” Proceedings of 15th Triennial International Conference on Liquid Atomization and Spray Systems, Edinburgh, UK, Aug. 29 – Sept. 2, 2021.
+- year: 2020
+  citation: |-
+    S. Srivastava, <u>A.M. Sheridan</u>, M. Henneke, and K.A. Sallam*, "Computational and Experimental Investigation of Inclined Choked Injection of Gaseous Jet," AIAA Paper No. 2020-2027, AIAA SciTech Forum, Orlando, Florida, January 6-10, 2020. <a href="https://doi.org/10.2514/6.2020-2027">https://doi.org/10.2514/6.2020-2027</a>.
+- year: 2019
+  citation: |-
+    <u>A. Williamson</u>, and K.A. Sallam*, “Human Powered Desalination Unit,” ASME Paper No. IMECE2019-12046, Proceedings of International Mechanical Engineering Congress & Exposition (IMECE), Salt Lake City, Utah, November 11-14, 2019.
+- year: 2019
+  citation: |-
+    <u>M.S. Raza</u>, K.A. Sallam*, and S.L. Post, “The Effect of Crosswind Velocity on the Spray Drift of Flat Fan Nozzle,” ASME Paper No. IMECE2019-12049, Proceedings of International Mechanical Engineering Congress & Exposition (IMECE), Salt Lake City, Utah, November 11-14, 2019. <a href="https://doi.org/10.1115/IMECE2019-12049">https://doi.org/10.1115/IMECE2019-12049</a>.
+- year: 2019
+  citation: |-
+    <u>A.M. Sheridan</u>, S. Srivastava, M. Henneke, <u>M.S. Raza</u>, K.A. Sallam*, “Inclined Injection of Under expanded supersonic Gas Jet,” ASME Paper No. IMECE2019-12020, Proceedings of International Mechanical Engineering Congress & Exposition (IMECE), Salt Lake City, Utah, November 11-14, 2019.
+- year: 2019
+  citation: |-
+    K.A. Sallam, “Core Breakup of Turbulent Liquid Sheets,” Proceedings of 14th International Conference on Heat Transfer, Fluid Mechanics and Thermodynamics, Wicklow, Ireland, July 22–24, 2019.
+- year: 2019
+  citation: |-
+    <u>T.E. Crane</u> and K.A. Sallam*, “Micro Liquid Jet Breakup and Pinch-off in Immiscible Liquid-Liquid Systems,” Proceedings of 14th International Conference on Heat Transfer, Fluid Mechanics and Thermodynamics, Wicklow, Ireland, July 22–24, 2019.
+- year: 2018
+  citation: |-
+    K.A. Sallam*, K.-C. Lin, S.D. Hammack, and C.D. Carter, “Effect of Nozzle Geometry on Aerated-Liquid Injection in Supersonic Crossflow,” Proceedings of 14th International Conference on Liquid Atomization and Spray Systems, Chicago, IL, July 22–26, 2018.
+- year: 2017
+  citation: |-
+    <u>S. Simon</u>, and K.A. Sallam*, “Simulation of the Flow of Single Stranded DNA through a Microchannel using Dissipative Particle Dynamics,” Proceedings of ASTFE 2nd Thermal and Fluids Engineering Conference, Las Vegas, Nevada, April 2-5, 2017.
+- year: 2017
+  citation: |-
+    <u>A. Choudhari</u>, and K.A. Sallam*, “Simulation of Supersonic Injection of Aerated Liquid Jet,” Proceedings of ASTFE 2nd Thermal and Fluids Engineering Conference, Las Vegas, Nevada, April 2-5, 2017.
+- year: 2017
+  citation: |-
+    <u>N. Davis</u>, and K.A. Sallam*, “Modeling of Membrane Fouling for Rotating Filtration Systems,” Proceedings of ASTFE 2nd Thermal and Fluids Engineering Conference, Las Vegas, Nevada, April 2-5, 2017.
+- year: 2017
+  citation: |-
+    <u>A. Herrington</u>, and K.A. Sallam*, “On PIV measurements of Diffusion Flames,” Proceedings of ASTFE 2nd Thermal and Fluids Engineering Conference, Las Vegas, Nevada, April 2-5, 2017.
+- year: 2017
+  citation: |-
+    K.A. Sallam*, K.-C. Lin, S.D. Hammack, and C.D. Carter, “Digital Holographic Analysis of the Breakup of Aerated Liquid Jets in Supersonic Crossflow,” AIAA Paper No. 2017-1957, 55th AIAA Aerospace Sciences Meeting, Grapevine, Texas, January 2017. <a href="https://doi.org/10.2514/6.2017-1957">https://doi.org/10.2514/6.2017-1957</a>.
+- year: 2015
+  citation: |-
+    <u>A. Adebayo</u>, K.A. Sallam*, K.-C. Lin, and C.D. Carter, “Drop Size and Velocity Distributions of the Spray of Aerated Injection in Subsonic Crossflow,” Proceedings of ICLASS 2015, 13th Triennial International Conference on Liquid Atomization and Spray Systems, Tainan, Taiwan, August 23-27, 2015.
+- year: 2013
+  citation: |-
+    <u>D.S. Olinger,</u> K.A. Sallam*, K.-C. Lin, and C.D. Carter, “Image Processing Algorithms for Digital Holographic Analysis of Near-Injector Sprays,” Proceedings of the ILASS Americas, 25th Annual Conference on Liquid Atomization and Spray Systems, Pittsburgh, PA, May 2013.
+- year: 2013
+  citation: |-
+    <u>D.S. Olinger,</u> K.A. Sallam*, K.-C. Lin, and C.D. Carter, “Digital Holographic Analysis of Near-Field Aerated Liquid Jets in Crossflow. Part II: Measurements,” AIAA Paper No. 2013-0167, 51st AIAA Aerospace Sciences Meeting, Grapevine, Texas, January 2013. <a href="https://doi.org/10.2514/6.2013-167">https://doi.org/10.2514/6.2013-167</a>.
+- year: 2013
+  citation: |-
+    <u>D.S. Olinger, J. Lee, A. Osta,</u> K.A. Sallam*, K.-C. Lin, and C.D. Carter, “Digital Holographic Analysis of Near-Field Aerated Liquid Jets in Crossflow. Part I: Algorithm Development,” AIAA Paper No. 2013-0164, 51st AIAA Aerospace Sciences Meeting, Grapevine, Texas, January 2013. <a href="https://doi.org/10.2514/6.2013-164">https://doi.org/10.2514/6.2013-164</a>.
+- year: 2011
+  citation: |-
+    <u>Ng, C.-L.,</u> and Sallam*, K.A., “Simulation of Laminar Liquid Jets in Gaseous Crossflow before the Onset of Primary Breakup,” ASME paper No. IMECE2011-65338, Proceedings of the ASME 2011 International Mechanical Engineering Congress & Exposition, Denver, Colorado, November 11-17, 2011. <a href="https://doi.org/10.1115/IMECE2011-65338">https://doi.org/10.1115/IMECE2011-65338</a>.
+- year: 2010
+  citation: |-
+    K.A. Sallam*, K.-C. Lin, and C.D. Carter, “Spray Structure of Aerated Liquid Jets using Double-View Digital Holography,” AIAA paper No. 2010-194, 48th AIAA Aerospace Sciences Meeting, Orlando, Florida, January 2010. <a href="https://doi.org/10.2514/6.2010-194">https://doi.org/10.2514/6.2010-194</a>.
+- year: 2009
+  citation: |-
+    <u>A. Osta, J. Lee,</u> K.A. Sallam*, and K. Fezzaa “Investigating the Effect of the Injector Length/Diameter ratio on the Primary Breakup of Liquid Jets using X-ray Diagnostics,” Proceedings of 11th International Conference on Liquid Atomization and Spray Systems, Vail, Colorado, July 26–30, 2009.
+- year: 2009
+  citation: |-
+    <u>D.S. Olinger,</u> K.A. Sallam*, K.-C. Lin, and C.D. Carter, “Effects of GLR on the Spray Structure in the Near-Injector Region of Aerated Liquid Jets in Subsonic Crossflow,” AIAA paper No. 2009-1373, 47th AIAA Aerospace Sciences Meeting, Orlando, Florida, January 2009. <a href="https://doi.org/10.2514/6.2009-1373">https://doi.org/10.2514/6.2009-1373</a>.
+- year: 2009
+  citation: |-
+    <u>A. Osta</u> and K.A. Sallam*, “The Effect of the Nozzle Length to Diameter Ratio on the Surface Properties of Turbulent Liquid Jets in Gaseous Crossflow,” AIAA paper No. 2009-1374, 47th AIAA Aerospace Sciences Meeting, Orlando, Florida, January 2009. <a href="https://doi.org/10.2514/6.2009-1374">https://doi.org/10.2514/6.2009-1374</a>.
+- year: 2008
+  citation: |-
+    <u>D.S. Olinger</u> and K.A. Sallam*, “Toward a Fully-Automated Digital Holographic Spray Analyzer,” AIAA Paper No. 2008-4045, 38th Fluid Dynamics Conference, Seattle, Washington, June, 2008. <a href="https://doi.org/10.2514/6.2008-4045">https://doi.org/10.2514/6.2008-4045</a>.
+- year: 2008
+  citation: |-
+    <u>D.S. Olinger, J. Lee, A. Osta,</u> and K.A. Sallam*, “Single- and Double-View Digital Holographic Diagnostics for Sprays,” Proceedings of 21st Annual ILASS-Americas Conference, Orlando, Florida, May 18–21, 2008.
+- year: 2008
+  citation: |-
+    <u>J. Lee,</u> K.A. Sallam*, K.-C. Lin and C.D. Carter, “Spray Structure in Near-Injector Region of Aerated Jet in Subsonic Crossflow,” AIAA paper No. 2008-1043, 46th AIAA Aerospace Sciences Meeting, Reno, Nevada, January 2008. <a href="https://doi.org/10.2514/6.2008-1043">https://doi.org/10.2514/6.2008-1043</a>.
+- year: 2008
+  citation: |-
+    <u>A.R. Osta</u> and K.A. Sallam*, “Effect of Injector Length/Diameter Ratio on the Breakup of Round Liquid Jet in Crossflow,” AIAA paper No. 2008-1040, 46th AIAA Aerospace Sciences Meeting, Reno, Nevada, January 2008. <a href="https://doi.org/10.2514/6.2008-1040">https://doi.org/10.2514/6.2008-1040</a>.
+- year: 2007
+  citation: |-
+    <u>J. Lee, B. Miller</u>, K.A. Sallam*, and M. Bingabr, “Digital Double-Pulsed Microscopic Holography Diagnostics for Sprays using Commercial-Grade CCD,” International Conference on Multiphase Flow, ICMF 2007, Leipzig, Germany, July 9 – 13, 2007.
+- year: 2007
+  citation: |-
+    A.M. El-Leathy and K.A. Sallam*, “Effect of Polymer Concentration on Beads Formation during Electro Spinning of Nanofibers,” Twelfth International Conference on Aerospace Sciences and Aviation Technology, ASAT-12, May 29-31, 2007, Cairo, Egypt.
+- year: 2007
+  citation: |-
+    <u>J. Lee, B. Miller</u>, K.A. Sallam*, K.-C. Lin, and C.D. Carter, “Velocity and Size Measurements of Aerated Spray using Digital Microscopic Holography,” ILASS-AMERICAS 2007, May 15-18, 2007 - Chicago, Illinois.
+- year: 2007
+  citation: |-
+    <u>B. Miller,</u> K.A. Sallam*, M. Bingabr, K.-C. Lin and C. Carter, “Secondary Breakup of Aerated Liquid Jets in Subsonic Crossflow,” AIAA paper No. 2007-1342, 45th AIAA Aerospace Sciences Meeting, Reno, Nevada, January 2007. <a href="https://doi.org/10.2514/6.2007-1342">https://doi.org/10.2514/6.2007-1342</a>.
+- year: 2006
+  citation: |-
+    <u>B. Miller,</u> K.A. Sallam*, K.-C. Lin and C. Carter, “Digital Holographic Spray Analyzer,” ASME paper No. FEDSM2006-98526, ASME Joint U.S.-European Fluids Engineering Summer Meeting, Miami, Florida, July 2006.
+- year: 2006
+  citation: |-
+    K.A. Sallam*, C. Aalburg, K. Lee, <u>C.-L. Ng and R. Sankarakrishnan</u> “Breakup of Turbulent and Non-Turbulent Liquid jets in Gaseous Crossflows,” AIAA paper No. 2006-1517, 44th AIAA Aerospace Sciences Meeting, Reno, Nevada, January 2006, (<b>Invited</b>). <a href="https://doi.org/10.2514/6.2006-1517">https://doi.org/10.2514/6.2006-1517</a>.
+- year: 2006
+  citation: |-
+    K. Lee, J.F. Diez, G.M. Faeth*, C. Aalburg, and K.A. Sallam, “Breakup of Round Turbulent Liquid Jets in Air Crossflows,” Proceedings of the 18th Annual Conference on Liquid Atomization and Spray Systems, Irvine, CA, May 2005 (<u>Awarded the Marshall Award, Toronto, Canada, 2006).</u>
+- year: 2005
+  citation: |-
+    <u>R. Sankarakrishnan,</u> K.A. Sallam*, and F.W. Chambers “Effects of Turbulence on the Breakup of Round Liquid Jets in Gaseous Crossflow,” ASME paper No. FEDSM2005-77407, ASME Fluids Engineering Summer Conference, Houston, TX, June 2005. <a href="https://doi.org/10.1115/FEDSM2005-77407">https://doi.org/10.1115/FEDSM2005-77407</a>.
+- year: 2005
+  citation: |-
+    <u>C.-L. Ng,</u> K.A. Sallam*, H.M. Metwally, and C. Aalburg “Deformation and Surface Waves Properties of Round Nonturbulent Liquid Jets in Gaseous Crossflow,” ASME paper No. FEDSM2005-77469, ASME Fluids Engineering Summer Conference, Houston, TX, June 2005. <a href="https://doi.org/10.1115/FEDSM2005-77469">https://doi.org/10.1115/FEDSM2005-77469</a>.
+- year: 2005
+  citation: |-
+    C. Aalburg, G.M. Faeth*, and K.A. Sallam, “Primary Breakup of Round Turbulent Liquid Jets in Uniform Gaseous Crossflows,” AIAA paper No. 2005-0734, 43rd AIAA Aerospace Sciences Meeting, Reno, Nevada, January 2005. <a href="https://doi.org/10.2514/6.2005-734">https://doi.org/10.2514/6.2005-734</a>.
+- year: 2004
+  citation: |-
+    K.A. Sallam, C. Aalburg, G.M. Faeth*, K.-C. Lin, C.D. Carter, and T.A. Jackson “Breakup of Aerated-Liquid Jets in Supersonic Crossflows,” AIAA paper No. 2004-0970, 42nd AIAA Aerospace Sciences Meeting, Reno, Nevada, January 2004. <a href="https://doi.org/10.2514/6.2004-970">https://doi.org/10.2514/6.2004-970</a>.
+- year: 2004
+  citation: |-
+    C. Aalburg, K.A. Sallam, and G.M. Faeth*, “Properties of Nonturbulent Round Liquid Jets in Uniform Crossflows,” AIAA paper No. 2004-0969, 42nd AIAA Aerospace Sciences Meeting, Reno, Nevada, January 2004. <a href="https://doi.org/10.2514/6.2004-969">https://doi.org/10.2514/6.2004-969</a>.
+- year: 2004
+  citation: |-
+    K.A. Sallam, C. Aalburg, G.M. Faeth*, K.-C. Lin, C. D. Carter, and T. A. Jackson “Primary Breakup of Aerated-Liquid Jets in Uniform Gaseous Crossflows,” Proceedings of the 19th Annual Conference, ILASS-Europe, Nottingham, UK, September 2004.
+- year: 2004
+  citation: |-
+    K.A. Sallam, C. Aalburg, and G.M. Faeth*, “Primary Breakup of Nonturbulent Round Liquid Jets in Uniform Gaseous Crossflows,” Proceedings of the 19th Annual Conference, ILASS-Europe, Nottingham, UK, September 2004.
+- year: 2004
+  citation: |-
+    K.A. Sallam, C. Aalburg, G.M. Faeth*, K.-C. Lin, C.D. Carter, and T. A. Jackson “Properties of Aerated-Liquid Jets in Supersonic Crossflows,” Proceedings of the 17th Annual Conference on Liquid Atomization and Spray Systems, Arlington, Virginia, May 2004.
+- year: 2003
+  citation: |-
+    K.A. Sallam, C. Aalburg, and G.M. Faeth*, “Primary Breakup of Nonturbulent Liquid Jets in Gaseous Crossflows,” Proceedings of the 16th Annual Conference on Liquid Atomization and Spray Systems, Monterey, California, May 2003<u> (Featured on the conference proceeding cover).</u>
+- year: 2003
+  citation: |-
+    K.A. Sallam, C. Aalburg, and G.M. Faeth*, “Primary Breakup of Round Nonturbulent Liquid Jets in Gaseous Crossflows,” AIAA Paper No. 2003-1326, 41st AIAA Aerospace Sciences Meeting, Reno, Nevada, January 2003. <a href="https://doi.org/10.2514/6.2003-1326">https://doi.org/10.2514/6.2003-1326</a>.
+- year: 2002
+  citation: |-
+    K.A. Sallam, Z. Dai, and G.M. Faeth*, “Turbulent Primary Breakup of Round and Plane Liquid Jets in Still Air,” AIAA Paper No. 2002-1115, 40th AIAA Aerospace Sciences Meeting, Reno, Nevada, January 2002. <a href="https://doi.org/10.2514/6.2002-1115">https://doi.org/10.2514/6.2002-1115</a>.
+- year: 1999
+  citation: |-
+    K.A. Sallam, Z. Dai, and G.M. Faeth*, "Breakup of Turbulent Liquid Jets in Still Gases," AIAA Paper No. 99-3759, 30th AIAA Fluid Dynamics Conference, Norfolk, Virginia, June 1999. <a href="https://doi.org/10.2514/6.1999-3759">https://doi.org/10.2514/6.1999-3759</a>.
+- year: 1999
+  citation: |-
+    K.A. Sallam, Z. Dai, and G.M. Faeth*, "Breakup Lengths of Turbulent Liquid Jets in Still Gases," Proceedings of the 12th Annual Conference on Liquid Atomization and Spray Systems, Indianapolis, Indiana, May 1999, pp. 219-223.
+- year: 1998
+  citation: |-
+    Z. Dai, K.A. Sallam, and G.M. Faeth*, "Turbulent Primary Breakup of Plane Free Bow Sheets," Proceedings of the 22nd Symposium on Naval Hydrodynamics, National Academy Press, Washington, D.C., 1998, pp. 568-581.
+- year: 1996
+  citation: |-
+    K.A. Sallam*, A.S. Sabry, M.A. Serag-Eldin, and M.A. Fouad, "Characteristics Based Nonlinear Simulation of Reactive Silencers," Proceedings of the International Congress on Fluid Dynamics & Propulsion, Cairo, Egypt, December 1996, pp. 370-385.
+magazine:
+- year: 2026
+  citation: |-
+    B.H. Saracoglu, J.S. Kadosh, and K.A. Sallam, “Research Boosts limits of high-speed air-breathing propulsion,” Aerospace America, January 2026.
+- year: 2024
+  citation: |-
+    B.H. Saracoglu, K.A. Sallam, and F. Strauss, “High-Speed Air-Breathing Propulsion Pushes the Limits of Mach Numbers,” Aerospace America, December 2024.
+- year: 2022
+  citation: |-
+    F. Strauss, J.S. Kadosh, K.A. Sallam, “Ramjet and scramjet propulsion mature, advancing weapon capabilities,” Aerospace America, December 2022.
+- year: 2021
+  citation: |-
+    K.A. Sallam, “Hypersonic flight systems: From research and testing to business analysis,” Aerospace America, December 2021.
+- year: 2020
+  citation: |-
+    K.A. Sallam, “Europe, China and U.S. cite progress in hypersonic propulsion,” Aerospace America, p. 26, December 2020.
+- year: 2019
+  citation: |-
+    G. Johnston, K.A. Sallam, and A. Cintron, “Lighting fires that can’t be extinguished,” Aerospace America, p. 49, December 2019.
+- year: 2008
+  citation: |-
+    K.A. Sallam, “To speak for those who can't,” American Physical Society News Series II, Vol. 17, No. 5, pp. 3, May 2008.

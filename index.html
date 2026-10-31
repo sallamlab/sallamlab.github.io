@@ -1,0 +1,115 @@
+---
+layout: default
+title: Home
+permalink: /
+---
+<section class="home-hero">
+  <div class="container">
+    <span class="eyebrow">Oklahoma State University · School of Mechanical and Aerospace Engineering</span>
+    <h1>Sallam Research Lab</h1>
+    <p class="lede">We explore thermofluids at the intersection of fluid mechanics, thermodynamics,
+      heat transfer, and combustion &mdash; from the breakup of liquid jets in supersonic crossflow
+      to solar-driven desalination.</p>
+    <div class="btn-row">
+      <a class="btn btn-primary" href="{{ '/research/' | relative_url }}">Our research</a>
+      <a class="btn btn-ghost" href="{{ '/publications/' | relative_url }}">Publications</a>
+      <a class="btn btn-ghost" href="{{ '/team/' | relative_url }}">Meet the team</a>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="two-col">
+      <div>
+        <span class="eyebrow">The lab</span>
+        <h2>Facilities</h2>
+        <p>We have a subsonic wind tunnel and a shock tube to generate the wind speeds we need for
+          testing liquid atomization, a combustion test rig for studying combustion noise, and a
+          membrane distillation test rig for water desalination research.</p>
+      </div>
+      <div>
+        <span class="eyebrow">Diagnostics</span>
+        <h2>Measurement tools</h2>
+        <p>We investigate thermo-fluid problems at macro and micro scales using particle image
+          velocimetry (PIV), digital holography, and high-speed imaging.</p>
+      </div>
+    </div>
+    {%- assign pubs = site.data.publications -%}
+    {%- assign n_journal = pubs.journal | size -%}
+    {%- assign n_conf = pubs.conference | size -%}
+    {%- assign n_grad = site.data.team.graduate | size -%}
+    <div class="stat-row">
+      <div class="stat"><b>{{ n_journal }}</b><span>peer-reviewed journal articles</span></div>
+      <div class="stat"><b>{{ n_conf }}</b><span>conference papers</span></div>
+      <div class="stat"><b>{{ n_grad }}</b><span>graduate alumni</span></div>
+      <div class="stat"><b>{{ site.data.courses | size }}</b><span>courses taught</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-head">
+      <h2>Inside the lab</h2>
+    </div>
+    <div class="gallery wide">
+      <figure><img src="{{ '/assets/img/img-6903.jpg' | relative_url }}" alt="Subsonic wind tunnel test section" loading="lazy"><figcaption>Subsonic wind tunnel used for atomization testing in crossflow</figcaption></figure>
+      <figure><img src="{{ '/assets/img/combustionrig.jpg' | relative_url }}" alt="Combustion test rig with gas supply panel" loading="lazy"><figcaption>Combustion test rig for combustion-noise studies</figcaption></figure>
+      <figure><img src="{{ '/assets/img/md.jpg' | relative_url }}" alt="Air-gap membrane distillation bench with labeled components" loading="lazy"><figcaption>Membrane distillation test rig for desalination research</figcaption></figure>
+      <figure><img src="{{ '/assets/img/piv.jpg' | relative_url }}" alt="Green laser sheet illuminating a spray for particle image velocimetry" loading="lazy"><figcaption>Particle image velocimetry (PIV) of a spray</figcaption></figure>
+      <figure><img src="{{ '/assets/img/dsc-0629.jpg' | relative_url }}" alt="Optical table with laser and optics for digital holography" loading="lazy"><figcaption>Optics for digital holographic diagnostics</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="two-col">
+      <div>
+        <span class="eyebrow">Book</span>
+        <div class="book">
+          <a href="https://www.amazon.com/Introduction-Combustion-Applications-Using-Cantera/dp/1527533204/" rel="noopener">
+            <img src="{{ '/assets/img/book-cover.jpg' | relative_url }}" alt="Cover of An Introduction to Combustion with Applications Using Cantera" loading="lazy">
+          </a>
+          <div>
+            <h3 style="margin-bottom:.3em"><em>An Introduction to Combustion with Applications Using Cantera</em></h3>
+            <p class="muted">K.A. Sallam and S. Srivastava, Cambridge Scholars Publishing, 2023.</p>
+            <a class="btn btn-outline" href="https://www.amazon.com/Introduction-Combustion-Applications-Using-Cantera/dp/1527533204/" rel="noopener">View on Amazon</a>
+          </div>
+        </div>
+      </div>
+      <div>
+        <span class="eyebrow">Get in touch</span>
+        <h2>Interested in joining or collaborating?</h2>
+        <p>For questions about the lab, graduate or undergraduate research opportunities, or
+          collaborations, please contact Dr. Sallam at
+          <a href="mailto:{{ site.email }}">{{ site.email }}</a>.</p>
+        <p class="muted small">{{ site.director_title }}, {{ site.institution }} &mdash; {{ site.campus }}.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-head">
+      <h2>Latest news</h2>
+      <a href="{{ '/news/' | relative_url }}">All news &rarr;</a>
+    </div>
+    <div class="news-teaser">
+      {%- for item in site.data.news limit: 3 -%}
+      <article class="card">
+        {%- if item.photos and item.photos.size > 0 -%}
+        <img class="card-img" src="{{ '/assets/img/' | append: item.photos[0].file | relative_url }}" alt="{{ item.photos[0].caption | escape }}" loading="lazy">
+        {%- endif -%}
+        <div class="card-body">
+          <span class="date">{{ item.date }}</span>
+          <h3>{{ item.title }}</h3>
+          <p class="small muted">{{ item.text | strip_html | truncate: 160 }}</p>
+        </div>
+      </article>
+      {%- endfor -%}
+    </div>
+  </div>
+</section>

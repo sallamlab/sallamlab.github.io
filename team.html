@@ -1,0 +1,106 @@
+---
+layout: default
+title: Team
+permalink: /team/
+description: Current members, visiting scholars, and alumni of the Sallam Research Lab at Oklahoma State University.
+---
+{%- assign team = site.data.team -%}
+<section class="page-hero">
+  <div class="container">
+    <h1>The Team</h1>
+    <p>Students and scholars who have worked in the lab since 2005.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head"><h2>Current members</h2></div>
+    <div class="people">
+      {%- for p in team.current -%}
+      <div class="person">
+        {%- if p.photo -%}
+        <img src="{{ '/assets/img/' | append: p.photo | relative_url }}" alt="{{ p.name }}" loading="lazy">
+        {%- else -%}
+        <div class="placeholder" aria-hidden="true">{{ p.name | slice: 0 }}</div>
+        {%- endif -%}
+        <h3>{{ p.name }}</h3>
+        <p>{{ p.role }}</p>
+      </div>
+      {%- endfor -%}
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-head"><h2>Graduate alumni</h2><span class="muted small">{{ team.graduate | size }} theses and reports, advised by K.A. Sallam at Oklahoma State University</span></div>
+    <ul class="alumni">
+      {%- for a in team.graduate -%}
+      <li class="alum">
+        {%- if a.photo -%}
+        <img src="{{ '/assets/img/' | append: a.photo | relative_url }}" alt="{{ a.name }}" loading="lazy">
+        {%- else -%}
+        <div class="placeholder" aria-hidden="true">{{ a.name | slice: 0 }}</div>
+        {%- endif -%}
+        <div>
+          <div class="alum-head">
+            <strong>{{ a.name }}</strong>
+            <span class="badge badge-grad">{{ a.degree }}</span>
+            <span class="muted small">{{ a.date }}</span>
+          </div>
+          <p class="thesis">“{{ a.thesis }}”</p>
+          {%- if a.note -%}<p class="meta">{{ a.note }}</p>{%- endif -%}
+        </div>
+      </li>
+      {%- endfor -%}
+    </ul>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="two-col">
+      <div>
+        <div class="section-head"><h2>Visiting scholars</h2></div>
+        <ul class="simple-list">
+          {%- for v in team.visiting -%}
+          <li><strong>{{ v.name }}</strong><span>{{ v.role }} · {{ v.period }}</span></li>
+          {%- endfor -%}
+        </ul>
+      </div>
+      <div>
+        <div class="section-head"><h2>Undergraduate researchers</h2></div>
+        <ul class="simple-list">
+          {%- for u in team.undergraduate -%}
+          <li><strong>{{ u.name }}</strong><span>{{ u.role }} · {{ u.period }}{% if u.note %} · {{ u.note }}{% endif %}</span></li>
+          {%- endfor -%}
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-head"><h2>Faces of the lab</h2></div>
+    <div class="gallery portraits">
+      {%- for u in team.undergraduate -%}{%- if u.photo -%}
+      <figure><img src="{{ '/assets/img/' | append: u.photo | relative_url }}" alt="{{ u.name }}" loading="lazy"><figcaption>{{ u.name }}<br><span class="muted">{{ u.role }}, {{ u.period }}</span></figcaption></figure>
+      {%- endif -%}{%- endfor -%}
+      {%- for v in team.visiting -%}{%- if v.photo -%}
+      <figure><img src="{{ '/assets/img/' | append: v.photo | relative_url }}" alt="{{ v.name }}" loading="lazy"><figcaption>{{ v.name }}<br><span class="muted">{{ v.role }}, {{ v.period }}</span></figcaption></figure>
+      {%- endif -%}{%- endfor -%}
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head"><h2>The lab through the years</h2></div>
+    <div class="gallery wide">
+      {%- for g in team.group_photos -%}
+      <figure><img src="{{ '/assets/img/' | append: g.file | relative_url }}" alt="{{ g.caption | default: 'Lab photo' | escape }}" loading="lazy">{% if g.caption and g.caption != "" %}<figcaption>{{ g.caption }}</figcaption>{% endif %}</figure>
+      {%- endfor -%}
+    </div>
+  </div>
+</section>

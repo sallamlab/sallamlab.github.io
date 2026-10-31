@@ -1,0 +1,101 @@
+---
+layout: default
+title: Teaching
+permalink: /teaching/
+description: Courses taught by Dr. Khaled A. Sallam at Oklahoma State University, lecture videos, teaching laboratory, industry visits, and the ASME student section at OSU-Tulsa.
+---
+{%- assign t = site.data.teaching -%}
+{%- assign courses = site.data.courses -%}
+<section class="page-hero">
+  <div class="container">
+    <h1>Teaching</h1>
+    <p>Dr. Sallam has taught {{ courses | where: "level", "graduate" | size }} graduate and
+      {{ courses | where: "level", "undergraduate" | size }} undergraduate courses in thermofluids,
+      from fluid mechanics and heat transfer to compressible flow, propulsion, and combustion.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head"><h2>Courses</h2></div>
+    <h3 class="muted" style="font-family:var(--sans);font-size:1rem;text-transform:uppercase;letter-spacing:.1em">Undergraduate</h3>
+    <div class="grid" style="margin-bottom:36px">
+      {%- for c in courses -%}{%- if c.level == "undergraduate" -%}
+      {%- include course.html course=c -%}
+      {%- endif -%}{%- endfor -%}
+    </div>
+    <h3 class="muted" style="font-family:var(--sans);font-size:1rem;text-transform:uppercase;letter-spacing:.1em">Graduate</h3>
+    <div class="grid">
+      {%- for c in courses -%}{%- if c.level == "graduate" -%}
+      {%- include course.html course=c -%}
+      {%- endif -%}{%- endfor -%}
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-head"><h2>Teaching laboratory</h2></div>
+    <p class="measure">{{ t.facilities.intro }}
+      {%- for v in t.facilities.video_links %} <a href="{{ v.url }}" rel="noopener">{{ v.label }}</a>{% unless forloop.last %} ·{% endunless %}{% endfor %}</p>
+    <div class="gallery">
+      {%- for g in t.facilities.photos -%}
+      <figure><img src="{{ '/assets/img/' | append: g.file | relative_url }}" alt="{{ g.caption | escape }}" loading="lazy"><figcaption>{{ g.caption }}</figcaption></figure>
+      {%- endfor -%}
+    </div>
+    {%- if t.facilities.videos and t.facilities.videos.size > 0 -%}
+    <div class="video-grid" style="margin-top:24px">
+      {%- for v in t.facilities.videos -%}
+      <figure class="video">
+        <div class="frame">
+          {%- if v.youtube -%}
+          <div class="yt" data-id="{{ v.youtube }}" role="button" tabindex="0" aria-label="Play: {{ v.title | escape }}"></div>
+          {%- elsif v.file -%}
+          <video controls preload="metadata" src="{{ '/assets/video/' | append: v.file | relative_url }}"{% if v.poster %} poster="{{ '/assets/img/' | append: v.poster | relative_url }}"{% endif %}></video>
+          {%- endif -%}
+        </div>
+        <figcaption>{{ v.title }}</figcaption>
+      </figure>
+      {%- endfor -%}
+    </div>
+    {%- endif -%}
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head"><h2>Industry visits</h2></div>
+    <p class="measure">{{ t.visits.intro }}</p>
+    <div class="gallery">
+      {%- for g in t.visits.photos -%}
+      <figure><img src="{{ '/assets/img/' | append: g.file | relative_url }}" alt="{{ g.caption | escape }}" loading="lazy"><figcaption>{% if g.url %}<a href="{{ g.url }}" rel="noopener">{{ g.caption }}</a>{% else %}{{ g.caption }}{% endif %}</figcaption></figure>
+      {%- endfor -%}
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-head"><h2>ASME student section &amp; outreach</h2></div>
+    <p class="measure">{{ t.asme.intro }}</p>
+    <div class="gallery">
+      {%- for g in t.asme.photos -%}
+      <figure><img src="{{ '/assets/img/' | append: g.file | relative_url }}" alt="{{ g.caption | escape }}" loading="lazy"><figcaption>{{ g.caption }}</figcaption></figure>
+      {%- endfor -%}
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="feature">
+      <div>
+        <span class="eyebrow">Tool</span>
+        <h2>Combustion simulator</h2>
+        <p>{{ t.combustion_simulator.text }}</p>
+        <a class="btn btn-outline" href="{{ t.combustion_simulator.contact_url }}" rel="noopener">{{ t.combustion_simulator.contact_label }}</a>
+      </div>
+      <img src="{{ '/assets/img/' | append: t.combustion_simulator.image | relative_url }}" alt="Screenshot of the combustion simulator application" loading="lazy" style="max-width:420px;justify-self:center">
+    </div>
+  </div>
+</section>

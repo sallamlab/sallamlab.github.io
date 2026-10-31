@@ -1,0 +1,171 @@
+# Courses taught by Dr. Sallam.
+# ----------------------------------------------------------------
+# level: undergraduate | graduate
+# resources: optional list of links shown under the description
+# videos:    optional list of YouTube videos (give the 11-character
+#            video ID from the YouTube URL, e.g. youtu.be/nOWZYy9QsFw)
+# ----------------------------------------------------------------
+
+- code: ENSC 3233
+  title: Fluid Mechanics
+  level: undergraduate
+  description: >-
+    The study of fluid properties, statics, conservation equations, dimensional analysis and
+    similitude, viscous flow in ducts, inviscid flow, boundary layer theory, open channel flow,
+    turbomachinery and fluid measurement techniques.
+  prerequisites: ENSC 2113 and MATH 2153 with a grade of "C" or better.
+
+- code: MAE 3013
+  title: Engineering Analysis and Methods
+  level: undergraduate
+  description: >-
+    Setup and solution of equations which govern mechanical engineering systems. Application and
+    solution of the governing equations to describe the steady state or transient behavior of
+    dynamics, mechanics and circuit problems. Linear sets of equations and ODEs are used to
+    describe systems; solutions may be simplified using complex numbers or Fourier/Laplace
+    transforms. Numerical methods for solutions, data analysis, quality control and statistical
+    hypothesis testing are covered.
+  prerequisites: A grade of "C" or higher in PHYS 2114 and MATH 2233.
+
+- code: MAE 3233
+  title: Heat Transfer
+  level: undergraduate
+  description: >-
+    Mechanisms of heat transfer. Steady and transient conduction, free and forced convection,
+    heat exchanger design and analysis, radiation and multiphase behavior. Numerical methods,
+    dimensional analysis and boundary layer theory.
+  prerequisites: A grade of "C" or higher in ENSC 3233.
+
+- code: MAE 3293
+  title: Compressible Flow
+  level: undergraduate
+  description: >-
+    Basic equations of compressible flow. Nozzle and duct flows with friction and heat transfer,
+    choking, normal and oblique shock waves, Prandtl-Meyer expansions, compressible flow over
+    airfoils.
+  prerequisites: A grade of "C" or higher in ENSC 2213, ENSC 3233 and MATH 2233.
+  resources:
+    - label: "Textbook: Gas Dynamics, 3rd Edition, by John and Keith"
+      url: https://www.amazon.com/Gas-Dynamics-3rd-James-John/dp/0131206680/
+  videos:
+    - heading: Dr. Sallam's Compressible Flow lectures
+      items:
+        - id: nOWZYy9QsFw
+          title: "Lecture 1, part 2"
+        - id: 3CS3pG7n1xY
+          title: "Lecture 2: Subsonic vs. supersonic flow — what is the difference?"
+        - id: g3eVK7ZPdlw
+          title: "Lecture 3, part 1"
+        - id: d6b25uMMenU
+          title: "Lecture 3, part 2"
+        - id: pMMyTDg4BYM
+          title: "Lecture 4"
+        - id: wqvs4vBfJW0
+          title: "Lecture 6, part 1"
+        - id: ozvqWq7ohvU
+          title: "Lecture 6, part 2"
+        - id: XPPbXuGDHsY
+          title: "Lecture 6, part 3"
+        - id: TFiy5qZ6D10
+          title: "Lecture 7"
+        - id: 87pwhOkDf6o
+          title: "Lecture 8"
+        - id: cwsLq4CzuyQ
+          title: "Lecture 9, part 1"
+        - id: q8zIPA2sV28
+          title: "Lecture 9, part 2"
+        - id: g1quD_y1zNU
+          title: "Lecture 10"
+    - heading: Prof. John Cimbala (Penn State) on oblique shock waves
+      items:
+        - id: 6qP97JtgowU
+          title: "ME 420 Lecture 34: Introduction to Oblique Shocks"
+        - id: p_eazTNZeT0
+          title: "ME 420 Lecture 35: The Theta-Beta-Mach Number Equation for Oblique Shocks"
+        - id: 1w7VZkVhP7k
+          title: "ME 420 Lecture 36: Oblique Shocks — Discussion and Examples"
+
+- code: MAE 3524
+  title: Thermal Fluids Design
+  level: undergraduate
+  description: >-
+    Design, modeling and simulation of thermal systems. Analysis and modeling of components such
+    as fans, pumps, ducts, pipes, fittings, heat exchangers, and heat pumps.
+  prerequisites: Admission to MAE professional school. Grades of "C" or higher in ENSC 2213 and ENSC 3233, or concurrent enrollment in MAE 3233.
+  resources:
+    - label: "Video 1: How to install MATLAB"
+      url: https://youtu.be/h6tytgQH8rI
+    - label: "Video 2: Running MATLAB for the first time"
+      url: https://youtu.be/UqtlttFRzAk
+    - label: "Mechanical vapor compression desalination / wastewater treatment — Video 1"
+      url: https://youtu.be/9lm2ubpOoL4
+    - label: "Mechanical vapor compression desalination / wastewater treatment — Video 2"
+      url: https://youtu.be/COxnCz1WOXw
+
+- code: MAE 4243
+  title: Aerospace Propulsion and Power
+  level: undergraduate
+  description: >-
+    The study of aerospace power and propulsion engines utilizing a gas as the working fluid.
+    Design and analysis of complete aircraft engine systems and individual components of the
+    aircraft engine. Engine component matching for design using analysis routines, including
+    inlets and diffusers, fans and compressors, combustors, turbines, nozzles, and propellers.
+    Additional propulsion and power systems including chemical and non-chemical rocket motors
+    and other internal combustion engines.
+  prerequisites: Grades of "C" or higher in ENSC 3233 and MAE 3293.
+
+- code: MAE 4263
+  title: Energy Conversion Systems
+  level: undergraduate
+  description: >-
+    This course covers the use of renewable and non-renewable energy sources in power production.
+    Energy conversion processes are analyzed, and performance characteristics of components and
+    systems are modeled using modern computational methods. Applications include overall design
+    of conventional Rankine power systems and may also include design of nuclear, solar, wind,
+    wave, thermoelectric, and geothermal energy systems.
+  prerequisites: Admission to MAE professional school. Grades of "C" or higher in MAE 3233 and MAE 3223 or MAE 3524.
+  resources:
+    - label: Wave Power
+      url: https://youtu.be/UUlA5WKDiww
+    - label: Pumped Storage Hydropower
+      url: https://youtu.be/57OFwhXQdYY
+    - label: Torque Converter
+      url: https://youtu.be/bRcDvCj_JPs
+
+- code: MAE 4273
+  title: Experimental Fluid Dynamics
+  level: undergraduate
+  description: >-
+    Experimental study of basic and applied fluid dynamics systems with comparisons to analytical
+    predictions. Fluid dynamics instrumentation, digital data acquisition and processing, design
+    of facilities and experiments, technical report writing and design project with experimental
+    verification.
+  prerequisites: A grade of "C" or higher in MAE 3113 and ENSC 3233.
+
+- code: MAE 5243
+  title: Micro Flows
+  level: graduate
+  description: >-
+    Fundamentals and simulation of micro flows including governing equations, slip models,
+    shear- and pressure-driven micro flows. Thermal effects in micro scales. Applications: MEMS
+    and micro propulsion. Numerical methods for continuum simulation and atomistic simulation.
+  prerequisites: Graduate standing or consent of instructor.
+
+- code: MAE 5253
+  title: Multiphase Flow
+  level: graduate
+  description: >-
+    Theory, methods and practical experience for studying complex transient multiphase flows:
+    basic concepts and definitions, dynamics of bubbles, drops and rigid particles, gas-liquid
+    transport in ducts, fluid-solid transport in ducts, aerosol and spray systems, foam,
+    fluidization, particle separation systems, multiphase flow in porous media, breakup of liquid
+    sheets and jets, modeling, and advanced experimental techniques for multiphase flow.
+  prerequisites: Graduate standing.
+
+- code: MAE 5263
+  title: Combustion
+  level: graduate
+  description: >-
+    Chemical thermodynamics, chemical kinetics, conservation equations for reacting systems,
+    premixed laminar flames, diffusion flames, turbulent flames, mechanism reduction and
+    chemistry solvers, combustion diagnostics, and new combustion technologies.

@@ -1,0 +1,80 @@
+---
+layout: default
+title: Research
+permalink: /research/
+description: Research areas of the Sallam Research Lab — liquid atomization and sprays, supersonic injection, choked gas jets, digital holography, combustion, and energy–water systems.
+---
+{%- assign r = site.data.research -%}
+<section class="page-hero">
+  <div class="container">
+    <h1>Research</h1>
+    <p>Experimental and computational thermofluids: how liquids break up, how gases mix and burn,
+      and how to measure it all &mdash; with applications from scramjet fuel injection to
+      agricultural sprays and desalination.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <h2>Research areas</h2>
+      <a href="{{ '/publications/' | relative_url }}">See the publications &rarr;</a>
+    </div>
+    <div class="grid grid-3">
+      {%- for a in r.areas -%}
+      <article class="card">
+        <img class="card-img{% if a.image contains '.png' %} contain{% endif %}" src="{{ '/assets/img/' | append: a.image | relative_url }}" alt="{{ a.title }}" loading="lazy">
+        <div class="card-body">
+          <h3>{{ a.title }}</h3>
+          <p class="small">{{ a.text }}</p>
+        </div>
+      </article>
+      {%- endfor -%}
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-head"><h2>From the lab</h2></div>
+    <div class="gallery wide contain">
+      {%- for g in r.gallery -%}
+      <figure><img src="{{ '/assets/img/' | append: g.file | relative_url }}" alt="{{ g.caption | escape }}" loading="lazy"><figcaption>{{ g.caption }}</figcaption></figure>
+      {%- endfor -%}
+    </div>
+    {%- if r.videos and r.videos.size > 0 -%}
+    <div class="video-grid" style="margin-top:24px">
+      {%- for v in r.videos -%}
+      <figure class="video">
+        <div class="frame">
+          {%- if v.youtube -%}
+          <div class="yt" data-id="{{ v.youtube }}" role="button" tabindex="0" aria-label="Play: {{ v.title | escape }}"></div>
+          {%- elsif v.file -%}
+          <video controls preload="metadata" src="{{ '/assets/video/' | append: v.file | relative_url }}"{% if v.poster %} poster="{{ '/assets/img/' | append: v.poster | relative_url }}"{% endif %}></video>
+          {%- endif -%}
+        </div>
+        <figcaption>{{ v.title }}</figcaption>
+      </figure>
+      {%- endfor -%}
+    </div>
+    {%- endif -%}
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head"><h2>Facilities &amp; diagnostics</h2></div>
+    <div class="two-col">
+      <div>
+        <p>A subsonic wind tunnel and a shock tube generate the crossflow conditions needed for
+          liquid-atomization experiments. A combustion test rig supports combustion-noise studies,
+          and a membrane distillation rig supports desalination research.</p>
+      </div>
+      <div>
+        <p>Measurements span macro to micro scales with particle image velocimetry (PIV), single-
+          and double-view digital holography, and high-speed imaging, complemented by CFD (OpenFOAM)
+          and Cantera-based combustion modeling.</p>
+      </div>
+    </div>
+  </div>
+</section>
