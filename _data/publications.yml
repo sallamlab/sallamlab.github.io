@@ -19,6 +19,12 @@ books:
   citation: |-
     K.A. Sallam, (2010) “Chapter 17: Liquid Fuel Atomization Testing,” In C.E. Baukal (Ed.) <i>Industrial Combustion Testing</i>, (pp. 369-374) CRC Press.
 journal:
+- year: 2026
+  citation: |-
+    <u>Williamson, A.J.</u>; Srivastava, S.; Sallam, K.A. Balancing Accuracy and Computational Cost: Evaluating Methane Combustion Mechanisms. <i>Computation</i> 2026, 14, 256. <a href="https://doi.org/10.3390/computation14100256">https://doi.org/10.3390/computation14100256</a>.
+- year: 2026
+  citation: |-
+    Sallam, K. (2026). On Fuel Atomization in Scramjet Engines. <i>International Journal of Engineering and Applied Sciences – October 6 University</i>, 3(2), 178–184. <a href="https://doi.org/10.21608/ijeasou.2026.517528.1140">https://doi.org/10.21608/ijeasou.2026.517528.1140</a>.
 - year: 2025
   citation: |-
     <u>Kafle, B.,</u> Sallam, K. A., and Hareland, G. (2025). An economic comparison of wind, solar, and ocean thermal energy in the Federated States of Micronesia. Academia Engineering, 2(2). <a href="https://doi.org/10.20935/AcadEng7722">https://doi.org/10.20935/AcadEng7722</a>.
