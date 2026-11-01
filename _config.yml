@@ -19,7 +19,7 @@ youtube: https://www.youtube.com/@ProfSallam
 
 # The web address of the site. Leave url empty for a username.github.io/repo site;
 # set it to "https://www.sallamresearchlab.com" once the custom domain is connected.
-url: ""
+url: "https://www.sallamresearchlab.com"
 # baseurl is the repository name when the site is served at username.github.io/<repo>.
 # Set it to "" when using the custom domain or a <username>.github.io repository.
 baseurl: ""
