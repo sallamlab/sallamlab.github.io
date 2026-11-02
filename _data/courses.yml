@@ -35,6 +35,9 @@
     heat exchanger design and analysis, radiation and multiphase behavior. Numerical methods,
     dimensional analysis and boundary layer theory.
   prerequisites: A grade of "C" or higher in ENSC 3233.
+  resources:
+    - label: "Interactive heat exchanger simulator (ε–NTU method)"
+      url: /teaching/heat-exchanger/
 
 - code: MAE 3293
   title: Compressible Flow
@@ -93,6 +96,8 @@
     as fans, pumps, ducts, pipes, fittings, heat exchangers, and heat pumps.
   prerequisites: Admission to MAE professional school. Grades of "C" or higher in ENSC 2213 and ENSC 3233, or concurrent enrollment in MAE 3233.
   resources:
+    - label: "Interactive heat exchanger simulator (ε–NTU method)"
+      url: /teaching/heat-exchanger/
     - label: "Video 1: How to install MATLAB"
       url: https://youtu.be/h6tytgQH8rI
     - label: "Video 2: Running MATLAB for the first time"

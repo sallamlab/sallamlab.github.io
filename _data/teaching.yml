@@ -2,6 +2,22 @@
 # Photos live in assets/img/ — give just the file name.
 # ----------------------------------------------------------------
 
+# Interactive learning tools, shown near the top of the Teaching page.
+# url: a page on this site (for example /teaching/heat-exchanger/) or a full https:// link.
+# image: optional picture in assets/img/.
+tools:
+  - title: Heat exchanger simulator
+    label: Interactive tool
+    courses: MAE 3524 Thermal Fluids Design · MAE 3233 Heat Transfer
+    url: /teaching/heat-exchanger/
+    image: hx-simulator.svg
+    button: Open the simulator
+    text: >-
+      Set the inlet temperatures and flow rates of a parallel-flow, counterflow, shell-and-tube
+      or crossflow heat exchanger and watch the outlet temperatures, effectiveness and heat
+      transfer rate update live on a color-coded schematic, with a short write-up of the
+      equations behind it.
+
 asme:
   intro: >-
     Dr. Sallam is the faculty advisor of the ASME student section at OSU-Tulsa. The section was
