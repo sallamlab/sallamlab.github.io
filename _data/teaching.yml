@@ -28,6 +28,18 @@ tools:
       interactive psychrometric chart. Change the inlet air or the amount of heat and water to
       see the exit temperature and humidity, the heat transfer per kilogram of dry air, the water
       condensed or added, and the HVAC loads, with a short write-up of the equations behind it.
+  - title: Cooling tower simulator
+    label: Interactive tool
+    courses: MAE 3524 Thermal Fluids Design
+    url: /teaching/cooling-tower/
+    image: cooling-tower-simulator.svg
+    button: Open the simulator
+    text: >-
+      Send the condenser water of a water-cooled chiller through an evaporative cooling tower. Change
+      the outdoor air, the hot water temperature, the water flow and the fan speed to see the cold
+      water returned to the chiller, the air leaving the tower, the evaporation, drift, blowdown and
+      makeup water, and the fan power, on an animated picture of the tower, with a short write-up of
+      the equations behind it.
 
 asme:
   intro: >-
