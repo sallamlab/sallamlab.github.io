@@ -1,0 +1,1544 @@
+---
+layout: default
+title: Cooling Tower Simulator
+permalink: /teaching/cooling-tower/
+description: Interactive cooling tower simulator for HVAC condenser water. Change the outdoor air, the hot water from the chiller, the water flow and the fan speed to see the cold water temperature, the exit air, the evaporation, drift, blowdown and makeup water and the fan power, with a short explanation of the equations. MAE 3524 Thermal Fluids Design, Oklahoma State University.
+---
+{% raw %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<style>
+/* Cooling tower simulator: page styles. Site tokens (colors, fonts) come from /assets/css/site.css. */
+.ct { --hot: #c8372d; --cold: #2a78d6; --wall: #42515e; }
+.ct-hero .ct-crumb { margin: 0 0 10px; font-size: .92rem; color: #c3cfdb; }
+.ct-hero .ct-crumb a { color: #ffb48f; }
+.ct-app { display: grid; gap: 24px; grid-template-columns: minmax(290px, 350px) minmax(0, 1fr); align-items: start; }
+.ct-panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px; min-width: 0; }
+.ct-controls { padding: 18px 18px 6px; }
+.ct-intro { font-size: .9rem; color: var(--ink-soft); margin: 0 0 12px; }
+.ct-group { border: 0; padding: 0; margin: 0 0 18px; min-width: 0; }
+.ct-group legend { font-family: var(--serif); font-weight: 600; color: var(--navy); font-size: 1.05rem; padding: 0; margin: 0 0 8px; }
+.ct-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0 0 16px; }
+.ct-seg label { position: relative; display: block; cursor: pointer; min-width: 0; }
+.ct-seg input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.ct-seg span { display: flex; align-items: center; justify-content: center; height: 100%; box-sizing: border-box; text-align: center; padding: 8px 4px; border: 1px solid var(--line); border-radius: 8px; font-size: .86rem; font-weight: 500; line-height: 1.25; background: #fff; color: var(--ink); transition: background .15s, border-color .15s; }
+.ct-seg label:hover span { border-color: var(--ink-faint); }
+.ct-seg input:checked + span { background: var(--navy); border-color: var(--navy); color: #fff; }
+.ct-seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ct-ctl { margin-bottom: 12px; }
+.ct-ctl[hidden], .ct-field[hidden] { display: none; }
+.ct-ctl > label { display: block; font-size: .9rem; margin-bottom: 1px; }
+.ct-sym { color: var(--ink-soft); margin-left: 3px; }
+.ct-inrow { display: flex; align-items: center; gap: 10px; }
+.ct-inrow input[type=range] { flex: 1; min-width: 0; margin: 0; height: 26px; accent-color: var(--accent); cursor: pointer; }
+.ct-num { display: inline-flex; align-items: center; gap: 5px; flex: none; }
+.ct-num input { width: 76px; font: inherit; font-size: .92rem; text-align: right; padding: 4px 6px; border: 1px solid #cbd2d9; border-radius: 6px; background: #fff; color: var(--ink); font-variant-numeric: tabular-nums; }
+.ct-num input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ct-num input[aria-invalid=true] { border-color: #d03b3b; background: #fdecec; }
+.ct-unit { font-size: .8rem; color: var(--ink-soft); width: 58px; }
+.ct-derived { font-size: .85rem; color: var(--ink-soft); margin: -2px 0 0; line-height: 1.45; }
+.ct-field { display: block; font-size: .9rem; margin-bottom: 12px; }
+.ct-field select { display: block; width: 100%; margin-top: 4px; font: inherit; font-size: .9rem; padding: 7px 8px; border: 1px solid #cbd2d9; border-radius: 8px; background: #fff; color: var(--ink); }
+.ct-more { margin: 0 0 18px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 8px 0; }
+.ct-more summary { cursor: pointer; font-family: var(--serif); font-weight: 600; color: var(--navy); font-size: 1rem; padding: 2px 0; }
+.ct-more[open] summary { margin-bottom: 10px; }
+.ct-more .ct-derived { margin-bottom: 8px; }
+.ct-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.ct-btn { font: inherit; font-size: .86rem; font-weight: 600; padding: 6px 14px; border-radius: 999px; border: 2px solid var(--navy); background: #fff; color: var(--navy); cursor: pointer; }
+.ct-btn:hover { background: var(--navy); color: #fff; }
+.ct-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ct-out { display: grid; gap: 18px; min-width: 0; }
+.ct-card-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin-bottom: 8px; }
+.ct-card-head h2, .ct-card-head h3 { margin: 0; font-size: 1.22rem; }
+.ct-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: .84rem; color: var(--ink-soft); cursor: pointer; }
+.ct-toggle input { margin: 0; accent-color: var(--navy); width: 15px; height: 15px; }
+.ct-scroll { overflow-x: auto; }
+.ct-svg { display: block; width: 100%; height: auto; }
+.ct-svg text { font-family: var(--sans); }
+.ct-svg .lb { font-size: 12.5px; fill: #1f2933; paint-order: stroke; stroke: #fff; stroke-width: 4px; stroke-linejoin: round; }
+.ct-svg .lb.b { font-weight: 700; }
+.ct-svg .lb.s { font-size: 11.5px; fill: var(--ink-soft); }
+.ct-svg .part { font-size: 11px; fill: #6b7682; font-style: italic; }
+.ct-svg .num { font-size: 12px; font-weight: 700; fill: #fff; }
+.ct-svg .warnt { font-size: 13px; font-weight: 700; fill: #a3361a; paint-order: stroke; stroke: #fff; stroke-width: 4px; }
+.ct-water { stroke-dasharray: .1 11.9; animation: ct-flow var(--wd, .9s) linear infinite; }
+.ct-rain { stroke-dasharray: .1 23.9; animation: ct-flow var(--wd, .9s) linear infinite; }
+.ct-pipe { stroke-dasharray: 8 16; animation: ct-flow var(--wd, .9s) linear infinite; }
+.ct-air { stroke-dasharray: 14 10; animation: ct-flow var(--ad, 1.1s) linear infinite; }
+.ct-blade { transform-box: fill-box; transform-origin: center; animation: ct-spin var(--fd, .45s) linear infinite; }
+.ct-blade.b2 { animation-delay: calc(var(--fd, .45s) * -.25); }
+.ct-puff { transform-box: fill-box; transform-origin: center; animation: ct-puff 4.5s ease-out infinite; }
+.ct-drop { animation: ct-drift var(--ad, 1.1s) linear infinite; }
+@keyframes ct-flow { to { stroke-dashoffset: -24; } }
+@keyframes ct-spin { 0% { transform: scaleX(1); } 25% { transform: scaleX(.06); } 50% { transform: scaleX(-1); } 75% { transform: scaleX(-.06); } 100% { transform: scaleX(1); } }
+@keyframes ct-puff { 0% { transform: translateY(8px) scale(.7); opacity: 0; } 25% { opacity: .95; } 100% { transform: translateY(-26px) scale(1.35); opacity: 0; } }
+@keyframes ct-drift { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-40px); opacity: 0; } }
+.ct-still .ct-water, .ct-still .ct-pipe, .ct-still .ct-rain, .ct-still .ct-air, .ct-still .ct-blade, .ct-still .ct-puff, .ct-still .ct-drop { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .ct-water, .ct-pipe, .ct-rain, .ct-air, .ct-blade, .ct-puff, .ct-drop { animation: none; } }
+.ct-cbar { margin: 8px auto 0; max-width: 460px; font-size: .78rem; color: var(--ink-soft); }
+.ct-cbar-bar { height: 10px; border-radius: 5px; border: 1px solid rgba(20,41,61,.15); }
+.ct-cbar-ticks { position: relative; height: 16px; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.ct-cbar-ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.ct-cbar-title { text-align: center; margin-bottom: 3px; }
+.ct-notes { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.ct-notes li { font-size: .9rem; background: #f3f1ec; border-radius: 8px; padding: 8px 12px; }
+.ct-notes li b { color: var(--navy); }
+.ct-notes li.warn { background: #fdecec; }
+.ct-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.ct-tile { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 11px 14px 12px; min-width: 0; }
+.ct-tile .k { font-size: .82rem; color: var(--ink-soft); display: flex; align-items: center; gap: 6px; }
+.ct-tile .v { font-size: 1.5rem; font-weight: 600; color: var(--navy); line-height: 1.25; margin-top: 2px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ct-tile .s { font-size: .78rem; color: var(--ink-soft); line-height: 1.35; }
+.ct-tile.off .v { color: #9aa5b1; }
+.ct-swatch { width: 12px; height: 12px; border-radius: 50%; display: inline-block; flex: none; box-shadow: 0 0 0 1px rgba(20,41,61,.3); }
+.ct-row2 { display: grid; gap: 18px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 18px; align-items: start; }
+.ct-sub-note { font-size: .82rem; color: var(--ink-soft); margin: 2px 0 6px; }
+.ct-chart { position: relative; touch-action: pan-y; }
+.ct-chart svg { display: block; width: 100%; height: auto; overflow: visible; -webkit-user-select: none; user-select: none; }
+.ct-chart svg:focus { outline: none; }
+.ct-chart text { font-family: var(--sans); }
+.ct-grid { stroke: #c9ced4; stroke-width: 1; stroke-dasharray: 3 3; fill: none; }
+.ct-rh { stroke: #6b7682; stroke-width: 1; fill: none; }
+.ct-sat { stroke: var(--ink); stroke-width: 2; fill: none; }
+.ct-h { stroke: #2a78d6; stroke-width: 1; stroke-opacity: .5; fill: none; }
+.ct-axis { stroke: #9aa5b1; stroke-width: 1; }
+.ct-tick { font-size: 11.5px; fill: #6b7682; font-variant-numeric: tabular-nums; }
+.ct-axlab { font-size: 12.5px; fill: var(--ink-soft); }
+.ct-lab { font-size: 11px; fill: var(--ink-soft); paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; font-variant-numeric: tabular-nums; }
+.ct-lab.dark { fill: var(--ink); font-weight: 600; }
+.ct-lab.red { fill: #a3361a; font-weight: 600; }
+.ct-plab { font-size: 13px; font-weight: 700; fill: var(--navy); paint-order: stroke; stroke: #fff; stroke-width: 4px; stroke-linejoin: round; }
+.ct-cross { stroke: var(--navy); stroke-width: 1; opacity: .45; pointer-events: none; }
+.ct-tip { position: absolute; z-index: 5; pointer-events: none; background: #fff; border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: 8px 10px; font-size: .8rem; line-height: 1.45; min-width: 170px; display: none; }
+.ct-tip .hd { color: var(--ink); font-weight: 600; margin-bottom: 3px; font-variant-numeric: tabular-nums; }
+.ct-tip .row { display: flex; justify-content: space-between; gap: 12px; }
+.ct-tip .row b { font-variant-numeric: tabular-nums; font-weight: 600; }
+.ct-tip .row i { font-style: normal; color: var(--ink-soft); }
+.ct-tip .warn { color: #a3361a; max-width: 190px; }
+.ct-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: .82rem; color: var(--ink-soft); margin-top: 6px; }
+.ct-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.ct-key { display: inline-block; width: 18px; height: 0; border-top: 2px solid; vertical-align: middle; flex: none; }
+.ct-key.dash { border-top-style: dashed; }
+.ct-dotkey { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.ct-hint { font-size: .82rem; color: var(--ink-soft); margin: 6px 0 0; }
+.ct-bar { display: flex; height: 26px; border-radius: 6px; overflow: hidden; border: 1px solid var(--line); margin: 6px 0 4px; }
+.ct-bar span { display: block; height: 100%; min-width: 2px; }
+.ct-barkey { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .8rem; color: var(--ink-soft); margin-bottom: 10px; }
+.ct-barkey i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+.ct-table { width: 100%; border-collapse: collapse; font-size: .88rem; font-variant-numeric: tabular-nums; }
+.ct-table th, .ct-table td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.ct-table th:first-child, .ct-table td:first-child { text-align: left; white-space: normal; }
+.ct-table thead th { font-weight: 600; color: var(--ink-soft); font-size: .8rem; }
+.ct-table td small { color: var(--ink-soft); }
+.ct-table tr.tot td { font-weight: 600; border-top: 2px solid var(--line); }
+.ct-rates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; margin: 4px 0 0; font-size: .9rem; }
+.ct-rates div { min-width: 0; }
+.ct-rates dt { color: var(--ink-soft); font-size: .8rem; }
+.ct-rates dd { margin: 0; font-weight: 600; color: var(--navy); font-variant-numeric: tabular-nums; }
+.ct-rates dd small { display: block; font-weight: 400; color: var(--ink-soft); }
+.ct-steps { list-style: none; counter-reset: st; margin: 0; padding: 0; font-size: .9rem; }
+.ct-steps li { counter-increment: st; position: relative; padding: 7px 0 7px 30px; border-bottom: 1px dashed var(--line); }
+.ct-steps li::before { content: counter(st); position: absolute; left: 0; top: 8px; width: 21px; height: 21px; border-radius: 50%; background: var(--navy); color: #fff; font-size: .72rem; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+.ct-steps .lbl { display: block; font-size: .78rem; color: var(--ink-soft); }
+.ct-steps .eq { overflow-wrap: anywhere; }
+.ct-steps .res { font-weight: 600; color: var(--navy); white-space: nowrap; }
+.ct-matlab { margin: 12px 0 0; font-size: .82rem; }
+.ct-matlab pre { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: break-word; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: #14293d; color: #e6edf3; padding: 10px 12px; border-radius: 8px; font-size: .78rem; line-height: 1.5; }
+.ct-sticky { display: none; }
+.ct-doc .tex-d { overflow-x: auto; overflow-y: hidden; padding: 2px 0; }
+.ct-doc .tex-d .katex-display { margin: .4em 0; }
+.ct-eqs { width: 100%; border-collapse: collapse; margin: 8px 0 4px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
+.ct-eqs th, .ct-eqs td { text-align: left; vertical-align: middle; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.ct-eqs tr:last-child th, .ct-eqs tr:last-child td { border-bottom: 0; }
+.ct-eqs th { font-weight: 600; font-size: .92rem; color: var(--navy); width: 30%; }
+.ct-eqs th small { display: block; font-weight: 400; color: var(--ink-soft); }
+.ct-eqs td { min-width: 0; max-width: 0; width: 70%; }
+.ct-twocol { display: grid; gap: 8px 40px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); }
+.ct-twocol ul { margin: 0; }
+.ct-twocol li { margin-bottom: 10px; }
+.ct-try { counter-reset: tr; list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+.ct-try li { counter-increment: tr; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px 14px 52px; position: relative; font-size: .97rem; }
+.ct-try li::before { content: counter(tr); position: absolute; left: 14px; top: 13px; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: #9a3a0f; font-weight: 700; font-size: .85rem; display: flex; align-items: center; justify-content: center; }
+.ct-credit { font-size: .88rem; color: var(--ink-soft); margin-top: 28px; }
+@media (max-width: 1080px) { .ct-row2 { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 920px) {
+  .ct-app { grid-template-columns: minmax(0, 1fr); }
+  .ct-sticky { display: flex; position: sticky; top: 71px; z-index: 40; justify-content: space-between; gap: 10px; background: rgba(255,255,255,.97); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); padding: 7px 12px; font-size: .8rem; color: var(--ink-soft); }
+  .ct-sticky b { display: block; color: var(--navy); font-size: .95rem; font-variant-numeric: tabular-nums; }
+}
+.ct-swipe { display: none; }
+@media (max-width: 680px) { .ct-svg { min-width: 680px; } .ct-swipe { display: block; font-size: .8rem; color: var(--ink-soft); margin: 0 0 6px; } }
+@media (max-width: 560px) {
+  .ct-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ct-panel { padding: 14px; }
+  .ct-tile .v { font-size: 1.3rem; }
+  .ct-rates { grid-template-columns: minmax(0, 1fr); }
+  .ct-eqs, .ct-eqs tbody, .ct-eqs tr, .ct-eqs th, .ct-eqs td { display: block; width: 100%; max-width: none; }
+  .ct-eqs th { padding-bottom: 0; border-bottom: 0; }
+}
+</style>
+
+<section class="page-hero ct-hero">
+  <div class="container">
+    <p class="ct-crumb"><a href="/teaching/">Teaching</a> <span aria-hidden="true">&rsaquo;</span> MAE 3524 Thermal Fluids Design</p>
+    <h1>Cooling tower simulator</h1>
+    <p>A water-cooled chiller rejects its heat through an evaporative cooling tower. Change the outdoor air, the condenser water and the fan speed, and see the cold water sent back to the chiller, the air leaving the tower, the water the tower uses and the power its fan needs.</p>
+  </div>
+</section>
+
+<section class="section ct" id="simulator" aria-label="Cooling tower simulator">
+  <div class="container">
+    <noscript><p class="callout">The simulator needs JavaScript. The equations it uses are explained <a href="#equations">below</a>.</p></noscript>
+    <div class="ct-app">
+      <div class="ct-sticky" id="ct-sticky" aria-hidden="true">
+        <span>Cold water<b id="sk-t2">&ndash;</b></span><span>Exit air<b id="sk-t4">&ndash;</b></span><span>Makeup<b id="sk-m">&ndash;</b></span><span>Fan<b id="sk-f">&ndash;</b></span>
+      </div>
+
+      <form class="ct-panel ct-controls" id="ct-form" autocomplete="off" onsubmit="return false">
+        <p class="ct-intro">Drag a slider or type a value; everything on the page updates as you go. The numbers 1 to 5 are the states in the Chapter 12 slides.</p>
+        <div class="ct-seg" role="radiogroup" aria-label="Units">
+          <label><input type="radio" name="u" value="ip"><span>&deg;F, gal/min, hp</span></label>
+          <label><input type="radio" name="u" value="si"><span>&deg;C, SI units</span></label>
+        </div>
+
+        <fieldset class="ct-group">
+          <legend>Outdoor air entering, state 3</legend>
+          <div id="ctl-air"></div>
+          <label class="ct-field">Humidity entered as
+            <select id="ct-hk">
+              <option value="phi">Relative humidity &phi;</option>
+              <option value="twb">Wet-bulb temperature</option>
+            </select>
+          </label>
+          <div id="ctl-air2"></div>
+          <label class="ct-field">Location (atmospheric pressure)
+            <select id="ct-pk">
+              <option value="sea">Sea level</option>
+              <option value="tulsa">Tulsa, OK (about 700 ft)</option>
+              <option value="still">Stillwater, OK (about 900 ft)</option>
+              <option value="denver">Denver, CO (5,280 ft)</option>
+              <option value="custom">Other pressure&hellip;</option>
+            </select>
+          </label>
+          <div id="ctl-p"></div>
+          <p class="ct-derived" id="ct-air-note"></p>
+        </fieldset>
+
+        <fieldset class="ct-group">
+          <legend>Condenser water from the chiller, state 1</legend>
+          <div id="ctl-w"></div>
+          <p class="ct-derived" id="ct-w-note"></p>
+        </fieldset>
+
+        <fieldset class="ct-group">
+          <legend>Tower and fan</legend>
+          <label class="ct-field">Tower size (rated at 95/85/78 &deg;F)
+            <select id="ct-size"></select>
+          </label>
+          <div id="ctl-t"></div>
+          <p class="ct-derived" id="ct-t-note"></p>
+        </fieldset>
+
+        <fieldset class="ct-group">
+          <legend>Water treatment</legend>
+          <div id="ctl-wt"></div>
+          <p class="ct-derived" id="ct-wt-note"></p>
+        </fieldset>
+
+        <details class="ct-more">
+          <summary>More assumptions</summary>
+          <p class="ct-derived">Exit air state, makeup water and the tower&rsquo;s design airflow and fan.</p>
+          <div id="ctl-more"></div>
+          <p class="ct-derived" id="ct-more-note"></p>
+        </details>
+
+        <fieldset class="ct-group">
+          <legend>Options</legend>
+          <label class="ct-field">Load an example
+            <select id="ct-example">
+              <option value="">Choose an example&hellip;</option>
+              <option value="default">Rating point: 95 &deg;F hot water, 78 &deg;F wet bulb (default)</option>
+              <option value="okla">Oklahoma summer afternoon: 98 &deg;F, 40% RH</option>
+              <option value="desert">Hot, dry desert afternoon: 110 &deg;F, 12% RH</option>
+              <option value="humid">Hot, humid Gulf Coast afternoon: 92 &deg;F, 65% RH</option>
+              <option value="spring">Mild spring day, fan slowed to 75%</option>
+              <option value="plume">Cool, humid morning: a visible plume</option>
+              <option value="winter">Winter free cooling at reduced flow</option>
+              <option value="lowfan">Fan slowed too far: not enough air</option>
+              <option value="cycles">Poor water quality: 2 cycles of concentration</option>
+              <option value="denver">The same tower in Denver (5,280 ft)</option>
+            </select>
+          </label>
+          <div class="ct-buttons">
+            <button type="button" class="ct-btn" id="ct-reset">Reset</button>
+            <button type="button" class="ct-btn" id="ct-link">Copy link to this setup</button>
+          </div>
+        </fieldset>
+      </form>
+
+      <div class="ct-out" id="ct-out">
+        <div class="ct-panel">
+          <div class="ct-card-head"><h2>Inside the tower</h2><label class="ct-toggle"><input type="checkbox" id="tg-anim" checked> Animate the flows</label></div>
+          <p class="ct-swipe">Swipe sideways to see the whole tower.</p>
+          <div class="ct-scroll" id="ct-svgbox"><svg class="ct-svg" id="ct-svg" viewBox="0 -26 860 566" role="img" aria-labelledby="ct-svg-desc"><desc id="ct-svg-desc">Cooling tower schematic</desc></svg></div>
+          <div class="ct-cbar" aria-hidden="true">
+            <div class="ct-cbar-title" id="ct-cbar-title">Water and air temperature</div>
+            <div class="ct-cbar-bar" id="ct-cbar"></div>
+            <div class="ct-cbar-ticks" id="ct-cbar-ticks"></div>
+          </div>
+          <ul class="ct-notes" id="ct-notes" aria-live="polite"></ul>
+        </div>
+        <div class="ct-tiles" id="ct-tiles" aria-live="polite"></div>
+      </div>
+    </div>
+
+    <div class="ct-row2">
+      <div class="ct-panel">
+        <div class="ct-card-head"><h3>The air on the psychrometric chart</h3></div>
+        <div class="ct-chart" id="ct-chart"></div>
+        <div class="ct-legend" id="ct-legend"></div>
+        <p class="ct-hint">Hover over the chart (or tap it) to read the properties of any state.</p>
+      </div>
+      <div class="ct-panel">
+        <div class="ct-card-head"><h3>Driving force: enthalpy against water temperature</h3></div>
+        <div class="ct-chart" id="ct-ht"></div>
+        <div class="ct-legend" id="ct-ht-legend"></div>
+        <p class="ct-hint" id="ct-ht-note"></p>
+      </div>
+    </div>
+
+    <div class="ct-row2">
+      <div class="ct-panel">
+        <div class="ct-card-head"><h3>Water the tower uses</h3></div>
+        <div id="ct-water"></div>
+      </div>
+      <div class="ct-panel">
+        <div class="ct-card-head"><h3>Heat, airflow and fan</h3></div>
+        <dl class="ct-rates" id="ct-rates"></dl>
+      </div>
+    </div>
+
+    <div class="ct-row2">
+      <div class="ct-panel">
+        <div class="ct-card-head"><h3>States 1 to 5</h3></div>
+        <p class="ct-sub-note">Air properties from <code>Psychrometricsnew.m</code>&rsquo;s equations; water enthalpy <i>h</i><sub>f</sub> = <i>c</i><sub>p</sub><i>T</i>.</p>
+        <div class="ct-scroll" id="ct-states"></div>
+      </div>
+      <div class="ct-panel">
+        <div class="ct-card-head"><h3>Step-by-step solution</h3></div>
+        <ol class="ct-steps" id="ct-steps"></ol>
+        <div class="ct-matlab">Check it with the course MATLAB functions (SI units, <code>h</code> in J/kg dry air):<pre id="ct-matlab"></pre></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt ct-doc" id="equations">
+  <div class="container">
+    <div class="section-head"><h2>How the simulator works</h2></div>
+    <p class="measure">Warm condenser water from the chiller (state 1) is sprayed over the fill at the top of the tower and falls against the outdoor air (state 3) that the fan draws in at the bottom. A small part of the water evaporates; that takes heat from the rest, which collects in the basin and goes back to the chiller cooler (state 2). The air leaves at the top warmer and nearly saturated (state 4), and makeup water (state 5) replaces what was lost. The simulator writes the mass and energy balances of the Chapter 12 slides per kilogram of dry air, with the moist-air properties of <code>Psychrometricsnew.m</code>.</p>
+
+    <h3 style="margin-top:28px">Equations</h3>
+    <table class="ct-eqs">
+      <tr><th>Outdoor air, state 3<small>From <i>T</i><sub>3</sub> and &phi;<sub>3</sub> (or the wet bulb): humidity ratio, enthalpy per kg of dry air and wet-bulb temperature <i>T</i>*, as in <code>Psychrometricsnew.m</code> (ASHRAE eqs. 6, 22, 32 and 35).</small></th><td><div class="tex-d" data-tex="W=0.621945\,\frac{\phi\,p_{ws}(T)}{p-\phi\,p_{ws}(T)},\qquad h=1.006\,T+W\left(2501+1.86\,T\right)\ \mathrm{kJ/kg}"></div></td></tr>
+      <tr><th>Cold water, state 2<small>The approach is how close the tower brings the water to the outdoor wet bulb, the lowest temperature evaporation can reach. The range is the cooling of the water.</small></th><td><div class="tex-d" data-tex="T_2=T^{*}_3+\mathrm{approach},\qquad \mathrm{range}=T_1-T_2,\qquad \varepsilon=\frac{T_1-T_2}{T_1-T^{*}_3}"></div></td></tr>
+      <tr><th>Heat rejected<small>The chiller&rsquo;s condenser heat, carried by the water. In US units 1 gal/min of water is 500 lb/h; a cooling-tower ton is 15,000 Btu/h (one ton of cooling plus the compressor work).</small></th><td><div class="tex-d" data-tex="\dot Q=\dot m_w\left(h_{f1}-h_{f2}\right)=\dot m_w\,c_p\left(T_1-T_2\right),\qquad \dot Q\,[\mathrm{Btu/h}]\approx500\,\dot V[\mathrm{gal/min}]\,\Delta T[^{\circ}\mathrm{F}]"></div></td></tr>
+      <tr><th>Mass balances<small>Slides: the dry air passes through; the evaporated water leaves with the air and is replaced by makeup.</small></th><td><div class="tex-d" data-tex="\dot m_{a3}=\dot m_{a4}=\dot m_a,\qquad \dot m_5=\dot m_a\left(\omega_4-\omega_3\right)"></div></td></tr>
+      <tr><th>Energy balance and exit air, state 4<small>Steady flow, no heat loss, fan work neglected (Example 12.15). The exit air is assumed saturated (&phi;<sub>4</sub> = 100%, adjustable), which fixes <i>T</i><sub>4</sub> and &omega;<sub>4</sub>.</small></th><td><div class="tex-d" data-tex="0=\dot m_w\left(h_{f1}-h_{f2}\right)+\dot m_a\left(h_3-h_4\right)+\dot m_5\,h_{f5}"></div><div class="tex-d" data-tex="h_4-h_3-\left(\omega_4-\omega_3\right)h_{f5}=\frac{\dot Q}{\dot m_a}"></div></td></tr>
+      <tr><th>Fan<small>The fan moves a volume of air measured at the fan, in the exit air. Fan laws at fan speed <i>N</i>: airflow &prop; <i>N</i>, pressure &prop; <i>N</i><sup>2</sup>, power &prop; <i>N</i><sup>3</sup>.</small></th><td><div class="tex-d" data-tex="\dot m_a=\frac{\dot V}{v_4},\qquad \dot V=N\,\dot V_d,\qquad \dot W_{fan}=\frac{\dot V\,\Delta p}{\eta}=N^3\,\dot W_{fan,d}"></div></td></tr>
+      <tr><th>Water use<small>Drift: droplets carried out with the air, a small fraction <i>d</i> of the circulating water. Blowdown keeps the dissolved minerals at <i>C</i> times their level in the makeup water (cycles of concentration).</small></th><td><div class="tex-d" data-tex="E=\dot m_a\left(\omega_4-\omega_3\right),\qquad D=d\,\dot m_w,\qquad B=\frac{E}{C-1}-D,\qquad M=E+D+B"></div></td></tr>
+      <tr><th>Is there enough air?<small>Heat and water move from the water surface (saturated air at the water temperature, <i>h</i><sub>s</sub>) to the air (<i>h</i><sub>a</sub>). The air line must stay below the saturation curve; the Merkel number shows how large a tower that takes.</small></th><td><div class="tex-d" data-tex="h_s(T_w)-h_a>0,\qquad \frac{KaV}{\dot m_w}=\int_{T_2}^{T_1}\frac{c_p\,dT_w}{h_s(T_w)-h_a}"></div></td></tr>
+    </table>
+    <p class="small muted">Moist-air properties from the ASHRAE <i>Handbook&mdash;Fundamentals</i> (2013, SI), chapter 1, as coded in <code>Psychrometricsnew.m</code>; balances as in Moran &amp; Shapiro, <i>Fundamentals of Engineering Thermodynamics</i>, chapter 12; driving force and tower characteristic after Merkel, as in the ASHRAE <i>Handbook&mdash;HVAC Systems and Equipment</i>, cooling towers chapter.</p>
+
+    <h3 style="margin-top:28px">The tower in this simulator, and good habits</h3>
+    <div class="ct-twocol">
+      <ul>
+        <li><strong>The approach is an input.</strong> Real towers reach a larger approach when the air is cooler, the water flow higher or the fan slower. Here you set it, and the simulator checks that the air can carry the heat away: if the air line crosses the saturation curve, the approach is impossible at that airflow.</li>
+        <li><strong>Tower size.</strong> Each tower is rated for 3 gal/min of water per ton, cooled from 95 &deg;F to 85 &deg;F with a 78 &deg;F wet bulb (the usual rating point), at the design water-to-air ratio <i>L</i>/<i>G</i>. That fixes its full-speed airflow and fan power.</li>
+        <li><strong>Why evaporation, not heat transfer to the air?</strong> On a hot day the air can be warmer than the water, yet the water still cools: evaporating 1 kg of water takes about 2,400 kJ, so roughly 1% of the flow evaporates for every 10 &deg;F (5.6 &deg;C) of range.</li>
+      </ul>
+      <ul>
+        <li><strong>Plume.</strong> The warm, saturated exit air mixes with the outdoor air along a straight line on the chart (adiabatic mixing, as in the slides). If that line crosses the saturation curve, water condenses into the visible fog seen above towers on cool mornings.</li>
+        <li><strong>Water treatment.</strong> Evaporation leaves the minerals behind. More cycles of concentration mean less blowdown and makeup, but more scale and corrosion risk.</li>
+        <li><strong>Assumptions.</strong> Steady flow, no heat loss, liquid water with <i>c</i><sub>p</sub> = 4.186 kJ/kg&middot;K (1 Btu/lb&middot;&deg;F), 8.33 lb per gallon, fan work and drift left out of the energy balance, fan efficiency constant over speed.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="section ct-doc" id="activities">
+  <div class="container">
+    <div class="section-head"><h2>Try it yourself</h2></div>
+    <ol class="ct-try">
+      <li>At the default rating point, confirm the range of 10 &deg;F and the heat rejected of about 500 tons. Then compute the makeup water of the slides, <i>&#7745;</i><sub>5</sub> = <i>&#7745;</i><sub>a</sub>(&omega;<sub>4</sub> &minus; &omega;<sub>3</sub>), from the states table.</li>
+      <li>Compare the evaporation for the desert, Oklahoma and Gulf Coast examples, all with about the same heat rejected. Why does the dry climate evaporate the most water?</li>
+      <li>Slow the fan in steps of 10%. Track the fan power (the cube law) and the exit air temperature. At what speed can the air no longer carry the heat? What does the enthalpy diagram show there?</li>
+      <li>Raise the cycles of concentration from 2 to 6. How many gallons a day does that save? Why does the evaporation not change?</li>
+      <li>Load <em>Cool, humid morning</em> and find the fog on the psychrometric chart. Which change makes the plume disappear: a warmer morning, drier air, or a lower exit relative humidity?</li>
+      <li>Lower the approach from 10 &deg;F to 4 &deg;F at the rating point and watch the Merkel number <i>KaV</i>/<i>L</i>. Why do small approaches need very large towers?</li>
+      <li>Move the same tower to Denver. Why does the fan move less dry air there, and what happens to the exit air and the water use?</li>
+      <li>Run the MATLAB lines under the step-by-step solution and reproduce <i>T</i><sub>4</sub> and the makeup water with <code>Psychrometricsnew.m</code>.</li>
+    </ol>
+    <p class="ct-credit">Calculation engine: a JavaScript port of the MATLAB functions <code>Psychrometricsnew.m</code> and <code>psychplotting.m</code> used in MAE 3524. Property equations: ASHRAE <i>Handbook&mdash;Fundamentals</i> (2013), chapter 1. Questions or suggestions: <a href="mailto:sallam@okstate.edu">sallam@okstate.edu</a>.</p>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous" defer></script>
+<script>
+(function () {
+'use strict';
+/* ===== Moist-air model: a JavaScript port of Psychrometricsnew.m =====
+   ASHRAE Handbook 2013 Fundamentals (SI), chapter 1. Units: T in °C, p in kPa,
+   W in kg water per kg dry air, h in kJ per kg dry air, v in m³ per kg dry air. */
+var CA = 1.006, HLG = 2501, CW = 1.86, CL = 4.186, MWR = 0.621945;
+
+/* Saturation pressure of water vapor, kPa: eq. 6 over liquid water (0 to 200 °C), eq. 5 over ice below 0 °C */
+function pws(T) {
+  var K = T + 273.15;
+  if (T < 0) return Math.exp(-5.6745359e3 / K + 6.3925247 - 9.677843e-3 * K + 6.2215701e-7 * K * K + 2.0747825e-9 * K * K * K - 9.484024e-13 * K * K * K * K + 4.1635019 * Math.log(K)) / 1000;
+  return Math.exp(-5.8002206e3 / K + 1.3914993 - 4.8640239e-2 * K + 4.1764768e-5 * K * K - 1.4452093e-8 * K * K * K + 6.5459673 * Math.log(K)) / 1000;
+}
+/* Bisection for f(x) = 0 on [a, b]; without a sign change it returns the end where |f| is smaller */
+function root(f, a, b, n) {
+  var fa = f(a), fb = f(b), m, fm, i;
+  if (fa === 0) return a;
+  if (fb === 0) return b;
+  if ((fa < 0) === (fb < 0)) return Math.abs(fa) <= Math.abs(fb) ? a : b;
+  for (i = 0; i < (n || 64); i++) {
+    m = 0.5 * (a + b); fm = f(m);
+    if ((fm < 0) === (fa < 0)) { a = m; fa = fm; } else b = m;
+  }
+  return 0.5 * (a + b);
+}
+function Tsat(pw) { return root(function (T) { return pws(T) - pw; }, -100, 200); }   // temperature at which pws = pw
+function wOfPw(pw, P) { return MWR * pw / (P - pw); }                                  // eq. 22
+function pwOfW(W, P) { return W * P / (MWR + W); }                                     // eq. 20, solved for pw
+function Wsat(T, P) { return wOfPw(pws(T), P); }                                       // eq. 23
+function hOf(T, W) { return CA * T + W * (HLG + CW * T); }                             // eq. 32
+function vOf(T, W, P) { return 0.287042 * (T + 273.15) * (1 + 1.607858 * W) / P; }    // eq. 28
+function TofWh(W, h) { return (h - W * HLG) / (CA + W * CW); }                         // eq. 32 solved for T
+function WofTh(T, h) { return (h - CA * T) / (HLG + CW * T); }                         // eq. 32 solved for W
+/* Wet bulb: eq. 35 (above freezing) or eq. 37 (below freezing) gives W from T and the wet-bulb temperature t */
+function WofTwb(T, t, P) {
+  var ws = Wsat(t, P);
+  if (t >= 0) return ((HLG - 2.326 * t) * ws - CA * (T - t)) / (HLG + CW * T - CL * t);
+  return ((2830 - 0.24 * t) * ws - CA * (T - t)) / (2830 + CW * T - 2.1 * t);
+}
+/* Near 0 °C the liquid-water (eq. 35) and ice (eq. 37) forms can both have a root; the liquid one is used when it exists */
+function wetBulb(T, W, P) {
+  var g = function (t) { return WofTwb(T, t, P) - W; };
+  if (T > 0 && g(0) <= 0) return root(g, 0, T);
+  return root(g, -60, Math.min(T, -1e-12));
+}
+function dewPoint(W, P) { return W > 0 ? Tsat(pwOfW(W, P)) : -Infinity; }
+
+/* All properties of the state (T, W) at pressure P, like the outputs of Psychrometricsnew */
+function props(T, W, P) {
+  var pw = pwOfW(W, P), ps = pws(T);
+  return { T: T, W: W, P: P, pw: pw, pws: ps, phi: 100 * pw / ps, h: hOf(T, W), v: vOf(T, W, P), Tdp: dewPoint(W, P), Twb: wetBulb(T, W, P) };
+}
+
+function hsat(T, P) { return hOf(T, Wsat(T, P)); }                                  // saturated air at T
+function Wphi(T, phi, P) { return wOfPw(phi / 100 * pws(T), P); }                      // W from T and phi (%)
+function Thsat(h, P) { return root(function (t) { return hsat(t, P) - h; }, -40, Tsat(0.95 * P), 64); }   // saturated air with enthalpy h
+
+/* ===== Cooling tower (counterflow, induced draft) =====
+   States as in the Chapter 12 slides: 1 warm water in, 2 cooled water back to the chiller,
+   3 ambient air in, 4 moist air out, 5 makeup water. All energies per kg of dry air, kJ/kg. */
+var KGS_GPM = 998.2 * 3.785411784e-3 / 60;   // kg/s of water per gal/min (8.33 lb/gal)
+var KW_CTTON = 15000 / 3412.142;            // kW per cooling-tower ton (15,000 Btu/h of heat rejected)
+var GPM_TON = 3;                            // design water flow per nominal ton (CTI rating)
+var RATE = { T1: 35, T2: 85 / 1.8 - 32 / 1.8, Twb: 78 / 1.8 - 32 / 1.8, T3: 35, T5: 20 };   // 95/85/78 °F rating point
+
+/* Exit air (state 4) at relative humidity phi4 from the energy balance of the slides,
+   ma (h4 - h3) = mw (hf1 - hf2) + ma (W4 - W3) hf5, written with the heat rejected Q = mw (hf1 - hf2). */
+function exitAir(G, Q, h3, W3, phi4, T5, P) {
+  var f = phi4 / 100, hf5 = CL * T5;
+  var res = function (T) { var W = wOfPw(f * pws(T), P); return hOf(T, W) - (W - W3) * hf5 - h3 - Q / G; };
+  var hi = Tsat(Math.min(0.95 * P / f, pws(150)));          // keep the vapor pressure below p
+  if (!(G > 0) || res(hi) < 0) return null;
+  var T = root(res, -60, hi, 60), W = wOfPw(f * pws(T), P);
+  return { T: T, W: W, h: hOf(T, W), v: vOf(T, W, P) };
+}
+
+/* The tower itself: sized for GPM_TON gal/min per ton at the rating point, with the design L/G.
+   The fan moves the design airflow V (m³/s, measured at the fan, i.e. in the exit air) at full speed. */
+function design(o) {
+  var P = 101.325, L = GPM_TON * o.tons * KGS_GPM, G = L / o.LG;
+  var W3 = WofTwb(RATE.T3, RATE.Twb, P), h3 = hOf(RATE.T3, W3);
+  var s4 = exitAir(G, L * CL * (RATE.T1 - RATE.T2), h3, W3, 100, RATE.T5, P);
+  var V = G * s4.v;
+  return { gpm: GPM_TON * o.tons, L: L, G: G, V: V, Pfan: V * o.dp / (o.eta / 100) / 1000, T4: s4.T, v4: s4.v };
+}
+
+/* Dry-air flow and exit state for a fan airflow V: G = V / v4, iterated because v4 depends on G */
+function airSide(V, Q, s3, phi4, T5, P) {
+  var G = V / s3.v, s4 = null, k, G2;
+  for (k = 0; k < 60; k++) {
+    s4 = exitAir(G, Q, s3.h, s3.W, phi4, T5, P);
+    if (!s4) return null;
+    G2 = V / s4.v;
+    if (Math.abs(G2 - G) <= 1e-12 * G) { G = G2; break; }
+    G = G2;
+  }
+  s4 = exitAir(G, Q, s3.h, s3.W, phi4, T5, P);
+  return s4 ? { G: G, s4: s4 } : null;
+}
+
+/* Air operating line on the enthalpy-water temperature diagram: air enters (h3) where the water leaves (T2)
+   and leaves (h4) where the water enters (T1). The driving force is hs(Tw) - ha; it must stay positive. */
+function opLine(T2, T1, h3, h4) { return function (T) { return h3 + (h4 - h3) * (T - T2) / (T1 - T2); }; }
+function minGap(T2, T1, h3, h4, P) {
+  var line = opLine(T2, T1, h3, h4), m = gmin(function (T) { return hsat(T, P) - line(T); }, T2, T1);   // convex in T
+  return { g: m.f, T: m.x };
+}
+/* Golden-section search for the minimum of a unimodal function on [a, b], ends included */
+function gmin(f, a, b) {
+  var g = 0.3819660112501051, lo = a, hi = b, x1 = lo + g * (hi - lo), x2 = hi - g * (hi - lo), f1 = f(x1), f2 = f(x2), i;
+  for (i = 0; i < 48; i++) {
+    if (f1 <= f2) { hi = x2; x2 = x1; f2 = f1; x1 = lo + g * (hi - lo); f1 = f(x1); }
+    else { lo = x1; x1 = x2; f1 = f2; x2 = hi - g * (hi - lo); f2 = f(x2); }
+  }
+  var best = f1 <= f2 ? { x: x1, f: f1 } : { x: x2, f: f2 }, fa = f(a), fb = f(b);
+  if (fa < best.f) best = { x: a, f: fa };
+  if (fb < best.f) best = { x: b, f: fb };
+  return best;
+}
+/* Merkel number KaV/L = ∫ cp dTw / (hs - ha), adaptive Simpson's rule */
+function merkel(T2, T1, h3, h4, P) {
+  var line = opLine(T2, T1, h3, h4), f = function (T) { return CL / (hsat(T, P) - line(T)); };
+  var simp = function (a, b, fa, fm, fb) { return (b - a) / 6 * (fa + 4 * fm + fb); };
+  var rec = function (a, b, fa, fm, fb, whole, tol, depth) {
+    var m = 0.5 * (a + b), lm = 0.5 * (a + m), rm = 0.5 * (m + b), flm = f(lm), frm = f(rm);
+    var left = simp(a, m, fa, flm, fm), right = simp(m, b, fm, frm, fb), d = left + right - whole;
+    if (depth <= 0 || Math.abs(d) <= 15 * tol) return left + right + d / 15;
+    return rec(a, m, fa, flm, fm, left, tol / 2, depth - 1) + rec(m, b, fm, frm, fb, right, tol / 2, depth - 1);
+  };
+  var n = 8, d = (T1 - T2) / n, s = 0, i;
+  for (i = 0; i < n; i++) {
+    var a = T2 + i * d, b = a + d, fa = f(a), fm = f(0.5 * (a + b)), fb = f(b);
+    s += rec(a, b, fa, fm, fb, simp(a, b, fa, fm, fb), 1e-10, 30);
+  }
+  return s;
+}
+
+/* Full solution for one set of inputs (SI): P kPa, T3 °C, hk 'phi' or 'twb' with hv (% or °C), T1 °C, gpm,
+   app K, N %, tons, coc (cycles), drift (% of circulating flow), phi4 %, T5 °C, LG, dp Pa, eta % */
+function solveTower(inp) {
+  var P = inp.P, r = { inp: inp, P: P, ok: true, err: '' };
+  var W3 = inp.hk === 'twb' ? WofTwb(inp.T3, inp.hv, P) : Wphi(inp.T3, inp.hv, P);
+  var s3 = props(inp.T3, W3, P);
+  r.s3 = s3; r.T1 = inp.T1; r.T5 = inp.T5;
+  r.T2 = s3.Twb + inp.app;
+  r.range = inp.T1 - r.T2;
+  r.d = design(inp);
+  r.mw = inp.gpm * KGS_GPM;
+  var n = inp.N / 100;
+  r.V = n * r.d.V; r.dp = n * n * inp.dp; r.Pfan = n * n * n * r.d.Pfan;     // fan laws
+  if (r.T2 < 1) { r.ok = false; r.err = 'freeze'; return r; }
+  if (!(r.range > 0.05)) { r.ok = false; r.err = 'nocool'; return r; }
+  r.Q = r.mw * CL * r.range;                                                 // kW, = mw (hf1 - hf2)
+  r.eff = r.range / (inp.T1 - s3.Twb);
+  var a = airSide(r.V, r.Q, s3, inp.phi4, inp.T5, P);
+  if (!a) { r.ok = false; r.err = 'air'; r.Nmin = minSpeed(inp, s3, r); return r; }
+  r.G = a.G; r.s4 = props(a.s4.T, a.s4.W, P);
+  r.LG = r.mw / r.G;
+  var mg = minGap(r.T2, inp.T1, s3.h, r.s4.h, P);
+  r.gmin = mg.g; r.Tpinch = mg.T;
+  r.feasible = mg.g > 0;
+  r.Me = r.feasible ? merkel(r.T2, inp.T1, s3.h, r.s4.h, P) : Infinity;
+  r.Nmin = minSpeed(inp, s3, r);
+  // water: evaporation (the slides' makeup m5 = ma (W4 - W3)), drift, blowdown, total makeup
+  r.E = r.G * (r.s4.W - s3.W);
+  r.D = inp.drift / 100 * r.mw;
+  r.B = Math.max(0, r.E / (inp.coc - 1) - r.D);
+  r.M = r.E + r.D + r.B;
+  r.plume = plume(r.s4, s3, P);
+  r.prof = profile(r);
+  return r;
+}
+
+/* Lowest fan speed (%) at which the air can carry the heat away. The steepest air line from (T2, h3) that
+   stays below the saturation curve has slope s* = min (hs(T) - h3)/(T - T2); it fixes the largest exit
+   enthalpy h4 and so the smallest dry-air flow, from the energy balance. */
+function minSpeed(inp, s3, r) {
+  var P = inp.P, T2 = r.T2, T1 = inp.T1, h3 = s3.h, f = inp.phi4 / 100, hf5 = CL * inp.T5;
+  if (!(r.Q > 0)) return 0;
+  var sl = gmin(function (T) { return (hsat(T, P) - h3) / (T - T2); }, T2 + 1e-6 * (T1 - T2), T1);
+  var h4 = h3 + sl.f * (T1 - T2);
+  var T4 = root(function (T) { return hOf(T, wOfPw(f * pws(T), P)) - h4; }, -60, Tsat(Math.min(0.95 * P / f, pws(150))), 70);
+  var W4 = wOfPw(f * pws(T4), P), den = h4 - h3 - (W4 - s3.W) * hf5;
+  if (!(den > 0)) return Infinity;
+  return 100 * (r.Q / den) * vOf(T4, W4, P) / r.d.V;
+}
+
+/* Visible plume: the exit air mixes with ambient air along a straight line in (h, W) (adiabatic mixing).
+   Where that line passes above the saturation curve, water condenses as fog. */
+function plume(s4, s3, P) {
+  var i, n = 120, x, W, h, T, ex, out = { visible: false, exmax: 0, x0: 1, x1: 0, pts: [] };
+  for (i = 0; i <= n; i++) {
+    x = i / n; W = s4.W + x * (s3.W - s4.W); h = s4.h + x * (s3.h - s4.h); T = TofWh(W, h);
+    ex = W - Wsat(T, P);
+    out.pts.push([T, W]);
+    if (ex > 1e-5) { out.visible = true; out.exmax = Math.max(out.exmax, ex); out.x0 = Math.min(out.x0, x); out.x1 = Math.max(out.x1, x); }
+  }
+  return out;
+}
+
+/* Water and air temperatures through the fill, for the picture and the chart. Height from Merkel's equation,
+   dz/H = (cp dTw / (hs - ha)) / Me. Air humidity: with a Lewis factor of 1 the air moves toward saturated air
+   at the local water temperature, dW/dh = (Ws(Tw) - W)/(hs(Tw) - h), scaled so that it ends at state 4. */
+function profile(r) {
+  var P = r.P, T2 = r.T2, T1 = r.T1, h3 = r.s3.h, h4 = r.s4.h, line = opLine(T2, T1, h3, h4), pts = [], i, n = 60;
+  var z = [0], Tw = [], Wl = [r.s3.W];
+  for (i = 0; i <= n; i++) Tw.push(T2 + (T1 - T2) * i / n);
+  var slope = function (T, h, W) { return (Wsat(T, P) - W) / (hsat(T, P) - h); };
+  for (i = 1; i <= n; i++) {
+    var h0 = line(Tw[i - 1]), h1 = line(Tw[i]), g0 = hsat(Tw[i - 1], P) - h0, g1 = hsat(Tw[i], P) - h1;
+    if (r.feasible) {
+      z.push(z[i - 1] + 0.5 * CL * (Tw[i] - Tw[i - 1]) * (1 / g0 + 1 / g1));
+      var k1 = slope(Tw[i - 1], h0, Wl[i - 1]), k2 = slope(Tw[i], h1, Wl[i - 1] + k1 * (h1 - h0));
+      Wl.push(Wl[i - 1] + 0.5 * (k1 + k2) * (h1 - h0));                       // Heun's method
+    } else { z.push(i); Wl.push(NaN); }
+  }
+  var corr = r.feasible ? r.s4.W - Wl[n] : 0;
+  for (i = 0; i <= n; i++) {
+    var h = line(Tw[i]), f = (h - h3) / (h4 - h3);
+    var W = r.feasible ? Wl[i] + corr * f : r.s3.W + (r.s4.W - r.s3.W) * f, Ta = TofWh(W, h);
+    if (W > Wsat(Ta, P)) { Ta = Thsat(h, P); W = Wsat(Ta, P); }
+    pts.push({ z: z[i] / z[n], Tw: Tw[i], h: h, Ta: Ta, W: W });
+  }
+  r.lewisCorr = corr;
+  return pts;
+}
+/* ===== User interface ===== */
+var $ = function (id) { return document.getElementById(id); };
+var SVGNS = 'http://www.w3.org/2000/svg';
+var ACCENT = '#d9541e', NAVY = '#14293d', WALL = '#42515e', DARK = '#24313d', WBG = '#1baf7a';
+
+function S(tag, attrs, parent, text) {
+  var e = document.createElementNS(SVGNS, tag), k;
+  for (k in attrs) if (attrs[k] !== undefined && attrs[k] !== null) e.setAttribute(k, attrs[k]);
+  if (text !== undefined && text !== null) e.textContent = text;
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+function clamp(v, a, b) { return Math.min(b, Math.max(a, v)); }
+function fix(v, d) {
+  if (!isFinite(v)) return '–';
+  if (Math.abs(v) < 0.5 * Math.pow(10, -d)) v = 0;
+  return v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d, useGrouping: Math.abs(v) >= 10000 }).replace('-', '−');
+}
+function sig(v, n) { return Number(v.toPrecision(n)); }
+function rnd(v, d) { return Number(v.toFixed(d)); }
+function inp(v, d) { return String(rnd(v, d)); }
+function copy(o) { var r = {}, k; for (k in o) r[k] = o[k]; return r; }
+function ceilTo(v, s) { return Math.ceil(v / s - 1e-9) * s; }
+function floorTo(v, s) { return Math.floor(v / s + 1e-9) * s; }
+function niceStep(span, n) {
+  var raw = span / n, p = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10)), m = raw / p;
+  return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p;
+}
+
+/* ----- Units: the model works in SI; the page shows °F and US units or °C and SI ----- */
+var BTUH_KW = 3412.142, HP_KW = 0.745699872, CFM_M3S = 2118.880, PA_INWG = 249.0889, PSI_KPA = 0.1450377, LBH_KGS = 7936.641, FT3LB = 16.01846, LPM_KGS = 60 / 0.9982;
+function ip() { return st.u === 'ip'; }
+function tD(c) { return ip() ? 1.8 * c + 32 : c; }
+function tI(x) { return ip() ? (x - 32) / 1.8 : x; }
+function dD(k) { return ip() ? 1.8 * k : k; }
+function dI(x) { return ip() ? x / 1.8 : x; }
+function TU() { return ip() ? '°F' : '°C'; }
+function fT(c, d) { return fix(tD(c), d === undefined ? 1 : d) + ' ' + TU(); }
+function fdT(k, d) { return fix(dD(k), d === undefined ? 1 : d) + ' ' + TU(); }
+function wD(W) { return (ip() ? 7000 : 1000) * W; }
+function WU() { return ip() ? 'gr/lb' : 'g/kg'; }
+function fW(W) { return fix(wD(W), ip() ? 1 : 2) + ' ' + WU(); }
+function hD(h) { return ip() ? h / 2.326 + 7.68 : h; }          // IP enthalpy is zero for dry air at 0 °F
+function hI(x) { return ip() ? (x - 7.68) * 2.326 : x; }
+function HU() { return ip() ? 'Btu/lb' : 'kJ/kg'; }
+function fH(h) { return fix(hD(h), ip() ? 2 : 1) + ' ' + HU(); }
+function fdH(dh) { return fix(ip() ? dh / 2.326 : dh, ip() ? 2 : 1) + ' ' + HU(); }
+function hfD(T) { return ip() ? 1.8 * T : CL * T; }              // liquid water: T(°F) − 32 Btu/lb, or 4.186 T kJ/kg
+function fHf(T) { return fix(hfD(T), 1) + ' ' + HU(); }
+function fPhi(p) { return fix(p, 1) + '%'; }
+function fv(v) { return ip() ? fix(v * FT3LB, 2) + ' ft³/lb' : fix(v, 3) + ' m³/kg'; }
+function pD(kPa) { return ip() ? kPa * PSI_KPA : kPa; }
+function fPk(kPa) { return ip() ? fix(kPa * PSI_KPA, 2) + ' psia' : sig(kPa, 6) + ' kPa'; }
+function gpmOf(kgs) { return kgs / KGS_GPM; }
+function wdec(x) { x = Math.abs(x); return x >= 100 ? 0 : x >= 10 ? 1 : x >= 1 ? 2 : 3; }
+function fFlow(kgs) { var x = ip() ? gpmOf(kgs) : kgs * LPM_KGS; return fix(x, wdec(x)) + (ip() ? ' gal/min' : ' L/min'); }
+function fDay(kgs) { var x = ip() ? gpmOf(kgs) * 1440 : kgs * 86400 / 998.2; return fix(x >= 100 ? sig(x, 3) : x, wdec(x)) + (ip() ? ' gal/day' : ' m³/day'); }
+function fQ(kW) { return ip() ? fix(sig(kW * BTUH_KW, 3), 0) + ' Btu/h' : fix(kW, 0) + ' kW'; }
+function fTons(kW) { return fix(kW / KW_CTTON, 0) + ' tons'; }
+function fPow(kW) { return ip() ? fix(kW / HP_KW, 1) + ' hp' : fix(kW, 1) + ' kW'; }
+function fPow2(kW) { return ip() ? fix(kW, 1) + ' kW' : fix(kW / HP_KW, 1) + ' hp'; }
+function fAir(m3s) { return ip() ? fix(sig(m3s * CFM_M3S, 3), 0) + ' cfm' : fix(m3s, 1) + ' m³/s'; }
+function fDp(Pa) { return ip() ? fix(Pa / PA_INWG, 2) + ' in. w.g.' : fix(Pa, 0) + ' Pa'; }
+function fMass(kgs) { return ip() ? fix(sig(kgs * LBH_KGS, 3), 0) + ' lb/h' : fix(kgs, kgs >= 100 ? 1 : 2) + ' kg/s'; }
+function pct(x, d) { return fix(100 * x, d === undefined ? 1 : d) + '%'; }
+
+/* Temperature colors: blue (cold) through teal and amber to red (hot), saturated enough to read on the dark tower and on white,
+   stretched over the water and air temperatures on screen */
+var RAMP = [[36, 84, 181], [54, 144, 214], [60, 186, 180], [153, 204, 91], [247, 196, 59], [240, 117, 46], [196, 40, 40]];
+var tlo = 20, thi = 40;
+function tcol(T) {
+  var u = clamp((T - tlo) / (thi - tlo), 0, 1) * (RAMP.length - 1);
+  var i = Math.min(RAMP.length - 2, Math.floor(u)), f = u - i, a = RAMP[i], b = RAMP[i + 1];
+  return 'rgb(' + Math.round(a[0] + f * (b[0] - a[0])) + ',' + Math.round(a[1] + f * (b[1] - a[1])) + ',' + Math.round(a[2] + f * (b[2] - a[2])) + ')';
+}
+function setScale(r) {
+  var a = [r.T1, r.s3.T];
+  if (r.T2 >= 0) a.push(r.T2);
+  if (r.ok) a.push(r.s4.T);
+  var lo = Math.min.apply(null, a), hi = Math.max.apply(null, a), step = ip() ? 5 : 2.5;
+  if (hi - lo < 8) { var c = 0.5 * (hi + lo); lo = c - 4; hi = c + 4; }
+  tlo = tI(floorTo(tD(lo) - (ip() ? 1 : 0.5), step)); thi = tI(ceilTo(tD(hi) + (ip() ? 1 : 0.5), step));
+}
+
+/* ----- State (always SI) ----- */
+var PK = { sea: 101.325, tulsa: 98.8, still: 98.1, denver: 83.4 };
+var SIZES = [100, 150, 200, 300, 400, 500, 750, 1000, 1500, 2000];
+var DEF = { u: 'ip', pk: 'sea', P: 101.325, T3: 35, hk: 'phi', hv: 47.3, T1: 35, gpm: 1500, app: 7 / 1.8, N: 100, tons: 500,
+  coc: 4, drift: 0.005, phi4: 100, T5: 20, LG: 1.2, dp: 0.7 * PA_INWG, eta: 60 };
+var st = copy(DEF), anim = true;
+function pressure() { return st.pk === 'custom' ? st.P : PK[st.pk]; }
+function wbMin(T, P) { return wetBulb(T, Wphi(T, 5, P), P); }
+function normalize() {
+  var P = pressure();
+  st.T3 = clamp(st.T3, 0, 50);
+  if (st.hk === 'twb') st.hv = clamp(st.hv, wbMin(st.T3, P), st.T3); else st.hv = clamp(st.hv, 5, 100);
+  if (SIZES.indexOf(st.tons) < 0) st.tons = 500;
+  st.gpm = clamp(st.gpm, 0.25 * GPM_TON * st.tons, 1.5 * GPM_TON * st.tons);
+}
+function inputs() {
+  return { P: pressure(), T3: st.T3, hk: st.hk, hv: st.hv, T1: st.T1, gpm: st.gpm, app: st.app, N: st.N, tons: st.tons,
+    coc: st.coc, drift: st.drift, phi4: st.phi4, T5: st.T5, LG: st.LG, dp: st.dp, eta: st.eta };
+}
+
+/* ----- Slider + number controls (values shown in the units on screen) ----- */
+function Ctl(parent, id, set) {
+  var d = document.createElement('div');
+  d.className = 'ct-ctl'; d.id = 'c-' + id;
+  d.innerHTML = '<label for="n-' + id + '" id="l-' + id + '"></label><div class="ct-inrow"><input type="range" id="r-' + id + '">' +
+    '<span class="ct-num"><input type="number" id="n-' + id + '" step="any" inputmode="decimal"><span class="ct-unit" id="u-' + id + '"></span></span></div>';
+  parent.appendChild(d);
+  var c = { el: d, rg: $('r-' + id), nb: $('n-' + id), lab: $('l-' + id), unit: $('u-' + id), min: 0, max: 1, dec: 1, value: 0, onset: set };
+  c.config = function (label, unit, min, max, step, dec, aria) {
+    if (c.lab.innerHTML !== label) c.lab.innerHTML = label;
+    if (c.unit.innerHTML !== unit) c.unit.innerHTML = unit;
+    c.min = min; c.max = max; c.dec = dec;
+    c.rg.min = min; c.rg.max = max; c.rg.step = step; c.rg.setAttribute('aria-label', aria);
+    c.nb.min = rnd(min, dec); c.nb.max = rnd(max, dec);
+  };
+  c.show = function (v) {
+    c.value = v; c.rg.value = v;
+    if (document.activeElement !== c.nb) { c.nb.value = inp(v, c.dec); c.nb.removeAttribute('aria-invalid'); }
+  };
+  c.rg.addEventListener('input', function () { var v = +c.rg.value; c.nb.value = inp(v, c.dec); c.nb.removeAttribute('aria-invalid'); c.onset(v); });
+  c.nb.addEventListener('input', function () {
+    var v = parseFloat(c.nb.value);
+    if (isFinite(v) && v >= rnd(c.min, c.dec) - 1e-9 && v <= rnd(c.max, c.dec) + 1e-9) { c.nb.removeAttribute('aria-invalid'); c.rg.value = v; c.onset(v); }
+    else c.nb.setAttribute('aria-invalid', 'true');
+  });
+  c.nb.addEventListener('change', function () {
+    var v = parseFloat(c.nb.value);
+    if (!isFinite(v)) v = c.value;
+    v = clamp(v, c.min, c.max);
+    c.nb.value = inp(v, c.dec); c.nb.removeAttribute('aria-invalid'); c.rg.value = v; c.onset(v);
+  });
+  return c;
+}
+var cT3 = Ctl($('ctl-air'), 'T3', function (v) { st.T3 = tI(v); changed(); });
+var cHv = Ctl($('ctl-air2'), 'hv', function (v) { st.hv = st.hk === 'twb' ? tI(v) : v; changed(); });
+var cP = Ctl($('ctl-p'), 'P', function (v) { st.P = ip() ? v / PSI_KPA : v; changed(); });
+var cT1 = Ctl($('ctl-w'), 'T1', function (v) { st.T1 = tI(v); changed(); });
+var cG = Ctl($('ctl-w'), 'gpm', function (v) { st.gpm = v; changed(); });
+var cApp = Ctl($('ctl-t'), 'app', function (v) { st.app = dI(v); changed(); });
+var cN = Ctl($('ctl-t'), 'N', function (v) { st.N = v; changed(); });
+var cC = Ctl($('ctl-wt'), 'coc', function (v) { st.coc = v; changed(); });
+var cD = Ctl($('ctl-wt'), 'drift', function (v) { st.drift = v; changed(); });
+var cPhi4 = Ctl($('ctl-more'), 'phi4', function (v) { st.phi4 = v; changed(); });
+var cT5 = Ctl($('ctl-more'), 'T5', function (v) { st.T5 = tI(v); changed(); });
+var cLG = Ctl($('ctl-more'), 'LG', function (v) { st.LG = v; changed(); });
+var cDp = Ctl($('ctl-more'), 'dp', function (v) { st.dp = ip() ? v * PA_INWG : v; changed(); });
+var cEta = Ctl($('ctl-more'), 'eta', function (v) { st.eta = v; changed(); });
+
+function setRadio(name, v) { var el = document.querySelector('input[name="' + name + '"][value="' + v + '"]'); if (el) el.checked = true; }
+Array.prototype.forEach.call(document.querySelectorAll('input[name="u"]'), function (el) {
+  el.addEventListener('change', function () { if (el.checked) { st.u = el.value; sizeKey = ''; changed(); } });
+});
+$('ct-hk').addEventListener('change', function () {
+  st.hk = this.value;
+  st.hv = st.hk === 'twb' ? last.s3.Twb : rnd(last.s3.phi, 1);
+  changed();
+});
+$('ct-pk').addEventListener('change', function () { if (this.value === 'custom') st.P = pressure(); st.pk = this.value; changed(); });
+$('ct-size').addEventListener('change', function () { st.tons = +this.value; st.gpm = GPM_TON * st.tons; changed(); });
+$('tg-anim').addEventListener('change', function () { anim = this.checked; $('ct-svg').classList.toggle('ct-still', !anim); });
+var sizeKey = '';
+function buildSizes() {
+  var key = st.u;
+  if (key === sizeKey) return;
+  sizeKey = key;
+  $('ct-size').innerHTML = SIZES.map(function (t) {
+    var g = GPM_TON * t;
+    return '<option value="' + t + '">' + t + ' tons, ' + fix(g, 0) + ' gal/min' + (ip() ? '' : ' (' + fix(t * KW_CTTON, 0) + ' kW)') + '</option>';
+  }).join('');
+}
+function gstep(g) { return g <= 450 ? 1 : g <= 1500 ? 5 : 10; }
+function syncControls(r) {
+  setRadio('u', st.u); buildSizes();
+  var P = r.P, dg = GPM_TON * st.tons, sfx = ip() ? 0.5 : 0.1;
+  cT3.config('Dry-bulb temperature <span class="ct-sym">T<sub>3</sub></span>', TU(), tD(0), tD(50), sfx, 1, 'Outdoor dry-bulb temperature');
+  cT3.show(tD(st.T3));
+  if (st.hk === 'twb') {
+    cHv.config('Wet-bulb temperature <span class="ct-sym">T*<sub>3</sub></span>', TU(), tD(wbMin(st.T3, P)), tD(st.T3), 0.1, 1, 'Outdoor wet-bulb temperature');
+    cHv.show(tD(st.hv));
+  } else {
+    cHv.config('Relative humidity <span class="ct-sym">φ<sub>3</sub></span>', '%', 5, 100, 0.1, 1, 'Outdoor relative humidity');
+    cHv.show(st.hv);
+  }
+  $('ct-hk').value = st.hk; $('ct-pk').value = st.pk; $('ct-size').value = String(st.tons);
+  cP.el.hidden = st.pk !== 'custom';
+  cP.config('Pressure <span class="ct-sym">p</span>', ip() ? 'psia' : 'kPa', pD(60), pD(110), ip() ? 0.01 : 0.1, ip() ? 2 : 1, 'Atmospheric pressure');
+  cP.show(pD(pressure()));
+  cT1.config('Hot water temperature <span class="ct-sym">T<sub>1</sub></span>', TU(), tD(10), tD(60), sfx, 1, 'Hot water temperature from the chiller');
+  cT1.show(tD(st.T1));
+  cG.config('Water flow', 'gal/min', 0.25 * dg, 1.5 * dg, gstep(dg), 0, 'Condenser water flow, gallons per minute');
+  cG.show(st.gpm);
+  cApp.config('Approach to the wet bulb <span class="ct-sym">T<sub>2</sub> − T*<sub>3</sub></span>', TU(), dD(5 / 9), dD(20), 0.1, 1, 'Approach to the wet-bulb temperature');
+  cApp.show(dD(st.app));
+  cN.config('Fan speed <span class="ct-sym">N</span>', '%', 30, 100, 1, 0, 'Fan speed in percent of full speed');
+  cN.show(st.N);
+  cC.config('Cycles of concentration <span class="ct-sym">C</span>', 'cycles', 1.5, 10, 0.1, 1, 'Cycles of concentration');
+  cC.show(st.coc);
+  cD.config('Drift loss <span class="ct-sym">d</span>', '% of flow', 0, 0.2, 0.001, 3, 'Drift loss in percent of the circulating water');
+  cD.show(st.drift);
+  cPhi4.config('Exit air relative humidity <span class="ct-sym">φ<sub>4</sub></span>', '%', 80, 100, 0.5, 1, 'Exit air relative humidity');
+  cPhi4.show(st.phi4);
+  cT5.config('Makeup water temperature <span class="ct-sym">T<sub>5</sub></span>', TU(), tD(1), tD(40), sfx, 1, 'Makeup water temperature');
+  cT5.show(tD(st.T5));
+  cLG.config('Design water-to-air ratio <span class="ct-sym">L/G</span>', 'kg/kg', 0.6, 2, 0.05, 2, 'Design water to dry air mass flow ratio');
+  cLG.show(st.LG);
+  cDp.config('Fan total pressure at full speed <span class="ct-sym">Δp<sub>d</sub></span>', ip() ? 'in. w.g.' : 'Pa', ip() ? 75 / PA_INWG : 75, ip() ? 375 / PA_INWG : 375, ip() ? 0.01 : 1, ip() ? 2 : 0, 'Fan total pressure at full speed');
+  cDp.show(ip() ? st.dp / PA_INWG : st.dp);
+  cEta.config('Fan, drive and motor efficiency <span class="ct-sym">η</span>', '%', 30, 85, 1, 0, 'Fan, drive and motor efficiency');
+  cEta.show(st.eta);
+}
+
+/* ----- Rendering ----- */
+var last = null, queued = false, touched = false;
+function changed() {
+  touched = true;
+  if (!queued) { queued = true; requestAnimationFrame(function () { queued = false; render(); }); }
+}
+function render() {
+  normalize();
+  var r = solveTower(inputs());
+  last = r;
+  syncControls(r);
+  setScale(r);
+  drawNotesIn(r);
+  if (touched) writeHash();
+  updateTower(r); drawCbar(); drawTiles(r); drawNotes(r);
+  drawChart(r); drawHT(r); drawWater(r); drawRates(r); drawStates(r); drawSteps(r); drawMatlab(r);
+  var sk = function (id, v) { $(id).textContent = v; };
+  sk('sk-t2', r.T2 >= 0 ? fT(r.T2) : '–'); sk('sk-t4', r.ok ? fT(r.s4.T) : '–'); sk('sk-m', r.ok ? fFlow(r.M) : '–'); sk('sk-f', fPow(r.Pfan));
+}
+function drawNotesIn(r) {
+  var s3 = r.s3, d = r.d;
+  $('ct-air-note').innerHTML = (st.hk === 'twb' ? 'φ<sub>3</sub> = ' + fPhi(s3.phi) : 'Wet bulb <i>T</i>*<sub>3</sub> = ' + fT(s3.Twb)) +
+    ' · dew point ' + fT(s3.Tdp) + '<br>ω<sub>3</sub> = ' + fW(s3.W) + ' · <i>h</i><sub>3</sub> = ' + fH(s3.h) + ' · <i>p</i> = ' + fPk(r.P);
+  $('ct-w-note').innerHTML = 'Water mass flow ' + fMass(r.mw) + '. The cold water returns at the wet bulb plus the approach: <i>T</i><sub>2</sub> = ' + fT(r.T2) + '.';
+  $('ct-t-note').innerHTML = 'At full speed the fan moves ' + fAir(d.V) + ' and uses ' + fPow(d.Pfan) + ' (' + fPow2(d.Pfan) + '). Design flow ' + fix(d.gpm, 0) + ' gal/min.';
+  $('ct-wt-note').innerHTML = 'Blowdown keeps the dissolved minerals at ' + fix(st.coc, 1) + ' times their level in the makeup water.';
+  $('ct-more-note').innerHTML = 'Design point: ' + fix(d.gpm, 0) + ' gal/min cooled from 95 to 85 °F at a 78 °F wet bulb' + (ip() ? '' : ' (35 to 29.4 °C, 25.6 °C wet bulb)') + ', sea level, with <i>L</i>/<i>G</i> = ' + fix(st.LG, 2) +
+    '; the exit air there is ' + fT(d.T4) + '. Fan power at full speed <i>V̇</i>Δ<i>p</i>/η = ' + fPow(d.Pfan) + '.';
+}
+
+/* ----- The tower picture: built once, then recolored and relabeled ----- */
+var TV = null;
+function ln(p, x1, y1, x2, y2, a) { a = a || {}; a.x1 = x1; a.y1 = y1; a.x2 = x2; a.y2 = y2; return S('line', a, p); }
+function pipe(g, d, w) {
+  S('path', { d: d, stroke: DARK, 'stroke-width': w + 4, fill: 'none', 'stroke-linejoin': 'round' }, g);
+  var c = S('path', { d: d, stroke: '#9aa5b1', 'stroke-width': w, fill: 'none', 'stroke-linejoin': 'round' }, g);
+  S('path', { d: d, stroke: 'rgba(255,255,255,.85)', 'stroke-width': 1.8, fill: 'none', 'class': 'ct-pipe' }, g);
+  return c;
+}
+function airArrow(g, d, ex, ey) {
+  S('path', { d: d, stroke: DARK, 'stroke-width': 8.5, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', opacity: 0.55 }, g);
+  var c = S('path', { d: d, 'stroke-width': 5, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, g);
+  S('path', { d: d, stroke: 'rgba(255,255,255,.9)', 'stroke-width': 1.6, fill: 'none', 'class': 'ct-air' }, g);
+  var h = S('path', { d: 'M' + ex + ' ' + (ey - 10) + 'L' + (ex - 6.5) + ' ' + (ey + 1) + 'L' + (ex + 6.5) + ' ' + (ey + 1) + 'Z', stroke: DARK, 'stroke-width': 1.2 }, g);
+  return [c, h];
+}
+function badge(g, x, y, n) {
+  S('circle', { cx: x, cy: y, r: 9, fill: NAVY }, g);
+  S('text', { x: x, y: y + 4, 'text-anchor': 'middle', 'class': 'num' }, g, n);
+}
+function initTower() {
+  var svg = $('ct-svg'), d = S('defs', {}, svg), i, x;
+  TV = { gw: [], ga: [], gl: [], spray: [], rain: [], airIn: [], airOut: [], drops: [], marks: {} };
+  var gw = S('linearGradient', { id: 'ct-gw', gradientUnits: 'userSpaceOnUse', x1: 0, y1: 196, x2: 0, y2: 344 }, d);
+  var ga = S('linearGradient', { id: 'ct-ga', gradientUnits: 'userSpaceOnUse', x1: 0, y1: 344, x2: 0, y2: 196 }, d);
+  for (i = 0; i <= 8; i++) { TV.gw.push(S('stop', { offset: i / 8 }, gw)); TV.ga.push(S('stop', { offset: i / 8 }, ga)); }
+  var gl = S('linearGradient', { id: 'ct-gl', x1: 0, y1: 1, x2: 0, y2: 0 }, d);
+  for (i = 0; i <= 6; i++) TV.gl.push(S('stop', { offset: i / 6 }, gl));
+  var pat = S('pattern', { id: 'ct-pf', width: 12, height: 16, patternUnits: 'userSpaceOnUse' }, d);
+  S('path', { d: 'M6 0Q10 4 6 8Q2 12 6 16', stroke: '#4b6074', 'stroke-width': 1.3, fill: 'none' }, pat);
+  var root = S('g', {}, svg);
+  // chiller
+  var ch = S('g', {}, root);
+  S('rect', { x: 24, y: 252, width: 172, height: 100, rx: 10, fill: '#f3f1ec', stroke: WALL, 'stroke-width': 2 }, ch);
+  S('text', { x: 110, y: 277, 'text-anchor': 'middle', 'class': 'lb b' }, ch, 'Water-cooled chiller');
+  S('text', { x: 110, y: 295, 'text-anchor': 'middle', 'class': 'lb s' }, ch, 'its condenser rejects');
+  TV.chQ = S('text', { x: 110, y: 315, 'text-anchor': 'middle', 'class': 'lb b' }, ch, '');
+  TV.chQ2 = S('text', { x: 110, y: 333, 'text-anchor': 'middle', 'class': 'lb s' }, ch, '');
+  // pipes: hot water to the tower, cold water back, makeup in, blowdown out
+  var pg = S('g', {}, root);
+  TV.hot = pipe(pg, 'M110 252L110 162L294 162', 7);
+  TV.cold = pipe(pg, 'M282 452L176 452L176 352', 7);
+  TV.mk = pipe(pg, 'M698 438L582 438', 5);
+  TV.bd = pipe(pg, 'M556 468L556 500L698 500', 5);
+  S('circle', { cx: 230, cy: 452, r: 15, fill: '#e4e9ee', stroke: WALL, 'stroke-width': 2 }, pg);
+  S('path', { d: 'M237 444L222 452L237 460Z', fill: WALL }, pg);
+  S('path', { d: 'M650 430L664 446L664 430L650 446Z', fill: '#e4e9ee', stroke: WALL, 'stroke-width': 1.5 }, pg);
+  // tower interior, fill, eliminators, distribution
+  var tw = S('g', {}, root);
+  S('rect', { x: 280, y: 118, width: 300, height: 352, fill: DARK }, tw);
+  S('rect', { x: 290, y: 196, width: 280, height: 148, fill: 'url(#ct-pf)' }, tw);
+  var zz = 'M286 131';
+  for (x = 286; x < 572; x += 12) zz += 'L' + (x + 6) + ' 124L' + (x + 12) + ' 138';
+  S('path', { d: zz, stroke: '#8fa3b6', 'stroke-width': 1.6, fill: 'none' }, tw);
+  S('text', { x: 430, y: 152, 'text-anchor': 'middle', 'class': 'part', style: 'fill:#c3cfdb' }, tw, 'drift eliminators');
+  for (i = 0; i < 9; i++) {
+    x = 306 + 31 * i;
+    TV.spray.push(S('path', { d: 'M' + x + ' 172L' + (x - 13) + ' 194L' + (x + 13) + ' 194Z', opacity: 0.5 }, tw));
+    S('path', { d: 'M' + (x - 4) + ' 166L' + (x + 4) + ' 166L' + x + ' 173Z', fill: '#9aa5b1' }, tw);
+  }
+  TV.hdr = S('rect', { x: 292, y: 157, width: 276, height: 10, rx: 4, stroke: DARK, 'stroke-width': 1.5 }, tw);
+  for (i = 0; i < 8; i++) {
+    x = 321.5 + 31 * i;
+    ln(tw, x, 344, x, 206, { stroke: 'url(#ct-ga)', 'stroke-width': 2.6, opacity: 0.85, 'stroke-linecap': 'round', 'class': 'ct-air' });
+    TV.chev = TV.chev || [];
+    TV.chev.push(S('path', { d: 'M' + (x - 5) + ' 207L' + x + ' 200L' + (x + 5) + ' 207', 'stroke-width': 2.2, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, tw));
+  }
+  for (i = 0; i < 9; i++) { x = 306 + 31 * i; ln(tw, x, 196, x, 344, { stroke: 'url(#ct-gw)', 'stroke-width': 4.2, 'stroke-linecap': 'round', 'class': 'ct-water' }); }
+  S('text', { x: 296, y: 210, 'class': 'part', style: 'fill:#c3cfdb' }, tw, 'fill');
+  for (i = 0; i < 10; i++) { x = 296 + 29 * i + (i % 2) * 7; TV.rain.push(ln(tw, x, 348, x, 416, { 'stroke-width': 3.6, 'stroke-linecap': 'round', 'class': 'ct-rain' })); }
+  TV.basin = S('rect', { x: 283, y: 420, width: 294, height: 48 }, tw);
+  var wave = 'M284 424';
+  for (x = 284; x < 574; x += 18) wave += 'Q' + (x + 4.5) + ' 420 ' + (x + 9) + ' 424T' + (x + 18) + ' 424';
+  S('path', { d: wave, stroke: 'rgba(255,255,255,.6)', 'stroke-width': 1.5, fill: 'none' }, tw);
+  S('text', { x: 430, y: 452, 'text-anchor': 'middle', 'class': 'part', style: 'fill:#fff' }, tw, 'basin');
+  // walls with louvered air inlets, deck, fan stack and fan
+  var wl = { stroke: WALL, 'stroke-width': 4, 'stroke-linecap': 'square' };
+  ln(tw, 280, 118, 280, 352, copy(wl)); ln(tw, 280, 420, 280, 470, copy(wl)); ln(tw, 580, 118, 580, 352, copy(wl)); ln(tw, 580, 420, 580, 470, copy(wl));
+  ln(tw, 280, 470, 580, 470, copy(wl)); ln(tw, 274, 118, 586, 118, { stroke: WALL, 'stroke-width': 5 });
+  for (var y = 356; y < 418; y += 9) { ln(tw, 272, y, 288, y + 7, { stroke: '#7b8a99', 'stroke-width': 2 }); ln(tw, 588, y, 572, y + 7, { stroke: '#7b8a99', 'stroke-width': 2 }); }
+  S('path', { d: 'M352 118C358 96 358 76 346 50L514 50C502 76 502 96 508 118Z', fill: '#e4e9ee', stroke: WALL, 'stroke-width': 2 }, tw);
+  S('rect', { x: 427, y: 106, width: 6, height: 12, fill: WALL }, tw);
+  TV.blades = [S('ellipse', { cx: 430, cy: 103, rx: 66, ry: 4.5, fill: '#5b6b7b', 'class': 'ct-blade' }, tw), S('ellipse', { cx: 430, cy: 103, rx: 66, ry: 4.5, fill: '#7d8ea0', 'class': 'ct-blade b2' }, tw)];
+  S('circle', { cx: 430, cy: 103, r: 6, fill: DARK }, tw);
+  // air: in through the louvers, up through the fill, out of the fan stack
+  var ag = S('g', {}, root);
+  [['M202 372L292 372Q318 372 318 350', 318, 350], ['M202 400L292 400Q346 400 346 350', 346, 350],
+   ['M674 372L568 372Q542 372 542 350', 542, 350], ['M674 400L568 400Q514 400 514 350', 514, 350]].forEach(function (a) { TV.airIn.push(airArrow(ag, a[0], a[1], a[2])); });
+  [['M394 50L386 16', 386, 16], ['M430 50L430 10', 430, 10], ['M466 50L474 16', 474, 16]].forEach(function (a) { TV.airOut.push(airArrow(ag, a[0], a[1], a[2])); });
+  [[408, 42], [452, 38], [432, 46]].forEach(function (p, i) { TV.drops.push(S('circle', { cx: p[0], cy: p[1], r: 2.2, fill: '#5da5da', 'class': 'ct-drop', style: 'animation-delay:' + (-0.4 * i) + 's' }, ag)); });
+  TV.plume = S('g', { visibility: 'hidden' }, root);
+  [[396, 24, 28, 15], [440, 12, 32, 17], [480, 24, 24, 13], [428, 34, 26, 12]].forEach(function (c, i) {
+    S('ellipse', { cx: c[0], cy: c[1], rx: c[2], ry: c[3], fill: '#e8edf1', stroke: '#aab6c2', 'stroke-width': 1.5, 'class': 'ct-puff', style: 'animation-delay:' + (-1.1 * i) + 's' }, TV.plume);
+  });
+  // warnings drawn over the fill
+  TV.warn = S('g', { visibility: 'hidden' }, root);
+  S('rect', { x: 287, y: 193, width: 286, height: 154, fill: 'rgba(192,57,43,.18)', stroke: '#e74c3c', 'stroke-width': 2.5, 'stroke-dasharray': '7 5' }, TV.warn);
+  TV.warnT = S('text', { x: 430, y: 266, 'text-anchor': 'middle', 'class': 'warnt' }, TV.warn, '');
+  TV.warnT2 = S('text', { x: 430, y: 284, 'text-anchor': 'middle', 'class': 'warnt', style: 'font-size:11.5px' }, TV.warn, '');
+  // labels
+  var lb = S('g', {}, root);
+  badge(lb, 126, 136, 1); TV.l1 = S('text', { x: 140, y: 140, 'class': 'lb b' }, lb, ''); TV.l1b = S('text', { x: 140, y: 155, 'class': 'lb s' }, lb, '');
+  badge(lb, 34, 382, 3); TV.l3 = S('text', { x: 48, y: 386, 'class': 'lb b' }, lb, 'Outdoor air');
+  TV.l3b = S('text', { x: 48, y: 402, 'class': 'lb' }, lb, ''); TV.l3c = S('text', { x: 48, y: 417, 'class': 'lb s' }, lb, '');
+  badge(lb, 126, 490, 2); TV.l2 = S('text', { x: 140, y: 494, 'class': 'lb b' }, lb, '');
+  badge(lb, 528, 18, 4); TV.l4 = S('text', { x: 542, y: 22, 'class': 'lb b' }, lb, ''); TV.l4b = S('text', { x: 542, y: 37, 'class': 'lb s' }, lb, '');
+  badge(lb, 598, 422, 5); TV.l5 = S('text', { x: 612, y: 426, 'class': 'lb b' }, lb, '');
+  TV.lB = S('text', { x: 566, y: 522, 'class': 'lb s' }, lb, '');
+  TV.lF = S('text', { x: 338, y: 88, 'text-anchor': 'end', 'class': 'lb b' }, lb, ''); TV.lF2 = S('text', { x: 338, y: 103, 'text-anchor': 'end', 'class': 'lb s' }, lb, '');
+  // temperature ladder: range and approach
+  var ld = S('g', {}, root);
+  S('text', { x: 712, y: 66, 'class': 'lb b' }, ld, 'Temperatures');
+  S('rect', { x: 712, y: 80, width: 8, height: 252, rx: 4, fill: 'url(#ct-gl)', stroke: 'rgba(20,41,61,.25)' }, ld);
+  TV.brR = S('path', { stroke: NAVY, 'stroke-width': 1.5, fill: 'none' }, ld); TV.brRt = S('text', { 'class': 'lb s', 'text-anchor': 'middle' }, ld, '');
+  TV.brA = S('path', { stroke: WBG, 'stroke-width': 1.5, fill: 'none' }, ld); TV.brAt = S('text', { 'class': 'lb s', 'text-anchor': 'middle' }, ld, '');
+  ['T1', 'T4', 'T3', 'T2', 'wb'].forEach(function (k) {
+    TV.marks[k] = { lead: S('path', { stroke: '#9aa5b1', 'stroke-width': 1, fill: 'none' }, ld), dot: S('circle', { cx: 716, r: 5.5, stroke: DARK, 'stroke-width': 1.5 }, ld), txt: S('text', { x: 734, 'class': 'lb' }, ld, '') };
+  });
+}
+function profAt(prof, z, key) {
+  var i;
+  for (i = 1; i < prof.length; i++) if (prof[i].z >= z) break;
+  i = Math.min(i, prof.length - 1);
+  var a = prof[i - 1], b = prof[i], f = b.z > a.z ? (z - a.z) / (b.z - a.z) : 0;
+  return a[key] + clamp(f, 0, 1) * (b[key] - a[key]);
+}
+function updateTower(r) {
+  var svg = $('ct-svg'), ok = r.ok, gray = '#9aa5b1', i;
+  var c1 = tcol(r.T1), c2 = r.T2 >= 0 ? tcol(r.T2) : gray, c3 = tcol(r.s3.T), c4 = ok ? tcol(r.s4.T) : gray, c5 = tcol(r.T5);
+  TV.hot.setAttribute('stroke', c1); TV.hdr.setAttribute('fill', c1);
+  TV.spray.forEach(function (e) { e.setAttribute('fill', c1); });
+  TV.cold.setAttribute('stroke', c2); TV.basin.setAttribute('fill', c2); TV.bd.setAttribute('stroke', c2);
+  TV.rain.forEach(function (e) { e.setAttribute('stroke', c2); });
+  TV.mk.setAttribute('stroke', c5);
+  TV.airIn.forEach(function (a) { a[0].setAttribute('stroke', c3); a[1].setAttribute('fill', c3); });
+  TV.airOut.forEach(function (a) { a[0].setAttribute('stroke', c4); a[1].setAttribute('fill', c4); });
+  for (i = 0; i <= 8; i++) {
+    var o = i / 8;
+    TV.gw[i].setAttribute('stop-color', ok ? tcol(profAt(r.prof, 1 - o, 'Tw')) : (r.T2 >= 0 ? tcol(r.T1 + o * (r.T2 - r.T1)) : c1));
+    TV.ga[i].setAttribute('stop-color', ok ? tcol(profAt(r.prof, o, 'Ta')) : c3);
+  }
+  TV.chev.forEach(function (e) { e.setAttribute('stroke', ok ? tcol(profAt(r.prof, 0.93, 'Ta')) : c3); });
+  // flow speeds: water with the flow rate, air and fan blades with the fan speed
+  var flowing = ok || r.err === 'air';
+  svg.style.setProperty('--wd', (0.9 * clamp(GPM_TON * st.tons / st.gpm, 0.4, 3)).toFixed(2) + 's');
+  svg.style.setProperty('--ad', (1.1 * 100 / st.N).toFixed(2) + 's');
+  svg.style.setProperty('--fd', (0.42 * 100 / st.N).toFixed(2) + 's');
+  svg.classList.toggle('ct-still', !anim || !flowing);
+  TV.plume.setAttribute('visibility', ok && r.plume.visible ? 'visible' : 'hidden');
+  TV.plume.setAttribute('opacity', ok ? clamp(0.45 + 400 * r.plume.exmax, 0.45, 1).toFixed(2) : 0);
+  TV.drops.forEach(function (e) { e.setAttribute('visibility', ok && st.drift > 0 ? 'visible' : 'hidden'); });
+  var bad = !ok || !r.feasible;
+  TV.warn.setAttribute('visibility', bad ? 'visible' : 'hidden');
+  if (bad) {
+    TV.warnT.textContent = r.err === 'nocool' ? 'No cooling possible' : r.err === 'freeze' ? 'The water would freeze' : 'Not enough air';
+    TV.warnT2.textContent = r.err === 'nocool' ? 'hot water below wet bulb + approach' : r.err === 'freeze' ? 'raise the approach' : 'the air cannot carry this heat';
+  }
+  // labels
+  TV.l1.textContent = 'Hot water ' + fT(r.T1); TV.l1b.textContent = fix(st.gpm, 0) + ' gal/min' + (ip() ? '' : ' (' + fix(r.mw, 1) + ' kg/s)');
+  TV.l3b.textContent = fT(r.s3.T) + ', ' + fix(r.s3.phi, 0) + '% RH'; TV.l3c.textContent = 'wet bulb ' + fT(r.s3.Twb);
+  TV.l2.textContent = r.T2 >= 0 ? 'Cold water ' + fT(r.T2) + ', back to the chiller' : 'Cold water';
+  TV.l4.textContent = ok ? 'Exit air ' + fT(r.s4.T) + ', ' + fix(r.s4.phi, 0) + '% RH' : 'Exit air';
+  TV.l4b.textContent = ok ? fFlow(r.E) + ' of water evaporated' : '';
+  TV.l5.textContent = ok ? 'Makeup ' + fFlow(r.M) : 'Makeup';
+  TV.lB.textContent = ok ? 'Blowdown ' + fFlow(r.B) + ' · drift ' + fFlow(r.D) : 'Blowdown';
+  TV.lF.textContent = 'Fan ' + fix(st.N, 0) + '%'; TV.lF2.textContent = fPow(r.Pfan);
+  TV.chQ.textContent = r.Q > 0 ? (ip() ? fTons(r.Q) : fix(r.Q, 0) + ' kW') : '–';
+  TV.chQ2.textContent = r.Q > 0 ? (ip() ? fQ(r.Q) : fTons(r.Q) + ' (15,000 Btu/h each)') : 'no heat rejected';
+  // ladder
+  var lv = [r.T1, r.s3.T, r.s3.Twb];
+  if (r.T2 >= 0) lv.push(r.T2);
+  if (ok) lv.push(r.s4.T);
+  var Llo = Math.min.apply(null, lv), Lhi = Math.max.apply(null, lv), lpad = 0.06 * Math.max(Lhi - Llo, 4);
+  Llo -= lpad; Lhi += lpad;
+  var Yl = function (T) { return 332 - clamp((T - Llo) / (Lhi - Llo), 0, 1) * 252; };
+  for (i = 0; i <= 6; i++) TV.gl[i].setAttribute('stop-color', tcol(Llo + (Lhi - Llo) * i / 6));
+  var items = [['T1', r.T1, 'hot water'], ['T4', ok ? r.s4.T : NaN, 'exit air'], ['T3', r.s3.T, 'outdoor air'], ['T2', r.T2, 'cold water'], ['wb', r.s3.Twb, 'wet bulb']];
+  var shown = items.filter(function (it) { return isFinite(it[1]) && !(it[0] === 'T2' && !(r.T2 >= 0)); }).map(function (it) { return { k: it[0], T: it[1], y: Yl(it[1]), ly: Yl(it[1]), name: it[2] }; });
+  shown.sort(function (a, b) { return a.y - b.y; });
+  for (i = 1; i < shown.length; i++) if (shown[i].ly < shown[i - 1].ly + 15) shown[i].ly = shown[i - 1].ly + 15;
+  var over = shown.length ? shown[shown.length - 1].ly - 338 : 0;
+  if (over > 0) shown.forEach(function (s) { s.ly -= over; });
+  Object.keys(TV.marks).forEach(function (k) { var m = TV.marks[k]; m.dot.setAttribute('visibility', 'hidden'); m.txt.textContent = ''; m.lead.setAttribute('d', ''); });
+  shown.forEach(function (s) {
+    var m = TV.marks[s.k];
+    m.dot.setAttribute('visibility', 'visible'); m.dot.setAttribute('cy', s.y.toFixed(1)); m.dot.setAttribute('fill', tcol(s.T));
+    m.lead.setAttribute('d', 'M722 ' + s.y.toFixed(1) + 'L730 ' + s.ly.toFixed(1));
+    m.txt.setAttribute('y', (s.ly + 4).toFixed(1)); m.txt.textContent = fix(tD(s.T), 1) + ' ' + s.name;
+  });
+  var bracket = function (path, txt, Ta, Tb, label) {
+    if (!(Ta > Tb) || !isFinite(Ta) || !isFinite(Tb)) { path.setAttribute('d', ''); txt.textContent = ''; return; }
+    var ya = Yl(Ta), yb = Yl(Tb), ym = 0.5 * (ya + yb);
+    path.setAttribute('d', 'M708 ' + ya.toFixed(1) + 'L702 ' + ya.toFixed(1) + 'L702 ' + yb.toFixed(1) + 'L708 ' + yb.toFixed(1));
+    txt.textContent = label;
+    if (yb - ya >= 7 * label.length) { txt.setAttribute('x', 696); txt.setAttribute('y', ym.toFixed(1)); txt.setAttribute('transform', 'rotate(-90 696 ' + ym.toFixed(1) + ')'); txt.setAttribute('text-anchor', 'middle'); }
+    else { txt.setAttribute('x', 698); txt.setAttribute('y', (ym + 4).toFixed(1)); txt.removeAttribute('transform'); txt.setAttribute('text-anchor', 'end'); }
+  };
+  bracket(TV.brR, TV.brRt, r.T1, r.T2 >= 0 ? r.T2 : NaN, 'range ' + fdT(r.range));
+  bracket(TV.brA, TV.brAt, r.T2 >= 0 ? r.T2 : NaN, r.s3.Twb, 'approach ' + fdT(st.app));
+  $('ct-svg-desc').textContent = 'Cooling tower: hot water ' + fT(r.T1) + ' enters at the top; outdoor air ' + fT(r.s3.T) + ' enters at the bottom' +
+    (ok ? '; cold water leaves at ' + fT(r.T2) + ' and the exit air at ' + fT(r.s4.T) + '.' : '. ' + noteFor(r));
+}
+function drawCbar() {
+  var stops = [], i;
+  for (i = 0; i <= 10; i++) stops.push(tcol(tlo + (thi - tlo) * i / 10) + ' ' + (i * 10) + '%');
+  $('ct-cbar').style.background = 'linear-gradient(90deg,' + stops.join(',') + ')';
+  $('ct-cbar-title').textContent = 'Water and air temperature, ' + TU();
+  var a = tD(tlo), b = tD(thi), s = niceStep(b - a, 5), h = '', v;
+  for (v = ceilTo(a, s); v <= b + 1e-9; v += s) h += '<span style="left:' + ((v - a) / (b - a) * 100).toFixed(2) + '%">' + fix(v, s < 1 ? 1 : 0) + '</span>';
+  $('ct-cbar-ticks').innerHTML = h;
+}
+
+/* ----- Result tiles and notes ----- */
+function tile(k, v, s, sw, off) {
+  return '<div class="ct-tile' + (off ? ' off' : '') + '"><div class="k">' + (sw ? '<span class="ct-swatch" style="background:' + sw + '"></span>' : '') +
+    '<span>' + k + '</span></div><div class="v">' + v + '</div><div class="s">' + s + '</div></div>';
+}
+function noteFor(r) {
+  if (r.err === 'nocool') return 'The hot water must be warmer than the coldest water the tower can make, the wet bulb plus the approach (' + fT(r.T2) + '). Raise the hot water temperature or lower the approach.';
+  if (r.err === 'freeze') return 'The wet bulb plus the approach is below freezing. In cold weather the controls slow or stop the fan; raise the approach.';
+  return 'The fan moves too little air to carry this much heat. Raise the fan speed or the approach.';
+}
+function drawTiles(r) {
+  var h = [], ok = r.ok;
+  h.push(tile('Cold water back to the chiller, <i>T</i><sub>2</sub>', r.T2 >= 0 ? fT(r.T2) : '–', 'wet bulb ' + fT(r.s3.Twb) + ' + approach ' + fdT(st.app), r.T2 >= 0 ? tcol(r.T2) : null, !ok));
+  h.push(tile('Range, <i>T</i><sub>1</sub> − <i>T</i><sub>2</sub>', r.range > 0 ? fdT(r.range) : '–', r.range > 0 ? 'effectiveness ' + pct(r.eff) + ' of the most possible' : 'no cooling', null, !ok));
+  h.push(tile('Heat rejected', r.Q > 0 ? (ip() ? fTons(r.Q) : fix(r.Q, 0) + ' kW') : '–', r.Q > 0 ? (ip() ? fQ(r.Q) + ' · ' + fix(r.Q, 0) + ' kW' : fTons(r.Q) + ' · ' + fix(r.Q * BTUH_KW / 1e6, 2) + ' million Btu/h') : '', null, !ok));
+  h.push(tile('Exit air, state 4', ok ? fT(r.s4.T) : '–', ok ? 'φ<sub>4</sub> = ' + fPhi(r.s4.phi) + ' · ω<sub>4</sub> = ' + fW(r.s4.W) : '', ok ? tcol(r.s4.T) : null, !ok));
+  h.push(tile('Makeup water', ok ? fFlow(r.M) : '–', ok ? 'evaporation ' + fFlow(r.E) + ' + blowdown ' + fFlow(r.B) + ' + drift' : '', null, !ok));
+  h.push(tile('Fan power', fPow(r.Pfan), fPow2(r.Pfan) + ' · ' + fAir(r.V) + ' at ' + fix(st.N, 0) + '%', null, false));
+  $('ct-tiles').innerHTML = h.join('');
+}
+function drawNotes(r) {
+  var n = [];
+  if (!r.ok) n.push('<li class="warn"><b>' + (r.err === 'nocool' ? 'No cooling.' : r.err === 'freeze' ? 'Freezing.' : 'Not enough air.') + '</b> ' + noteFor(r) + (r.err === 'air' && isFinite(r.Nmin) ? ' The fan needs at least ' + fix(r.Nmin, 0) + '% speed.' : '') + '</li>');
+  else {
+    if (!r.feasible) n.push('<li class="warn"><b>Not enough air for this approach.</b> The air leaving at ' + fH(r.s4.h) + ' would hold more energy than saturated air at the water temperature, so the air line crosses the saturation curve (see the enthalpy diagram). ' +
+      (r.Nmin <= 100 ? 'Run the fan at more than ' + fix(Math.ceil(r.Nmin), 0) + '% or raise the approach.' : 'Even full speed is not enough: raise the approach or lower the water flow.') + '</li>');
+    if (r.T2 < 4.44) n.push('<li class="warn"><b>Freezing risk.</b> The basin water is below about 40 °F (4.4 °C). In winter the controls slow or stop the fan, or bypass the tower.</li>');
+    if (r.plume.visible) n.push('<li><b>Visible plume.</b> Mixing the saturated exit air with the outdoor air crosses the saturation curve (dashed line on the chart), so up to ' + fW(r.plume.exmax) + ' condenses as fog.</li>');
+    if (r.feasible) n.push('<li><b>Evaporation</b> is ' + pct(r.E / r.mw, 2) + ' of the circulating water, ' + fix(100 * r.E / r.mw / (1.8 * r.range / 10), 2) + '% per 10 °F' + (ip() ? '' : ' (5.6 °C)') + ' of range (a common rule of thumb is about 1%).</li>');
+    if (st.N < 100) n.push('<li><b>Fan laws:</b> at ' + fix(st.N, 0) + '% speed the fan moves ' + fix(st.N, 0) + '% of its full airflow with ' + pct(Math.pow(st.N / 100, 3), 1) + ' of its full-speed power.</li>');
+  }
+  $('ct-notes').innerHTML = n.join('');
+}
+
+/* ----- Psychrometric chart (in the style of psychplotting.m) ----- */
+var CH = null;
+function drawChart(r) {
+  var box = $('ct-chart'), P = r.P, s3 = r.s3, ok = r.ok, k, x, pts;
+  var Ts = [s3.T, r.T1], Ws = [s3.W];
+  if (ok) { Ts.push(r.s4.T); Ws.push(r.s4.W, Wsat(r.T1, P)); }
+  var tmax = Math.max.apply(null, Ts), wmax = wD(Math.max.apply(null, Ws)) * 1.06;
+  var xlo = ip() ? 30 : 0, xhi = ip() ? Math.max(110, ceilTo(tD(tmax) + 4, 10)) : Math.max(45, ceilTo(tmax + 2, 5));
+  var whi = ip() ? Math.max(180, ceilTo(wmax, 20)) : Math.max(25, ceilTo(wmax, 5));
+  var keep = box.querySelector('.ct-tip');
+  clear(box);
+  var w = Math.max(300, Math.round(box.clientWidth || 600)), narrow = w < 480, h = Math.round(clamp(w * 0.7, 300, 520));
+  var m = { l: 8, r: narrow ? 46 : 56, t: 12, b: 44 }, pw = w - m.l - m.r, ph = h - m.t - m.b;
+  var X = function (v) { return m.l + (v - xlo) / (xhi - xlo) * pw; }, Y = function (v) { return m.t + ph - v / whi * ph; };
+  var XT = function (T) { return X(tD(T)); }, YW = function (W) { return Y(wD(W)); };
+  var pathTW = function (a) { var d = '', i; for (i = 0; i < a.length; i++) d += (i ? 'L' : 'M') + XT(a[i][0]).toFixed(1) + ' ' + YW(a[i][1]).toFixed(1); return d; };
+  CH = { X: X, Y: Y, m: m, pw: pw, ph: ph, xlo: xlo, xhi: xhi, whi: whi, P: P, w: w, h: h };
+  var svg = S('svg', { viewBox: '0 0 ' + w + ' ' + h, role: 'img', 'aria-label': 'Psychrometric chart with the outdoor air (state 3) and the exit air (state 4)' + (ok ? ': ' + fT(s3.T) + ', ' + fPhi(s3.phi) + ' to ' + fT(r.s4.T) + ', ' + fPhi(r.s4.phi) + '.' : '.') }, box);
+  var cp = S('clipPath', { id: 'ct-clip' }, S('defs', {}, svg));
+  S('rect', { x: m.l, y: m.t, width: pw, height: ph }, cp);
+  var g = S('g', { 'clip-path': 'url(#ct-clip)' }, svg), labs = S('g', {}, svg);
+  var Tlo = tI(xlo), Thi = tI(xhi), gstep = ip() ? 10 : 5, busy = [];
+  var free = function (b) { return !busy.some(function (q) { return b[0] < q[2] && b[2] > q[0] && b[1] < q[3] && b[3] > q[1]; }); };
+  // boxes of the labels drawn later: water temperatures, wet bulb and states 3 and 4
+  var wbT = r.s3.Twb;
+  busy.push([XT(wbT) - 80, YW(Wsat(wbT, P)) - 18, XT(wbT) + 4, YW(Wsat(wbT, P)) + 4]);
+  [r.T2, r.T1].forEach(function (T) { if (T >= 0) busy.push([XT(T) - 96, YW(Wsat(T, P)) - 18, XT(T) + 6, YW(Wsat(T, P)) + 6]); });
+  busy.push([XT(s3.T) - 14, YW(s3.W) - 14, XT(s3.T) + 14, YW(s3.W) + 14]);
+  if (ok) busy.push([XT(r.s4.T) - 14, YW(r.s4.W) - 14, XT(r.s4.T) + 14, YW(r.s4.W) + 14]);
+  // dashed guides through the saturation curve (psychplotting.m)
+  for (x = ceilTo(xlo + 0.01, gstep); x < xhi; x += gstep) {
+    var Wg = wD(Wsat(tI(x), P));
+    ln(g, X(x), Y(0), X(x), Y(Math.min(Wg, whi)), { 'class': 'ct-grid' });
+    if (Wg < whi) ln(g, X(x), Y(Wg), X(xhi), Y(Wg), { 'class': 'ct-grid' });
+  }
+  // relative humidity curves, labeled along the right edge or where they leave the top
+  for (var phi = 10; phi <= 100; phi += 10) {
+    pts = [];
+    for (k = 0; k <= 90; k++) { var Tp = Tlo + (Thi - Tlo) * k / 90, Wp = Wphi(Tp, phi, P); pts.push([Tp, Wp]); if (wD(Wp) > whi) break; }
+    S('path', { d: pathTW(pts), 'class': phi === 100 ? 'ct-sat' : 'ct-rh' }, g);
+    (phi === 100 ? [0.93, 0.78, 0.62, 0.46, 0.34, 0.24] : [0.93]).some(function (fr) {
+      var TL = Thi - (Thi - Tlo) * 0.035, top = whi * fr;
+      if (wD(Wphi(TL, phi, P)) > top) TL = root(function (t) { return wD(Wphi(t, phi, P)) - top; }, Tlo, Thi);
+      var dt = (Thi - Tlo) * 0.008, x0 = XT(TL - dt), y0 = YW(Wphi(TL - dt, phi, P)), x1 = XT(TL + dt), y1 = YW(Wphi(TL + dt, phi, P));
+      var ang = Math.atan2(y1 - y0, x1 - x0) * 180 / Math.PI, xl = (x0 + x1) / 2, yl = (y0 + y1) / 2, bx = [xl - 11, yl - 11, xl + 11, yl + 11];
+      if (!free(bx)) return false;
+      S('text', { x: xl, y: yl + 3.5, 'text-anchor': 'middle', transform: 'rotate(' + ang.toFixed(1) + ' ' + xl.toFixed(1) + ' ' + yl.toFixed(1) + ')', 'class': phi === 100 ? 'ct-lab dark' : 'ct-lab' }, labs, phi + '%');
+      busy.push(bx);
+      return true;
+    });
+  }
+  // constant-enthalpy lines, labeled at the saturation curve where there is room
+  var hstep = ip() ? 5 : 10, hlab = ip() ? 10 : 20, hmax = hD(hOf(Thi, whi / (ip() ? 7000 : 1000)));
+  for (var hv = hstep; hv <= hmax; hv += hstep) {
+    var hS = hI(hv), Tsh = Thsat(hS, P), T0 = Math.max(Tsh, Tlo), Te = Math.min(hS / CA, Thi);
+    if (Te <= T0) continue;
+    pts = [];
+    for (k = 0; k <= 8; k++) { var Tk = T0 + (Te - T0) * k / 8; pts.push([Tk, Math.max(0, WofTh(Tk, hS))]); }
+    S('path', { d: pathTW(pts), 'class': 'ct-h' }, g);
+    var lx = XT(Tsh) - 4, ly = YW(Wsat(Tsh, P)) - 4, hb = [lx - 7 * String(hv).length, ly - 10, lx, ly];
+    if (hv % hlab === 0 && Tsh > Tlo + 1 && wD(Wsat(Tsh, P)) < whi - 4 && free(hb)) { S('text', { x: lx, y: ly, 'text-anchor': 'end', 'class': 'ct-lab' }, labs, hv); busy.push(hb); }
+  }
+  svg.appendChild(labs);
+  // axes: dry bulb along the bottom, humidity ratio on the right
+  ln(svg, m.l, Y(0), m.l + pw, Y(0), { 'class': 'ct-axis' });
+  ln(svg, X(xhi), Y(0), X(xhi), Y(whi), { 'class': 'ct-axis' });
+  var xs = ip() ? (pw / (xhi - xlo) * 10 < 30 ? 20 : 10) : (pw / (xhi - xlo) * 5 < 26 ? 10 : 5);
+  for (x = ceilTo(xlo, xs); x <= xhi + 1e-9; x += xs) { ln(svg, X(x), Y(0), X(x), Y(0) + 5, { 'class': 'ct-axis' }); S('text', { x: X(x), y: Y(0) + 18, 'text-anchor': 'middle', 'class': 'ct-tick' }, svg, x); }
+  var ys = ip() ? (ph / whi * 20 < 18 ? 40 : 20) : (ph / whi * 5 < 18 ? 10 : 5);
+  for (var yv = 0; yv <= whi + 1e-9; yv += ys) { ln(svg, X(xhi), Y(yv), X(xhi) + 5, Y(yv), { 'class': 'ct-axis' }); S('text', { x: X(xhi) + 8, y: Y(yv) + 4, 'class': 'ct-tick' }, svg, yv); }
+  S('text', { x: m.l + pw / 2, y: h - 8, 'text-anchor': 'middle', 'class': 'ct-axlab' }, svg, 'Dry-bulb temperature, ' + TU());
+  S('text', { transform: 'translate(' + (w - 8) + ',' + (m.t + ph / 2) + ') rotate(-90)', 'text-anchor': 'middle', 'class': 'ct-axlab' }, svg, 'Humidity ratio ω, ' + WU() + ' dry air');
+  // wet bulb of the outdoor air
+  var wb = [r.s3.Twb, Wsat(r.s3.Twb, P)];
+  S('path', { d: pathTW([[s3.T, s3.W], wb]), stroke: WBG, 'stroke-width': 1.6, 'stroke-dasharray': '6 4', fill: 'none' }, svg);
+  S('circle', { cx: XT(wb[0]), cy: YW(wb[1]), r: 4, fill: WBG, stroke: '#fff', 'stroke-width': 1.5 }, svg);
+  S('text', { x: XT(wb[0]) - 7, y: YW(wb[1]) - 6, 'text-anchor': 'end', 'class': 'ct-lab' }, svg, 'wet bulb ' + fix(tD(wb[0]), 1));
+  // water temperatures on the saturation curve
+  [[r.T2, 'cold water'], [r.T1, 'hot water']].forEach(function (a) {
+    if (!(a[0] >= 0)) return;
+    var xx = XT(a[0]), yy = YW(Wsat(a[0], P));
+    if (yy < m.t) return;
+    S('rect', { x: xx - 4.5, y: yy - 4.5, width: 9, height: 9, fill: tcol(a[0]), stroke: NAVY, 'stroke-width': 1.5 }, svg);
+    S('text', { x: xx - 8, y: yy - 6, 'text-anchor': 'end', 'class': 'ct-lab' }, svg, a[1] + ' ' + fix(tD(a[0]), 1));
+  });
+  if (ok) {
+    // plume: mixing line from 4 back to 3; the part above the saturation curve is fog
+    S('path', { d: pathTW(r.plume.pts), stroke: '#7b8a99', 'stroke-width': 1.4, 'stroke-dasharray': '3 4', fill: 'none' }, svg);
+    if (r.plume.visible) {
+      var fog = r.plume.pts.filter(function (p) { return p[1] > Wsat(p[0], P); });
+      if (fog.length > 1) S('path', { d: pathTW(fog), stroke: '#5da5da', 'stroke-width': 5, 'stroke-linecap': 'round', fill: 'none', opacity: 0.75 }, svg);
+      var fm = fog[Math.floor(fog.length / 2)] || r.plume.pts[1];
+      S('text', { x: XT(fm[0]) + 6, y: YW(fm[1]) + 16, 'class': 'ct-lab dark' }, svg, 'fog');
+    }
+    // the air through the tower
+    var ap = r.prof.map(function (p) { return [p.Ta, p.W]; });
+    S('path', { d: pathTW(ap), stroke: '#fff', 'stroke-width': 7, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', opacity: 0.9 }, svg);
+    S('path', { d: pathTW(ap), stroke: r.feasible ? ACCENT : '#c0392b', 'stroke-width': 3, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, svg);
+    var a2 = ap[ap.length - 1], a1 = ap[ap.length - 4] || ap[0], ux = XT(a2[0]) - XT(a1[0]), uy = YW(a2[1]) - YW(a1[1]), L = Math.sqrt(ux * ux + uy * uy) || 1;
+    ux /= L; uy /= L;
+    var tx = XT(a2[0]) - ux * 8, ty = YW(a2[1]) - uy * 8, bx = tx - ux * 11, by = ty - uy * 11;
+    S('path', { d: 'M' + tx.toFixed(1) + ' ' + ty.toFixed(1) + 'L' + (bx - uy * 5.5).toFixed(1) + ' ' + (by + ux * 5.5).toFixed(1) + 'L' + (bx + uy * 5.5).toFixed(1) + ' ' + (by - ux * 5.5).toFixed(1) + 'Z', fill: r.feasible ? ACCENT : '#c0392b', stroke: '#fff', 'stroke-width': 1 }, svg);
+  }
+  var pts34 = [[s3.T, s3.W, '3']];
+  if (ok) pts34.push([r.s4.T, r.s4.W, '4']);
+  pts34.forEach(function (p, j) {
+    var px = XT(p[0]), py = YW(p[1]);
+    S('circle', { cx: px, cy: py, r: 6, fill: NAVY, stroke: '#fff', 'stroke-width': 2 }, svg);
+    var o = pts34.length > 1 ? pts34[1 - j] : null, dx = 0, dy = -1;
+    if (o) { dx = px - XT(o[0]); dy = py - YW(o[1]); var L2 = Math.sqrt(dx * dx + dy * dy) || 1; dx /= L2; dy /= L2; }
+    var lx = clamp(px + dx * 16, m.l + 8, m.l + pw - 8), ly = clamp(py + dy * 16, m.t + 10, m.t + ph - 6);
+    S('text', { x: lx, y: ly + 4.5, 'text-anchor': 'middle', 'class': 'ct-plab' }, svg, p[2]);
+  });
+  // reader
+  var cx1 = ln(svg, 0, 0, 0, 0, { 'class': 'ct-cross', visibility: 'hidden' }), cy1 = ln(svg, 0, 0, 0, 0, { 'class': 'ct-cross', visibility: 'hidden' });
+  CH.cross = [cx1, cy1];
+  var tip = keep || document.createElement('div');
+  tip.className = 'ct-tip'; tip.style.display = 'none'; box.appendChild(tip); CH.tip = tip; CH.svg = svg;
+  var items = ['<span><i class="ct-key" style="border-color:' + ACCENT + ';border-top-width:3px"></i>Air through the tower, 3 → 4</span>',
+    '<span><i class="ct-key dash" style="border-color:' + WBG + '"></i>Wet bulb of the outdoor air</span>',
+    '<span><i class="ct-dotkey" style="background:#f3a35c;border:1.5px solid ' + NAVY + ';border-radius:1px"></i>Water temperatures (saturated air at the water surface)</span>',
+    '<span><i class="ct-key dash" style="border-color:#7b8a99"></i>Exit air mixing with outdoor air</span>'];
+  if (ok && r.plume.visible) items.push('<span><i class="ct-key" style="border-color:#5da5da;border-top-width:4px"></i>Fog (visible plume)</span>');
+  items.push('<span><i class="ct-key" style="border-color:rgba(42,120,214,.6);border-top-width:1px"></i>Enthalpy, ' + HU() + ' dry air</span>');
+  $('ct-legend').innerHTML = items.join('');
+}
+function hideTip() { if (!CH) return; CH.tip.style.display = 'none'; CH.cross.forEach(function (e) { e.setAttribute('visibility', 'hidden'); }); }
+function readAt(e) {
+  if (!CH) return;
+  var rc = CH.svg.getBoundingClientRect(), sc = CH.w / rc.width, px = (e.clientX - rc.left) * sc, py = (e.clientY - rc.top) * sc;
+  var xv = CH.xlo + (px - CH.m.l) / CH.pw * (CH.xhi - CH.xlo), yv = (CH.m.t + CH.ph - py) / CH.ph * CH.whi;
+  if (xv < CH.xlo || xv > CH.xhi || yv < 0 || yv > CH.whi) { hideTip(); return; }
+  var T = tI(xv), W = yv / (ip() ? 7000 : 1000), c = CH.cross;
+  c[0].setAttribute('x1', px); c[0].setAttribute('x2', px); c[0].setAttribute('y1', CH.m.t); c[0].setAttribute('y2', CH.m.t + CH.ph);
+  c[1].setAttribute('y1', py); c[1].setAttribute('y2', py); c[1].setAttribute('x1', CH.m.l); c[1].setAttribute('x2', CH.m.l + CH.pw);
+  c.forEach(function (el) { el.setAttribute('visibility', 'visible'); });
+  var html = '<div class="hd">' + fT(T) + ' · ' + fW(W) + '</div>';
+  if (W > Wsat(T, CH.P) * 1.0005) html += '<div class="warn">Above the saturation curve: the extra water would be fog.</div>';
+  else {
+    var s = props(T, W, CH.P);
+    html += tr('Relative humidity φ', fPhi(s.phi)) + tr('Enthalpy h', fH(s.h)) + tr('Wet bulb T*', fT(s.Twb)) + tr('Dew point', fT(s.Tdp)) + tr('Specific volume v', fv(s.v));
+  }
+  var tip = CH.tip, bw = $('ct-chart').clientWidth, s2 = bw / CH.w;
+  tip.innerHTML = html; tip.style.display = 'block';
+  var tw = tip.offsetWidth, th = tip.offsetHeight, left = px * s2 + 14, top = py * s2 - th - 10;
+  if (left + tw > bw) left = px * s2 - tw - 14;
+  if (top < 0) top = py * s2 + 14;
+  tip.style.left = Math.max(0, left) + 'px'; tip.style.top = top + 'px';
+}
+function tr(k, v) { return '<div class="row"><i>' + k + '</i><b>' + v + '</b></div>'; }
+(function () {
+  var box = $('ct-chart');
+  box.addEventListener('pointermove', function (e) { if (e.pointerType === 'mouse') readAt(e); });
+  box.addEventListener('pointerdown', function (e) { readAt(e); });
+  box.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse') hideTip(); });
+})();
+
+/* ----- Enthalpy against water temperature: saturation curve, air line and driving force ----- */
+function drawHT(r) {
+  var box = $('ct-ht'), P = r.P, ok = r.ok, k;
+  clear(box);
+  if (!ok) {
+    box.innerHTML = '<p class="ct-hint">' + noteFor(r) + '</p>';
+    $('ct-ht-legend').innerHTML = ''; $('ct-ht-note').textContent = '';
+    return;
+  }
+  var s3 = r.s3, T1 = r.T1, T2 = r.T2, h3 = s3.h, h4 = r.s4.h, pad = ip() ? 3 : 1.5;
+  var a = Math.min(tD(s3.Twb), tD(T2)) - pad, b = tD(T1) + pad, xs = niceStep(b - a, 6);
+  a = floorTo(a, xs); b = ceilTo(b, xs);
+  var Ta = tI(a), Tb = tI(b), line = function (T) { return h3 + (h4 - h3) * (T - T2) / (T1 - T2); };
+  var ylo0 = Math.min(hD(h3), hD(hsat(Ta, P))), yhi0 = Math.max(hD(hsat(Tb, P)), hD(h4)), ys = niceStep(yhi0 - ylo0, 6);
+  var ylo = floorTo(ylo0 - 0.3 * ys, ys), yhi = ceilTo(yhi0 + 0.3 * ys, ys);
+  var w = Math.max(300, Math.round(box.clientWidth || 600)), h = Math.round(clamp(w * 0.7, 300, 520));
+  var m = { l: 52, r: 14, t: 14, b: 76 }, pw = w - m.l - m.r, ph = h - m.t - m.b;
+  var X = function (T) { return m.l + (tD(T) - a) / (b - a) * pw; }, Y = function (hh) { return m.t + ph - (hD(hh) - ylo) / (yhi - ylo) * ph; };
+  var svg = S('svg', { viewBox: '0 0 ' + w + ' ' + h, role: 'img', 'aria-label': 'Enthalpy against water temperature: the saturation curve and the air line from state 3 to state 4' + (r.feasible ? '; the air line stays below the curve.' : '; the air line crosses the curve, so there is not enough air.') }, box);
+  var cp = S('clipPath', { id: 'ct-clip2' }, S('defs', {}, svg));
+  S('rect', { x: m.l, y: m.t, width: pw, height: ph }, cp);
+  var g = S('g', { 'clip-path': 'url(#ct-clip2)' }, svg), v;
+  for (v = ylo; v <= yhi + 1e-9; v += ys) { ln(g, m.l, m.t + ph - (v - ylo) / (yhi - ylo) * ph, m.l + pw, m.t + ph - (v - ylo) / (yhi - ylo) * ph, { 'class': 'ct-grid' }); }
+  // driving force between the curve and the air line (blue), or where the line is above the curve (red)
+  var n = 80, run = [], sign = 0, runs = [];
+  for (k = 0; k <= n; k++) {
+    var T = T2 + (T1 - T2) * k / n, hs = hsat(T, P), ha = line(T), sg = hs - ha >= 0 ? 1 : -1;
+    if (sign && sg !== sign && run.length) { runs.push([sign, run]); run = [run[run.length - 1]]; }
+    sign = sg; run.push([T, hs, ha]);
+  }
+  runs.push([sign, run]);
+  runs.forEach(function (rr) {
+    var p = rr[1], d = '', i;
+    if (p.length < 2) return;
+    for (i = 0; i < p.length; i++) d += (i ? 'L' : 'M') + X(p[i][0]).toFixed(1) + ' ' + Y(p[i][1]).toFixed(1);
+    for (i = p.length - 1; i >= 0; i--) d += 'L' + X(p[i][0]).toFixed(1) + ' ' + Y(p[i][2]).toFixed(1);
+    S('path', { d: d + 'Z', fill: rr[0] > 0 ? 'rgba(42,120,214,.16)' : 'rgba(192,57,43,.28)' }, g);
+  });
+  // saturation enthalpy hs(Tw)
+  var d2 = '';
+  for (k = 0; k <= 80; k++) { var Tk = Ta + (Tb - Ta) * k / 80; d2 += (k ? 'L' : 'M') + X(Tk).toFixed(1) + ' ' + Y(hsat(Tk, P)).toFixed(1); }
+  S('path', { d: d2, 'class': 'ct-sat' }, g);
+  // air operating line 3 → 4
+  S('path', { d: 'M' + X(T2) + ' ' + Y(h3) + 'L' + X(T1) + ' ' + Y(h4), stroke: r.feasible ? ACCENT : '#c0392b', 'stroke-width': 3, fill: 'none', 'stroke-linecap': 'round' }, svg);
+  // wet bulb and approach
+  var wbh = hsat(s3.Twb, P);
+  S('path', { d: 'M' + X(s3.Twb) + ' ' + Y(wbh) + 'L' + X(T2) + ' ' + Y(h3), stroke: WBG, 'stroke-width': 1.6, 'stroke-dasharray': '6 4', fill: 'none' }, svg);
+  S('circle', { cx: X(s3.Twb), cy: Y(wbh), r: 4, fill: WBG, stroke: '#fff', 'stroke-width': 1.5 }, svg);
+  // smallest driving force
+  if (r.feasible) {
+    var xp = X(r.Tpinch);
+    S('path', { d: 'M' + xp + ' ' + Y(line(r.Tpinch)) + 'L' + xp + ' ' + Y(hsat(r.Tpinch, P)), stroke: NAVY, 'stroke-width': 1.5, fill: 'none' }, svg);
+    var right = xp > m.l + 0.6 * pw;
+    S('text', { x: right ? xp - 6 : xp + 6, y: 0.5 * (Y(line(r.Tpinch)) + Y(hsat(r.Tpinch, P))) + 4, 'text-anchor': right ? 'end' : 'start', 'class': 'ct-lab dark' }, svg, 'smallest gap ' + fdH(r.gmin));
+  }
+  [[T2, h3, '3'], [T1, h4, '4']].forEach(function (p, j) {
+    S('circle', { cx: X(p[0]), cy: Y(p[1]), r: 6, fill: NAVY, stroke: '#fff', 'stroke-width': 2 }, svg);
+    S('text', { x: X(p[0]) + 12, y: Y(p[1]) + 16, 'text-anchor': 'middle', 'class': 'ct-plab' }, svg, p[2]);
+  });
+  S('text', { x: X(T2) + 14, y: Y(h3) + 30, 'class': 'ct-lab' }, svg, 'air in, at the cold-water end');
+  S('text', { x: X(T1) - 10, y: Y(h4) + 26, 'text-anchor': 'end', 'class': 'ct-lab' }, svg, 'air out, at the hot-water end');
+  // axes
+  ln(svg, m.l, m.t + ph, m.l + pw, m.t + ph, { 'class': 'ct-axis' }); ln(svg, m.l, m.t, m.l, m.t + ph, { 'class': 'ct-axis' });
+  for (v = a; v <= b + 1e-9; v += xs) { var xv = m.l + (v - a) / (b - a) * pw; ln(svg, xv, m.t + ph, xv, m.t + ph + 5, { 'class': 'ct-axis' }); S('text', { x: xv, y: m.t + ph + 18, 'text-anchor': 'middle', 'class': 'ct-tick' }, svg, fix(v, xs < 1 ? 1 : 0)); }
+  for (v = ylo; v <= yhi + 1e-9; v += ys) { var yv = m.t + ph - (v - ylo) / (yhi - ylo) * ph; ln(svg, m.l - 5, yv, m.l, yv, { 'class': 'ct-axis' }); S('text', { x: m.l - 8, y: yv + 4, 'text-anchor': 'end', 'class': 'ct-tick' }, svg, fix(v, ys < 1 ? 1 : 0)); }
+  S('text', { x: m.l + pw / 2, y: h - 6, 'text-anchor': 'middle', 'class': 'ct-axlab' }, svg, 'Water temperature, ' + TU());
+  S('text', { transform: 'translate(13,' + (m.t + ph / 2) + ') rotate(-90)', 'text-anchor': 'middle', 'class': 'ct-axlab' }, svg, 'Enthalpy, ' + HU() + ' dry air');
+  // approach and range under the axis
+  var yb = m.t + ph + 28, br = function (t1, t2, lab, col) {
+    var x1 = X(t1), x2 = X(t2);
+    S('path', { d: 'M' + x1 + ' ' + (yb - 5) + 'L' + x1 + ' ' + yb + 'L' + x2 + ' ' + yb + 'L' + x2 + ' ' + (yb - 5), stroke: col, 'stroke-width': 1.5, fill: 'none' }, svg);
+    S('text', { x: 0.5 * (x1 + x2), y: yb + 13, 'text-anchor': 'middle', 'class': 'ct-lab', style: 'fill:' + col }, svg, lab);
+  };
+  br(s3.Twb, T2, 'approach', '#13865d'); br(T2, T1, 'range', NAVY);
+  // Merkel number
+  S('text', { x: m.l + 10, y: m.t + 18, 'class': r.feasible ? 'ct-lab dark' : 'ct-lab red', style: 'font-size:12.5px' }, svg, r.feasible ? 'Merkel number KaV/L = ' + fix(r.Me, 2) : 'Not enough air: the line crosses the curve');
+  $('ct-ht-legend').innerHTML = '<span><i class="ct-key" style="border-color:#1f2933"></i><span>Saturated air at the water temperature, <i>h</i><sub>s</sub>(<i>T</i><sub>w</sub>)</span></span>' +
+    '<span><i class="ct-key" style="border-color:' + ACCENT + ';border-top-width:3px"></i><span>Air, <i>h</i><sub>a</sub></span></span>' +
+    '<span><i class="ct-dotkey" style="background:rgba(42,120,214,.3);border-radius:2px"></i><span>Driving force <i>h</i><sub>s</sub> − <i>h</i><sub>a</sub></span></span>';
+  $('ct-ht-note').innerHTML = 'Each kilogram of air picks up heat and vapor in proportion to the gap between the saturation curve and its own enthalpy. The air line rises with slope <i>ṁ</i><sub>w</sub><i>c</i><sub>p</sub>/<i>ṁ</i><sub>a</sub>: less air makes it steeper, until it touches the curve.';
+}
+
+/* ----- Water use ----- */
+function drawWater(r) {
+  var el = $('ct-water');
+  if (!r.ok) { el.innerHTML = '<p class="ct-hint">' + noteFor(r) + '</p>'; return; }
+  var E = r.E, D = r.D, B = r.B, M = r.M, tot = M > 0 ? M : 1, mw = r.mw;
+  var seg = function (x, col) { return '<span style="width:' + (100 * x / tot).toFixed(2) + '%;background:' + col + '"></span>'; };
+  var row = function (name, x, note) { return '<tr><td>' + name + (note ? '<br><small>' + note + '</small>' : '') + '</td><td>' + fFlow(x) + '</td><td>' + fDay(x) + '</td><td>' + pct(x / mw, 3) + '</td></tr>'; };
+  var perTon = ip() ? fix(gpmOf(M) * 60 / (r.Q / KW_CTTON), 2) + ' gal per ton-hour' : fix(M * 3600 / 0.9982 / r.Q, 2) + ' L per kWh';
+  el.innerHTML = '<p class="ct-sub-note">Makeup water replaces what evaporates, the drift carried out as droplets and the blowdown drained to limit mineral buildup.</p>' +
+    '<div class="ct-bar" role="img" aria-label="Makeup water: evaporation ' + pct(E / tot, 0) + ', blowdown ' + pct(B / tot, 0) + ', drift ' + pct(D / tot, 1) + '">' + seg(E, '#2a78d6') + seg(B, '#1baf7a') + seg(D, '#9aa5b1') + '</div>' +
+    '<div class="ct-barkey"><span><i style="background:#2a78d6"></i>Evaporation</span><span><i style="background:#1baf7a"></i>Blowdown</span><span><i style="background:#9aa5b1"></i>Drift</span></div>' +
+    '<div class="ct-scroll"><table class="ct-table"><thead><tr><th></th><th>' + (ip() ? 'gal/min' : 'L/min') + '</th><th>' + (ip() ? 'gal/day' : 'm³/day') + '</th><th>of flow</th></tr></thead><tbody>' +
+    row('Evaporation <i>E</i>', E, 'ṁ<sub>a</sub>(ω<sub>4</sub> − ω<sub>3</sub>), the slides&rsquo; ṁ<sub>5</sub>') + row('Drift <i>D</i>', D, fix(st.drift, 3) + '% of the circulating water') +
+    row('Blowdown <i>B</i>', B, B > 0 ? '<i>E</i>/(<i>C</i> − 1) − <i>D</i> with <i>C</i> = ' + fix(st.coc, 1) : 'drift alone removes enough minerals') +
+    '<tr class="tot"><td>Makeup <i>M</i> = <i>E</i> + <i>D</i> + <i>B</i></td><td>' + fFlow(M) + '</td><td>' + fDay(M) + '</td><td>' + pct(M / mw, 3) + '</td></tr></tbody></table></div>' +
+    '<p class="ct-hint">That is ' + perTon + ' of heat rejected. The makeup arrives at ' + fT(r.T5) + '.</p>';
+}
+
+/* ----- Heat, airflow and fan ----- */
+function dd(k, v, s) { return '<div><dt>' + k + '</dt><dd>' + v + (s ? '<small>' + s + '</small>' : '') + '</dd></div>'; }
+function drawRates(r) {
+  var h = [], ok = r.ok, n = st.N / 100, gph = r.Pfan > 0 ? st.gpm / (r.Pfan / HP_KW) : Infinity;
+  h.push(dd('Heat rejected', r.Q > 0 ? fQ(r.Q) : '–', r.Q > 0 ? (ip() ? fix(r.Q, 0) + ' kW · ' : fix(r.Q * BTUH_KW, 0) + ' Btu/h · ') + fTons(r.Q) + ' at 15,000 Btu/h per tower ton' : ''));
+  h.push(dd('Chiller served', r.Q > 0 ? fix(r.Q / KW_CTTON, 0) + ' tons of cooling' : '–', 'a tower ton carries one ton of cooling plus about 3,000 Btu/h of compressor work'));
+  h.push(dd('Water flow', fix(st.gpm, 0) + ' gal/min', fMass(r.mw) + ', ' + pct(st.gpm / (GPM_TON * st.tons), 0) + ' of the design flow'));
+  h.push(dd('Dry air through the tower', ok ? fMass(r.G) : '–', ok ? '<i>L</i>/<i>G</i> = ' + fix(r.LG, 2) + ' (design ' + fix(st.LG, 2) + ')' : ''));
+  h.push(dd('Airflow at the fan', fAir(r.V), fix(st.N, 0) + '% of ' + fAir(r.d.V)));
+  h.push(dd('Fan pressure', fDp(r.dp), '∝ N²: ' + fix(n * n, 3) + ' × ' + fDp(st.dp)));
+  h.push(dd('Fan power', fPow(r.Pfan), '∝ N³: ' + fix(n * n * n, 3) + ' × ' + fPow(r.d.Pfan) + ' (' + fPow2(r.Pfan) + ')'));
+  h.push(dd('Water flow per fan horsepower', isFinite(gph) ? fix(gph, 1) + ' gal/min per hp' : '–', 'ASHRAE 90.1-2013 asks at least 40.2 for propeller-fan towers (rated at 95/85/75 °F)'));
+  h.push(dd('Lowest fan speed for this approach', isFinite(r.Nmin) ? (r.Nmin > 100 ? 'above 100%' : fix(Math.ceil(r.Nmin), 0) + '%') : '–', 'below it the air line crosses the saturation curve'));
+  h.push(dd('Merkel number needed', ok && r.feasible ? fix(r.Me, 2) : '–', 'tower characteristic <i>KaV</i>/<i>L</i>; typical towers run about 0.5 to 2.5'));
+  $('ct-rates').innerHTML = h.join('');
+}
+
+/* ----- States 1 to 5 ----- */
+function mf(kgs) { return ip() ? fix(sig(kgs * LBH_KGS, 3), 0) : fix(kgs, kgs >= 100 ? 1 : kgs >= 1 ? 2 : 4); }
+function drawStates(r) {
+  var ok = r.ok, s3 = r.s3, s4 = ok ? r.s4 : null, dash = '<td>–</td>';
+  var air = function (n, name, s, flow) {
+    return '<tr><td><b>' + n + '</b> ' + name + '</td><td>' + fT(s.T) + '</td><td>' + fPhi(s.phi) + '</td><td>' + fix(wD(s.W), ip() ? 1 : 2) + '</td><td>' + fix(hD(s.h), ip() ? 2 : 1) + '</td><td>' + flow + '</td></tr>';
+  };
+  var wat = function (n, name, T, flow) {
+    return '<tr><td><b>' + n + '</b> ' + name + '</td><td>' + (T >= 0 ? fT(T) : '–') + '</td>' + dash + dash + '<td>' + (T >= 0 ? fix(hfD(T), 1) : '–') + '</td><td>' + flow + '</td></tr>';
+  };
+  var h = '<table class="ct-table"><thead><tr><th>State</th><th>T</th><th>φ</th><th>ω, ' + WU() + '</th><th>h, ' + HU() + '</th><th>Flow, ' + (ip() ? 'lb/h' : 'kg/s') + '</th></tr></thead><tbody>';
+  h += wat(1, 'Hot water', r.T1, mf(r.mw));
+  h += wat(2, 'Cold water', r.T2, mf(r.mw));
+  h += air(3, 'Outdoor air', s3, ok ? mf(r.G) + '<br><small>dry air</small>' : '–');
+  h += s4 ? air(4, 'Exit air', s4, mf(r.G) + '<br><small>dry air</small>') : '<tr><td><b>4</b> Exit air</td><td colspan="5">–</td></tr>';
+  h += wat(5, 'Makeup', r.T5, ok ? mf(r.M) + '<br><small>' + mf(r.E) + ' evaporated</small>' : '–');
+  $('ct-states').innerHTML = h + '</tbody></table>';
+}
+
+/* ----- Step-by-step solution ----- */
+function li(lbl, eq, res) { return '<li><span class="lbl">' + lbl + '</span><span class="eq">' + eq + '</span>' + (res ? ' <span class="res">= ' + res + '</span>' : '') + '</li>'; }
+function sb(s, i) { return s + '<sub>' + i + '</sub>'; }
+function drawSteps(r) {
+  var h = [], s3 = r.s3, ok = r.ok, dT = function (T) { return fix(tD(T), 1); };
+  h.push(li('Outdoor air, state 3, from ' + (st.hk === 'twb' ? 'the dry and wet bulbs' : sb('T', 3) + ' and φ<sub>3</sub>') + ' at ' + fPk(r.P) + ' (Psychrometricsnew.m)',
+    sb('ω', 3) + ' = ' + fW(s3.W) + ', ' + sb('<i>h</i>', 3) + ' = ' + fH(s3.h) + ', ' + sb('<i>T</i>*', 3), fT(s3.Twb)));
+  h.push(li('Cold water, state 2: wet bulb plus approach', sb('<i>T</i>', 2) + ' = ' + dT(s3.Twb) + ' + ' + fix(dD(st.app), 1), r.T2 >= 0 ? fT(r.T2) : '–'));
+  if (r.err === 'nocool' || r.err === 'freeze') { h.push(li('Stop', noteFor(r))); $('ct-steps').innerHTML = h.join(''); return; }
+  if (ip()) {
+    h.push(li('Water mass flow (8.33 lb/gal × 60 min/h)', sb('<i>ṁ</i>', 'w') + ' = ' + fix(st.gpm, 0) + ' × 499.8', fMass(r.mw)));
+    h.push(li('Heat rejected, <i>c</i><sub>p</sub> = 1 Btu/lb·°F', '<i>Q̇</i> = ' + fix(sig(r.mw * LBH_KGS, 4), 0) + ' × (' + dT(r.T1) + ' − ' + dT(r.T2) + ')', fQ(r.Q) + ' = ' + fTons(r.Q)));
+  } else {
+    h.push(li('Water mass flow (1 gal/min = ' + fix(KGS_GPM, 5) + ' kg/s)', sb('<i>ṁ</i>', 'w') + ' = ' + fix(st.gpm, 0) + ' × ' + fix(KGS_GPM, 5), fMass(r.mw)));
+    h.push(li('Heat rejected', '<i>Q̇</i> = ' + fix(r.mw, 2) + ' × 4.186 × (' + dT(r.T1) + ' − ' + dT(r.T2) + ')', fQ(r.Q)));
+  }
+  h.push(li('Fan laws at ' + fix(st.N, 0) + '% speed', '<i>V̇</i> = ' + fix(st.N / 100, 2) + ' × ' + fAir(r.d.V) + ', <i>Ẇ</i><sub>fan</sub> = ' + fix(st.N / 100, 2) + '³ × ' + fPow(r.d.Pfan), fAir(r.V) + ', ' + fPow(r.Pfan)));
+  if (!ok) { h.push(li('Stop', noteFor(r))); $('ct-steps').innerHTML = h.join(''); return; }
+  var s4 = r.s4;
+  h.push(li('Dry air: the fan&rsquo;s volume flow divided by the exit air&rsquo;s specific volume (iterated)', sb('<i>ṁ</i>', 'a') + ' = <i>V̇</i>/' + sb('<i>v</i>', 4) + ' = ' + fAir(r.V) + ' / ' + fv(s4.v), fMass(r.G)));
+  h.push(li('Energy balance per kg of dry air, exit air at φ<sub>4</sub> = ' + fPhi(st.phi4), sb('<i>h</i>', 4) + ' − ' + sb('<i>h</i>', 3) + ' − (ω<sub>4</sub> − ω<sub>3</sub>)' + sb('<i>h</i>', 'f5') + ' = <i>Q̇</i>/' + sb('<i>ṁ</i>', 'a'), fdH(r.Q / r.G)));
+  h.push(li('Exit air, state 4', sb('<i>T</i>', 4) + ' = ' + fT(s4.T) + ', ω<sub>4</sub> = ' + fW(s4.W), sb('<i>h</i>', 4) + ' = ' + fH(s4.h)));
+  h.push(li('Evaporation (makeup in the slides)', sb('<i>ṁ</i>', 5) + ' = ' + sb('<i>ṁ</i>', 'a') + '(ω<sub>4</sub> − ω<sub>3</sub>) = ' + fMass(r.G) + ' × (' + fix(s4.W, 5) + ' − ' + fix(s3.W, 5) + ')', fMass(r.E) + ' = ' + fFlow(r.E)));
+  h.push(li('Drift and blowdown', '<i>D</i> = ' + fix(st.drift, 3) + '% × ' + sb('<i>ṁ</i>', 'w') + ', <i>B</i> = <i>E</i>/(' + fix(st.coc, 1) + ' − 1) − <i>D</i>', fFlow(r.D) + ', ' + fFlow(r.B)));
+  h.push(li('Total makeup water', '<i>M</i> = <i>E</i> + <i>D</i> + <i>B</i>', fFlow(r.M) + ' = ' + fDay(r.M)));
+  h.push(li('Is there enough air? Smallest driving force on the air line', 'min(' + sb('<i>h</i>', 's') + ' − ' + sb('<i>h</i>', 'a') + ') at ' + fT(r.Tpinch), fdH(r.gmin) + (r.feasible ? ' > 0 ✓' : ' < 0 ✗')));
+  if (r.feasible) h.push(li('Tower size needed (Merkel)', '<i>KaV</i>/<i>L</i> = ∫ <i>c</i><sub>p</sub> d<i>T</i><sub>w</sub>/(' + sb('<i>h</i>', 's') + ' − ' + sb('<i>h</i>', 'a') + ')', fix(r.Me, 2)));
+  h.push(li('Plume: mixing the exit air with outdoor air', r.plume.visible ? 'the mixing line crosses the saturation curve' : 'the mixing line stays below the saturation curve', r.plume.visible ? 'visible fog' : 'no visible plume'));
+  $('ct-steps').innerHTML = h.join('');
+}
+
+/* ----- MATLAB check with Psychrometricsnew.m and psychplotting.m ----- */
+function m4(x) { return String(rnd(x, 4)); }
+function drawMatlab(r) {
+  var L = [], NL = String.fromCharCode(10), c = function (t) { L.push('% ' + t); }, s3 = r.s3;
+  var uF = function (T) { return ip() ? ' (' + fix(1.8 * T + 32, 1) + ' F)' : ''; };
+  c('outdoor air, state 3' + uF(st.T3) + '; pressure in kPa, enthalpy in J/kg dry air');
+  L.push('P = ' + sig(r.P, 6) + ';');
+  L.push('[T3,w3,phi3,h3,Tdp3,v3,Twb3] = Psychrometricsnew(\'tdb\',' + m4(st.T3) + ',' + (st.hk === 'twb' ? '\'twb\',' + m4(st.hv) : '\'phi\',' + m4(st.hv)) + ',\'p\',P);');
+  c('cold water, state 2: wet bulb + approach (' + fix(st.app, 4) + ' K' + (ip() ? ' = ' + fix(1.8 * st.app, 1) + ' F' : '') + ')');
+  L.push('T2 = Twb3 + ' + m4(st.app));
+  c('hot water, state 1' + uF(st.T1) + ', and the heat rejected in kW (' + fix(st.gpm, 0) + ' gal/min)');
+  L.push('T1 = ' + m4(st.T1) + ';  mw = ' + fix(st.gpm, 0).replace(/,/g, '') + '*' + fix(KGS_GPM, 6) + ';');
+  L.push('Q = mw*4.186*(T1 - T2)');
+  if (!r.ok || !(r.Q > 0)) { c('simulator: ' + noteFor(r)); $('ct-matlab').textContent = L.join(NL); return; }
+  c('exit air, state 4, at phi4 from the energy balance; dry air from the fan, makeup at T5');
+  L.push('ma = ' + m4(r.G) + ';  phi4 = ' + m4(st.phi4) + ';  hf5 = 4186*' + m4(st.T5) + ';');
+  L.push('h4 = h3 + Q*1000/ma;');
+  L.push('for k = 1:4');
+  L.push('    [T4, w4] = Psychrometricsnew(\'phi\',phi4,\'h\',h4,\'p\',P);');
+  L.push('    h4 = h3 + Q*1000/ma + (w4 - w3)*hf5;');
+  L.push('end');
+  L.push('[T4,w4,phi4,h4] = Psychrometricsnew(\'phi\',phi4,\'h\',h4,\'p\',P)');
+  c('water in kg/s: evaporation, drift, blowdown, makeup (1 gal/min = ' + fix(KGS_GPM, 6) + ' kg/s)');
+  L.push('E = ma*(w4 - w3)');
+  L.push('D = ' + String(rnd(st.drift, 4)) + '/100*mw;  C = ' + String(rnd(st.coc, 2)) + ';');
+  L.push('B = max(0, E/(C - 1) - D);  M = E + D + B');
+  L.push('M_gpm = M/' + fix(KGS_GPM, 6));
+  c('simulator: T2 = ' + fix(r.T2, 3) + ' C, Q = ' + fix(r.Q, 1).replace(/,/g, '') + ' kW, T4 = ' + fix(r.s4.T, 3) + ' C, E = ' + fix(r.E, 4) + ' kg/s, M = ' + fix(r.M, 4) + ' kg/s');
+  c('the air on the psychrometric chart (psychplotting.m)');
+  var Tm = Math.max(45, ceilTo(Math.max(st.T3, r.s4.T, st.T1) + 2, 5)), Wm = Math.max(25, ceilTo(1000 * Math.max(r.s4.W, s3.W) * 1.08, 5));
+  L.push('psychplotting(0,' + Tm + ',0,' + Wm + ',P); hold on');
+  L.push('plot([T3 T4],[w3 w4]*1000,\'r-o\',\'LineWidth\',1.5)');
+  $('ct-matlab').textContent = L.join(NL);
+}
+
+/* ----- Shareable links: the setup is kept in the address after the # ----- */
+var KEYS = ['u', 'pk', 'P', 'T3', 'hk', 'hv', 'T1', 'gpm', 'app', 'N', 'tons', 'coc', 'drift', 'phi4', 'T5', 'LG', 'dp', 'eta'];
+var CHOICE = { u: ['ip', 'si'], pk: ['sea', 'tulsa', 'still', 'denver', 'custom'], hk: ['phi', 'twb'] };
+var LIM = { P: [60, 110], T3: [0, 50], hv: [-40, 100], T1: [10, 60], gpm: [1, 1e5], app: [5 / 9, 20], N: [30, 100], tons: [100, 2000],
+  coc: [1.5, 10], drift: [0, 0.2], phi4: [80, 100], T5: [1, 40], LG: [0.6, 2], dp: [75, 375], eta: [30, 85] };
+function writeHash() {
+  var parts = KEYS.map(function (k) { return k + '=' + (typeof st[k] === 'number' ? sig(st[k], 6) : st[k]); });
+  try { history.replaceState(null, '', '#' + parts.join('&')); } catch (e) { /* ignore */ }
+}
+function readHash() {
+  var h = location.hash.slice(1), got = {}, k;
+  if (h.indexOf('=') < 0) return false;
+  for (k in DEF) st[k] = DEF[k];
+  h.split('&').forEach(function (kv) { var i = kv.indexOf('='); if (i > 0) got[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1)); });
+  KEYS.forEach(function (key) {
+    if (got[key] === undefined) return;
+    if (CHOICE[key]) { if (CHOICE[key].indexOf(got[key]) >= 0) st[key] = got[key]; return; }
+    var x = parseFloat(got[key]);
+    if (isFinite(x)) st[key] = clamp(x, LIM[key][0], LIM[key][1]);
+  });
+  if (SIZES.indexOf(st.tons) < 0) st.tons = SIZES.reduce(function (a, b) { return Math.abs(b - st.tons) < Math.abs(a - st.tons) ? b : a; });
+  return true;
+}
+
+/* ----- Examples (temperatures in °F, converted to °C) ----- */
+function F(f) { return (f - 32) / 1.8; }
+var EX = {
+  'default': {},
+  okla: { T3: F(98), hv: 40, T1: F(94) },
+  desert: { T3: F(110), hv: 12, T1: F(87) },
+  humid: { T3: F(92), hv: 65, T1: F(99) },
+  spring: { T3: F(70), hv: 50, T1: F(78), app: 10 / 1.8, N: 75 },
+  plume: { T3: F(50), hv: 90, T1: F(70), app: 12 / 1.8 },
+  winter: { T3: F(40), hv: 60, T1: F(63), app: 18 / 1.8, gpm: 1000, N: 60 },
+  lowfan: { N: 50 },
+  cycles: { coc: 2 },
+  denver: { pk: 'denver' }
+};
+function apply(o) {
+  var k, u = st.u;
+  for (k in DEF) st[k] = DEF[k];
+  st.u = u;
+  for (k in o) st[k] = o[k];
+  changed();
+}
+$('ct-example').addEventListener('change', function () { var e = EX[this.value]; if (e) apply(e); this.value = ''; });
+$('ct-reset').addEventListener('click', function () { apply({}); });
+$('ct-link').addEventListener('click', function () {
+  var b = this; writeHash();
+  var done = function (ok) { b.textContent = ok ? 'Link copied' : 'Copy the address-bar link'; setTimeout(function () { b.textContent = 'Copy link to this setup'; }, 2200); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(location.href).then(function () { done(true); }, function () { done(false); });
+  else done(false);
+});
+
+/* ----- Start ----- */
+var lastW = 0, rt = null;
+window.addEventListener('resize', function () {
+  clearTimeout(rt);
+  rt = setTimeout(function () { var w = $('ct-chart').clientWidth; if (w !== lastW) { lastW = w; render(); } }, 120);
+});
+window.addEventListener('hashchange', function () { if (readHash()) render(); });
+initTower();
+readHash();
+render();
+lastW = $('ct-chart').clientWidth;
+(function () {   // on narrow screens start the tower picture centered on the tower
+  var b = $('ct-svgbox');
+  if (b.scrollWidth > b.clientWidth + 4) b.scrollLeft = Math.max(0, b.scrollWidth * 0.5 - b.clientWidth / 2);
+})();
+function renderTex() {
+  if (!window.katex) return;
+  Array.prototype.forEach.call(document.querySelectorAll('.tex-d'), function (el) {
+    try { window.katex.render(el.getAttribute('data-tex'), el, { displayMode: true, throwOnError: false }); } catch (e) { /* keep the source text */ }
+  });
+}
+Array.prototype.forEach.call(document.querySelectorAll('.tex-d'), function (el) { if (!el.textContent) el.textContent = el.getAttribute('data-tex'); });
+if (window.katex) renderTex(); else window.addEventListener('load', renderTex);
+})();
+</script>
+{% endraw %}
