@@ -17,6 +17,17 @@ tools:
       or crossflow heat exchanger and watch the outlet temperatures, effectiveness and heat
       transfer rate update live on a color-coded schematic, with a short write-up of the
       equations behind it.
+  - title: Moist air process simulator
+    label: Interactive tool
+    courses: MAE 3524 Thermal Fluids Design
+    url: /teaching/psychrometrics/
+    image: psychro-simulator.svg
+    button: Open the simulator
+    text: >-
+      Heat, cool, dehumidify or humidify a stream of moist air and follow the process on an
+      interactive psychrometric chart. Change the inlet air or the amount of heat and water to
+      see the exit temperature and humidity, the heat transfer per kilogram of dry air, the water
+      condensed or added, and the HVAC loads, with a short write-up of the equations behind it.
 
 asme:
   intro: >-

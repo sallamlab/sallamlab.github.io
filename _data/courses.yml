@@ -98,6 +98,8 @@
   resources:
     - label: "Interactive heat exchanger simulator (ε–NTU method)"
       url: /teaching/heat-exchanger/
+    - label: "Interactive moist air process simulator (psychrometric chart)"
+      url: /teaching/psychrometrics/
     - label: "Video 1: How to install MATLAB"
       url: https://youtu.be/h6tytgQH8rI
     - label: "Video 2: Running MATLAB for the first time"
