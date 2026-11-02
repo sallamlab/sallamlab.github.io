@@ -1,0 +1,1620 @@
+---
+layout: default
+title: Moist Air Process Simulator
+permalink: /teaching/psychrometrics/
+description: Interactive psychrometric chart simulator for sensible heating, sensible cooling, cooling with dehumidification and humidification of moist air, with HVAC rates and a short explanation of the equations. MAE 3524 Thermal Fluids Design, Oklahoma State University.
+---
+{% raw %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<style>
+/* Moist air (psychrometric) process simulator: page styles. Site tokens (colors, fonts) come from /assets/css/site.css. */
+.ps { --hot: #c8372d; --cold: #2a78d6; --hline: #2a78d6; --wbline: #1baf7a; --wall: #42515e; }
+.ps-hero .ps-crumb { margin: 0 0 10px; font-size: .92rem; color: #c3cfdb; }
+.ps-hero .ps-crumb a { color: #ffb48f; }
+.ps-app { display: grid; gap: 24px; grid-template-columns: minmax(290px, 350px) minmax(0, 1fr); align-items: start; }
+.ps-panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px; min-width: 0; }
+.ps-controls { padding: 18px 18px 6px; }
+.ps-intro { font-size: .9rem; color: var(--ink-soft); margin: 0 0 14px; }
+.ps-group { border: 0; padding: 0; margin: 0 0 18px; min-width: 0; }
+.ps-group legend { font-family: var(--serif); font-weight: 600; color: var(--navy); font-size: 1.05rem; padding: 0; margin: 0 0 8px; display: flex; align-items: center; gap: 8px; }
+.ps-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.ps-seg.c3 { grid-template-columns: repeat(3, 1fr); }
+.ps-seg label { position: relative; display: block; cursor: pointer; min-width: 0; }
+.ps-seg input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.ps-seg span { display: flex; align-items: center; justify-content: center; height: 100%; box-sizing: border-box; text-align: center; padding: 8px 4px; border: 1px solid var(--line); border-radius: 8px; font-size: .86rem; font-weight: 500; line-height: 1.25; background: #fff; color: var(--ink); transition: background .15s, border-color .15s; }
+.ps-seg label:hover span { border-color: var(--ink-faint); }
+.ps-seg input:checked + span { background: var(--navy); border-color: var(--navy); color: #fff; }
+.ps-seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ps-seg input:disabled + span { opacity: .45; cursor: not-allowed; }
+.ps-seg .ps-in { font-style: normal; display: block; }
+.ps-sub { margin-top: 10px; }
+.ps-sub[hidden], .ps-ctl[hidden], .ps-field[hidden] { display: none; }
+.ps-sublabel { display: block; font-size: .82rem; color: var(--ink-soft); margin-bottom: 4px; }
+.ps-ctl { margin-bottom: 12px; }
+.ps-ctl > label { display: block; font-size: .9rem; margin-bottom: 1px; }
+.ps-sym { color: var(--ink-soft); margin-left: 3px; }
+.ps-inrow { display: flex; align-items: center; gap: 10px; }
+.ps-inrow input[type=range] { flex: 1; min-width: 0; margin: 0; height: 26px; accent-color: var(--accent); cursor: pointer; }
+.ps-num { display: inline-flex; align-items: center; gap: 5px; flex: none; }
+.ps-num input { width: 76px; font: inherit; font-size: .92rem; text-align: right; padding: 4px 6px; border: 1px solid #cbd2d9; border-radius: 6px; background: #fff; color: var(--ink); font-variant-numeric: tabular-nums; }
+.ps-num input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ps-num input[aria-invalid=true] { border-color: #d03b3b; background: #fdecec; }
+.ps-unit { font-size: .8rem; color: var(--ink-soft); width: 46px; }
+.ps-ctl.is-off { opacity: .45; }
+.ps-derived { font-size: .85rem; color: var(--ink-soft); margin: -2px 0 0; line-height: 1.45; }
+.ps-field { display: block; font-size: .9rem; margin-bottom: 12px; }
+.ps-field select { display: block; width: 100%; margin-top: 4px; font: inherit; font-size: .9rem; padding: 7px 8px; border: 1px solid #cbd2d9; border-radius: 8px; background: #fff; color: var(--ink); }
+.ps-flow { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+.ps-flow input { width: 96px; font: inherit; font-size: .92rem; text-align: right; padding: 6px 8px; border: 1px solid #cbd2d9; border-radius: 8px; background: #fff; color: var(--ink); font-variant-numeric: tabular-nums; }
+.ps-flow input[aria-invalid=true] { border-color: #d03b3b; background: #fdecec; }
+.ps-flow select { flex: 1; min-width: 0; font: inherit; font-size: .9rem; padding: 6px 8px; border: 1px solid #cbd2d9; border-radius: 8px; background: #fff; color: var(--ink); }
+.ps-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.ps-btn { font: inherit; font-size: .86rem; font-weight: 600; padding: 6px 14px; border-radius: 999px; border: 2px solid var(--navy); background: #fff; color: var(--navy); cursor: pointer; }
+.ps-btn:hover { background: var(--navy); color: #fff; }
+.ps-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ps-btn[disabled] { opacity: .4; cursor: not-allowed; background: #fff; color: var(--navy); }
+.ps-btn.wide { width: 100%; margin-top: 10px; }
+.ps-chain { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+.ps-chain[hidden] { display: none; }
+.ps-chip { font: inherit; font-size: .8rem; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--ink); cursor: pointer; line-height: 1.2; }
+.ps-chip b { color: var(--navy); }
+.ps-chip[aria-pressed=true] { background: var(--accent-soft); border-color: var(--accent); }
+.ps-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ps-lock { font-size: .82rem; color: var(--ink-soft); background: #f3f1ec; border-radius: 8px; padding: 6px 10px; margin: 0 0 10px; }
+.ps-out { display: grid; gap: 18px; min-width: 0; }
+.ps-card-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin-bottom: 8px; }
+.ps-card-head h2, .ps-card-head h3 { margin: 0; font-size: 1.22rem; }
+.ps-code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .8rem; color: var(--ink); background: #f3f1ec; padding: 2px 7px; border-radius: 6px; }
+.ps-toggles { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .84rem; color: var(--ink-soft); margin: 0 0 6px; }
+.ps-toggles label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.ps-toggles input { margin: 0; accent-color: var(--navy); width: 15px; height: 15px; }
+.ps-chart { position: relative; touch-action: pan-y; }
+.ps-chart svg { display: block; width: 100%; height: auto; overflow: visible; -webkit-user-select: none; user-select: none; }
+.ps-chart svg:focus { outline: none; }
+.ps-chart:focus-within { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
+.ps-chart text { font-family: var(--sans); }
+.ps-grid { stroke: #c9ced4; stroke-width: 1; stroke-dasharray: 3 3; fill: none; }
+.ps-rh { stroke: #6b7682; stroke-width: 1; fill: none; }
+.ps-sat { stroke: var(--ink); stroke-width: 2; fill: none; }
+.ps-h { stroke: var(--hline); stroke-width: 1; stroke-opacity: .5; fill: none; }
+.ps-wb { stroke: var(--wbline); stroke-width: 1.3; stroke-dasharray: 6 4; fill: none; }
+.ps-v { stroke: #8a7f72; stroke-width: 1.2; stroke-dasharray: 1.5 3.5; stroke-linecap: round; fill: none; }
+.ps-axis { stroke: #9aa5b1; stroke-width: 1; }
+.ps-tick { font-size: 11.5px; fill: #6b7682; font-variant-numeric: tabular-nums; }
+.ps-axlab { font-size: 12.5px; fill: var(--ink-soft); }
+.ps-lab { font-size: 11px; fill: var(--ink-soft); paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; font-variant-numeric: tabular-nums; }
+.ps-lab.dark { fill: var(--ink); font-weight: 600; }
+.ps-plab { font-size: 13px; font-weight: 700; fill: var(--navy); paint-order: stroke; stroke: #fff; stroke-width: 4px; stroke-linejoin: round; }
+.ps-cross { stroke: var(--navy); stroke-width: 1; opacity: .45; pointer-events: none; }
+.ps-tip { position: absolute; z-index: 5; pointer-events: none; background: #fff; border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: 8px 10px; font-size: .8rem; line-height: 1.45; min-width: 170px; display: none; }
+.ps-tip .hd { color: var(--ink); font-weight: 600; margin-bottom: 3px; font-variant-numeric: tabular-nums; }
+.ps-tip .row { display: flex; justify-content: space-between; gap: 12px; }
+.ps-tip .row b { font-variant-numeric: tabular-nums; font-weight: 600; }
+.ps-tip .row i { font-style: normal; color: var(--ink-soft); }
+.ps-tip .warn { color: #a3361a; max-width: 190px; }
+.ps-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: .82rem; color: var(--ink-soft); margin-top: 6px; }
+.ps-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.ps-key { display: inline-block; width: 18px; height: 0; border-top: 2px solid; vertical-align: middle; flex: none; }
+.ps-key.dash { border-top-style: dashed; }
+.ps-key.dot { border-top-style: dotted; border-top-width: 3px; }
+.ps-dotkey { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.ps-hint { font-size: .82rem; color: var(--ink-soft); margin: 6px 0 0; }
+.ps-notes { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.ps-notes li { font-size: .9rem; background: #f3f1ec; border-radius: 8px; padding: 8px 12px; }
+.ps-notes li b { color: var(--navy); }
+.ps-notes li.warn { background: #fdecec; }
+.ps-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.ps-tile { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 11px 14px 12px; min-width: 0; }
+.ps-tile .k { font-size: .82rem; color: var(--ink-soft); display: flex; align-items: center; gap: 6px; }
+.ps-tile .v { font-size: 1.5rem; font-weight: 600; color: var(--navy); line-height: 1.25; margin-top: 2px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ps-tile .s { font-size: .78rem; color: var(--ink-soft); line-height: 1.35; }
+.ps-swatch { width: 12px; height: 12px; border-radius: 50%; display: inline-block; flex: none; box-shadow: 0 0 0 1px rgba(20,41,61,.3); }
+.ps-svg { display: block; width: 100%; height: auto; }
+.ps-svg text { font-family: var(--sans); paint-order: stroke; stroke: #fff; stroke-width: 4px; stroke-linejoin: round; }
+.ps-cbar { margin: 8px auto 0; max-width: 460px; font-size: .78rem; color: var(--ink-soft); }
+.ps-cbar-bar { height: 10px; border-radius: 5px; border: 1px solid rgba(20,41,61,.15); }
+.ps-cbar-ticks { position: relative; height: 16px; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.ps-cbar-ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.ps-cbar-title { text-align: center; margin-bottom: 3px; }
+.ps-row2 { display: grid; gap: 18px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 18px; align-items: start; }
+.ps-col { display: grid; gap: 18px; min-width: 0; }
+.ps-sub-note { font-size: .82rem; color: var(--ink-soft); margin: 2px 0 6px; }
+.ps-scroll { overflow-x: auto; }
+.ps-table { width: 100%; border-collapse: collapse; font-size: .88rem; font-variant-numeric: tabular-nums; }
+.ps-table th, .ps-table td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.ps-table th:first-child, .ps-table td:first-child { text-align: left; white-space: normal; }
+.ps-table thead th { font-weight: 600; color: var(--ink-soft); font-size: .8rem; }
+.ps-table td small { color: var(--ink-soft); }
+.ps-table tr.tot td { font-weight: 600; border-top: 2px solid var(--line); }
+.ps-table th.is-cur, .ps-table td.is-cur { background: var(--accent-soft); }
+.ps-rates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; margin: 4px 0 0; font-size: .9rem; }
+.ps-rates div { min-width: 0; }
+.ps-rates dt { color: var(--ink-soft); font-size: .8rem; }
+.ps-rates dd { margin: 0; font-weight: 600; color: var(--navy); font-variant-numeric: tabular-nums; }
+.ps-rates dd small { display: block; font-weight: 400; color: var(--ink-soft); }
+.ps-steps { list-style: none; counter-reset: st; margin: 0; padding: 0; font-size: .9rem; }
+.ps-steps li { counter-increment: st; position: relative; padding: 7px 0 7px 30px; border-bottom: 1px dashed var(--line); }
+.ps-steps li::before { content: counter(st); position: absolute; left: 0; top: 8px; width: 21px; height: 21px; border-radius: 50%; background: var(--navy); color: #fff; font-size: .72rem; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+.ps-steps .lbl { display: block; font-size: .78rem; color: var(--ink-soft); }
+.ps-steps .eq { overflow-wrap: anywhere; }
+.ps-steps .res { font-weight: 600; color: var(--navy); white-space: nowrap; }
+.ps-matlab { margin: 12px 0 0; font-size: .82rem; }
+.ps-matlab pre { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: break-word; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: #14293d; color: #e6edf3; padding: 10px 12px; border-radius: 8px; font-size: .78rem; line-height: 1.5; }
+.ps-sticky { display: none; }
+.ps-doc .tex-d { overflow-x: auto; overflow-y: hidden; padding: 2px 0; }
+.ps-doc .tex-d .katex-display { margin: .4em 0; }
+.ps-eqs { width: 100%; border-collapse: collapse; margin: 8px 0 4px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
+.ps-eqs th, .ps-eqs td { text-align: left; vertical-align: middle; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.ps-eqs tr:last-child th, .ps-eqs tr:last-child td { border-bottom: 0; }
+.ps-eqs th { font-weight: 600; font-size: .92rem; color: var(--navy); width: 30%; }
+.ps-eqs th small { display: block; font-weight: 400; color: var(--ink-soft); }
+.ps-eqs td { min-width: 0; max-width: 0; width: 70%; }
+.ps-steps-doc { padding-left: 1.4em; }
+.ps-steps-doc li { margin-bottom: 14px; }
+.ps-twocol { display: grid; gap: 8px 40px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); }
+.ps-twocol ul { margin: 0; }
+.ps-twocol li { margin-bottom: 10px; }
+.ps-try { counter-reset: tr; list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+.ps-try li { counter-increment: tr; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px 14px 52px; position: relative; font-size: .97rem; }
+.ps-try li::before { content: counter(tr); position: absolute; left: 14px; top: 13px; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: #9a3a0f; font-weight: 700; font-size: .85rem; display: flex; align-items: center; justify-content: center; }
+.ps-credit { font-size: .88rem; color: var(--ink-soft); margin-top: 28px; }
+@media (max-width: 1020px) { .ps-row2 { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 920px) {
+  .ps-app { grid-template-columns: minmax(0, 1fr); }
+  .ps-sticky { display: flex; position: sticky; top: 71px; z-index: 40; justify-content: space-between; gap: 10px; background: rgba(255,255,255,.97); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); padding: 7px 12px; font-size: .8rem; color: var(--ink-soft); }
+  .ps-sticky b { display: block; color: var(--navy); font-size: .95rem; font-variant-numeric: tabular-nums; }
+}
+@media (max-width: 560px) {
+  .ps-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ps-panel { padding: 14px; }
+  .ps-tile .v { font-size: 1.3rem; }
+  .ps-rates { grid-template-columns: minmax(0, 1fr); }
+  .ps-eqs, .ps-eqs tbody, .ps-eqs tr, .ps-eqs th, .ps-eqs td { display: block; width: 100%; max-width: none; }
+  .ps-eqs th { padding-bottom: 0; border-bottom: 0; }
+}
+</style>
+
+<section class="page-hero ps-hero">
+  <div class="container">
+    <p class="ps-crumb"><a href="/teaching/">Teaching</a> <span aria-hidden="true">&rsaquo;</span> MAE 3524 Thermal Fluids Design</p>
+    <h1>Moist air process simulator</h1>
+    <p>Heat, cool, dehumidify or humidify a stream of moist air and follow the process on the psychrometric chart. Change the inlet air or the amount of heat and water, and see the exit state, the heat transfer per kilogram of dry air, and the water condensed or added.</p>
+  </div>
+</section>
+
+<section class="section ps" id="simulator" aria-label="Moist air process simulator">
+  <div class="container">
+    <noscript><p class="callout">The simulator needs JavaScript. The equations it uses are explained <a href="#equations">below</a>.</p></noscript>
+    <div class="ps-app">
+      <div class="ps-sticky" id="ps-sticky" aria-hidden="true">
+        <span>Exit <i>T</i><b id="sk-t">&ndash;</b></span><span>Exit &phi;<b id="sk-phi">&ndash;</b></span><span><i>q</i>, kJ/kg<b id="sk-q">&ndash;</b></span><span id="sk-wl">Water<b id="sk-w">&ndash;</b></span>
+      </div>
+
+      <form class="ps-panel ps-controls" id="ps-form" autocomplete="off" onsubmit="return false">
+        <p class="ps-intro">Pick a process, then drag a slider, type a value or drag point 1 on the chart. Everything on the page updates as you go.</p>
+        <fieldset class="ps-group">
+          <legend>Process</legend>
+          <div class="ps-chain" id="ps-chain" hidden></div>
+          <div class="ps-seg" id="seg-proc">
+            <label><input type="radio" name="proc" value="heat"><span>Sensible heating</span></label>
+            <label><input type="radio" name="proc" value="cool"><span>Sensible cooling</span></label>
+            <label><input type="radio" name="proc" value="dehum"><span>Cooling &amp; dehumidification</span></label>
+            <label><input type="radio" name="proc" value="humid"><span>Humidification</span></label>
+          </div>
+          <div class="ps-sub" id="sub-coil" hidden>
+            <span class="ps-sublabel" id="lab-coil">Cooling coil model</span>
+            <div class="ps-seg" role="radiogroup" aria-labelledby="lab-coil">
+              <label><input type="radio" name="coil" value="ideal"><span>Ideal: air leaves saturated</span></label>
+              <label><input type="radio" name="coil" value="real"><span>Real coil: surface temperature</span></label>
+            </div>
+          </div>
+          <div class="ps-sub" id="sub-hum" hidden>
+            <span class="ps-sublabel" id="lab-hum">Water is added as</span>
+            <div class="ps-seg" role="radiogroup" aria-labelledby="lab-hum">
+              <label><input type="radio" name="hm" value="steam"><span>Steam</span></label>
+              <label><input type="radio" name="hm" value="water"><span>Liquid water spray</span></label>
+            </div>
+          </div>
+          <button type="button" class="ps-btn wide" id="ps-add">+ Add a process after state 2</button>
+        </fieldset>
+
+        <fieldset class="ps-group">
+          <legend id="lg-set">Heat removed</legend>
+          <div class="ps-seg" id="seg-ctl" role="radiogroup" aria-labelledby="lg-set"></div>
+          <div id="ctl-set" style="margin-top:10px"></div>
+          <p class="ps-derived" id="ps-set-note"></p>
+        </fieldset>
+
+        <fieldset class="ps-group">
+          <legend>Inlet air, state 1</legend>
+          <p class="ps-lock" id="ps-lock" hidden></p>
+          <div id="ctl-in"></div>
+          <label class="ps-field">Second property that fixes state 1
+            <select id="ps-hk">
+              <option value="phi">Relative humidity &phi;</option>
+              <option value="twb">Wet-bulb temperature</option>
+              <option value="tdp">Dew-point temperature</option>
+              <option value="w">Humidity ratio W</option>
+            </select>
+          </label>
+          <div id="ctl-in2"></div>
+          <label class="ps-field">Pressure
+            <select id="ps-pk">
+              <option value="sea">Sea level, 101.325 kPa</option>
+              <option value="bar">1 bar, 100 kPa</option>
+              <option value="tulsa">Tulsa, OK (about 700 ft), 98.8 kPa</option>
+              <option value="still">Stillwater, OK (about 900 ft), 98.1 kPa</option>
+              <option value="denver">Denver, CO (5,280 ft), 83.4 kPa</option>
+              <option value="custom">Other pressure&hellip;</option>
+            </select>
+          </label>
+          <div id="ctl-p"></div>
+          <p class="ps-derived" id="ps-in-note"></p>
+        </fieldset>
+
+        <fieldset class="ps-group">
+          <legend>HVAC application</legend>
+          <label class="ps-field" for="ps-flow">Airflow entering at state 1
+            <span class="ps-flow"><input type="number" id="ps-flow" min="0" step="any" inputmode="decimal" aria-label="Airflow">
+              <select id="ps-fu" aria-label="Airflow unit">
+                <option value="m3min">m&sup3;/min</option>
+                <option value="m3s">m&sup3;/s</option>
+                <option value="ls">L/s</option>
+                <option value="cfm">ft&sup3;/min (CFM)</option>
+                <option value="kgmin">kg/min of dry air</option>
+                <option value="kgs">kg/s of dry air</option>
+              </select></span>
+          </label>
+          <p class="ps-derived" id="ps-flow-note"></p>
+        </fieldset>
+
+        <fieldset class="ps-group">
+          <legend>Options</legend>
+          <label class="ps-field">Load an example
+            <select id="ps-example">
+              <option value="">Choose an example&hellip;</option>
+              <option value="default">Summer air conditioning, ideal coil (default)</option>
+              <option value="lec5">Lecture 5: heating moist air in a duct</option>
+              <option value="dehum10">Dehumidifier: 30 &deg;C, 50% cooled to 10 &deg;C</option>
+              <option value="realcoil">Real cooling coil with a bypass factor</option>
+              <option value="reheat">Cooling with dehumidification, then reheat</option>
+              <option value="winter">Winter: heating, then steam humidification</option>
+              <option value="steam">Steam humidifier: 22 &deg;C, wet bulb 9 &deg;C</option>
+              <option value="evap">Evaporative cooler in a hot, dry climate</option>
+              <option value="sens">Sensible cooling down to the dew point</option>
+            </select>
+          </label>
+          <div class="ps-buttons">
+            <button type="button" class="ps-btn" id="ps-reset">Reset</button>
+            <button type="button" class="ps-btn" id="ps-link">Copy link to this setup</button>
+          </div>
+        </fieldset>
+      </form>
+
+      <div class="ps-out" id="ps-out">
+        <div class="ps-panel">
+          <div class="ps-card-head"><h2 id="ps-title">Psychrometric chart</h2><span class="ps-code" id="ps-tag"></span></div>
+          <div class="ps-toggles">
+            <label><input type="checkbox" id="tg-h" checked> Enthalpy lines</label>
+            <label><input type="checkbox" id="tg-wb"> Wet-bulb lines</label>
+            <label><input type="checkbox" id="tg-v"> Specific-volume lines</label>
+          </div>
+          <div class="ps-chart" id="ps-chart"></div>
+          <div class="ps-legend" id="ps-legend"></div>
+          <p class="ps-hint">Hover over the chart (or tap it) to read the properties of any state. Drag point 1 to change the inlet air.</p>
+          <ul class="ps-notes" id="ps-notes" aria-live="polite"></ul>
+        </div>
+        <div class="ps-tiles" id="ps-tiles" aria-live="polite"></div>
+        <div class="ps-panel">
+          <div class="ps-card-head"><h3 id="sch-title">In the duct</h3></div>
+          <div class="ps-scroll"><svg class="ps-svg" id="ps-svg" viewBox="0 0 600 236" role="img" aria-labelledby="ps-svg-desc"><desc id="ps-svg-desc">Duct schematic</desc></svg></div>
+          <div class="ps-cbar" aria-hidden="true">
+            <div class="ps-cbar-title">Air temperature, &deg;C</div>
+            <div class="ps-cbar-bar" id="ps-cbar"></div>
+            <div class="ps-cbar-ticks" id="ps-cbar-ticks"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ps-row2">
+      <div class="ps-col">
+        <div class="ps-panel">
+          <div class="ps-card-head"><h3>State properties</h3></div>
+          <p class="ps-sub-note">Every property of each state, from <code>Psychrometricsnew.m</code>&rsquo;s equations. These are the values plotted on the chart.</p>
+          <div class="ps-scroll" id="ps-states"></div>
+        </div>
+        <div class="ps-panel">
+          <div class="ps-card-head"><h3>HVAC rates</h3></div>
+          <p class="ps-sub-note" id="ps-rates-note"></p>
+          <dl class="ps-rates" id="ps-rates"></dl>
+          <div class="ps-scroll" id="ps-chain-table" style="margin-top:12px"></div>
+        </div>
+      </div>
+      <div class="ps-panel">
+        <div class="ps-card-head"><h3 id="steps-title">Step-by-step solution</h3></div>
+        <ol class="ps-steps" id="ps-steps"></ol>
+        <div class="ps-matlab">Check it with the course MATLAB function (<code>h</code> in J/kg dry air):<pre id="ps-matlab"></pre></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt ps-doc" id="equations">
+  <div class="container">
+    <div class="section-head"><h2>How the simulator works</h2></div>
+    <p class="measure">Each process is a steady-flow device, a duct with a heating coil, a cooling coil or a humidifier. The simulator writes mass and energy balances per kilogram of <em>dry air</em>, because the dry-air flow is the same at the inlet and the exit while the water-vapor flow is not. Moist air is treated as an ideal-gas mixture of dry air and water vapor (the Dalton model), and its properties come from the ASHRAE <i>Fundamentals</i> equations coded in <code>Psychrometricsnew.m</code>. Notation: <i>W</i> is the humidity ratio (&omega; in the textbook), &phi; the relative humidity and <i>h</i> the enthalpy per kilogram of dry air.</p>
+
+    <h3 style="margin-top:28px">Properties of moist air</h3>
+    <ol class="ps-steps-doc measure">
+      <li><strong>Saturation pressure</strong> of water vapor at the dry-bulb temperature <i>T</i> (ASHRAE eq. 6, <i>T</i> in kelvin, <i>p</i><sub>ws</sub> in Pa):
+        <div class="tex-d" data-tex="\ln p_{ws}=\frac{C_8}{T}+C_9+C_{10}\,T+C_{11}\,T^2+C_{12}\,T^3+C_{13}\ln T"></div>
+        with <i>C</i><sub>8</sub> = &minus;5800.2206, <i>C</i><sub>9</sub> = 1.3914993, <i>C</i><sub>10</sub> = &minus;0.048640239, <i>C</i><sub>11</sub> = 4.1764768&times;10<sup>&minus;5</sup>, <i>C</i><sub>12</sub> = &minus;1.4452093&times;10<sup>&minus;8</sup> and <i>C</i><sub>13</sub> = 6.5459673 (valid from 0 to 200 &deg;C).</li>
+      <li><strong>Humidity ratio and relative humidity.</strong> The mixture pressure is the sum of the partial pressures, <i>p</i> = <i>p</i><sub>a</sub> + <i>p</i><sub>w</sub>. The humidity ratio compares masses; the relative humidity compares the vapor pressure with the most the air could hold at the same temperature:
+        <div class="tex-d" data-tex="W=\frac{m_w}{m_a}=0.621945\,\frac{p_w}{p-p_w},\qquad \phi=\frac{p_w}{p_{ws}(T)}"></div></li>
+      <li><strong>Enthalpy and specific volume</strong> per kilogram of dry air, <i>T</i> in &deg;C (the vapor term is <i>h</i><sub>g</sub> &asymp; 2501 + 1.86<i>T</i> kJ/kg):
+        <div class="tex-d" data-tex="h=1.006\,T+W\left(2501+1.86\,T\right)\quad\mathrm{kJ/kg\ dry\ air}"></div>
+        <div class="tex-d" data-tex="v=\frac{0.287042\,(T+273.15)\,(1+1.607858\,W)}{p}\quad\mathrm{m^3/kg\ dry\ air},\ \ p\ \mathrm{in\ kPa}"></div></li>
+      <li><strong>Dew point and wet bulb.</strong> The dew point <i>T</i><sub>dp</sub> is where air cooled at constant <i>W</i> becomes saturated, <i>p</i><sub>ws</sub>(<i>T</i><sub>dp</sub>) = <i>p</i><sub>w</sub>. The wet-bulb temperature <i>T</i><sup>*</sup> follows from ASHRAE eq. 35, where <i>W</i><sub>s</sub><sup>*</sup> is the saturation humidity ratio at <i>T</i><sup>*</sup>:
+        <div class="tex-d" data-tex="W=\frac{\left(2501-2.326\,T^{*}\right)W_s^{*}-1.006\left(T-T^{*}\right)}{2501+1.86\,T-4.186\,T^{*}}"></div></li>
+    </ol>
+
+    <h3 style="margin-top:28px">Process equations (per kilogram of dry air)</h3>
+    <table class="ps-eqs">
+      <tr><th>Sensible heating or cooling<small>No water is added or removed; the state moves horizontally on the chart.</small></th><td><div class="tex-d" data-tex="W_2=W_1,\qquad q=h_2-h_1"></div></td></tr>
+      <tr><th>Cooling with dehumidification<small>Below the dew point the air leaves saturated; the condensate leaves as liquid at <i>T</i><sub>2</sub>.</small></th><td><div class="tex-d" data-tex="W_2=W_s(T_2),\qquad \frac{m_{cond}}{m_a}=W_1-W_2"></div><div class="tex-d" data-tex="q=h_2-h_1+\left(W_1-W_2\right)h_f(T_2),\qquad h_f\approx4.186\,T_2"></div></td></tr>
+      <tr><th>Real cooling coil<small>The leaving air is a mixture of air brought to the coil-surface state s (saturated at <i>T</i><sub>s</sub>) and air that bypassed the coil, so it lies on the straight line from 1 to s.</small></th><td><div class="tex-d" data-tex="h_2=\mathrm{BF}\,h_1+\left(1-\mathrm{BF}\right)h_s,\qquad W_2=\mathrm{BF}\,W_1+\left(1-\mathrm{BF}\right)W_s"></div><div class="tex-d" data-tex="\mathrm{BF}\approx\frac{T_2-T_s}{T_1-T_s}"></div></td></tr>
+      <tr><th>Humidification<small>Adiabatic. Steam: <i>h</i><sub>w</sub> = <i>h</i><sub>g</sub>(<i>T</i><sub>steam</sub>); liquid water: <i>h</i><sub>w</sub> = <i>h</i><sub>f</sub>(<i>T</i><sub>water</sub>).</small></th><td><div class="tex-d" data-tex="\frac{m_w}{m_a}=W_2-W_1,\qquad h_2=h_1+\left(W_2-W_1\right)h_w"></div></td></tr>
+      <tr><th>HVAC rates<small>The airflow is measured at the inlet; 1 ton of refrigeration = 3.517 kW = 12,000 Btu/h.</small></th><td><div class="tex-d" data-tex="\dot m_a=\frac{\dot V_1}{v_1},\qquad \dot Q=\dot m_a\,q,\qquad \dot m_w=\dot m_a\left|W_2-W_1\right|"></div></td></tr>
+    </table>
+    <p class="small muted">Equations from the ASHRAE <i>Handbook&mdash;Fundamentals</i> (2013, SI), chapter 1, as used in <code>Psychrometricsnew.m</code>; process balances as in Moran &amp; Shapiro, <i>Fundamentals of Engineering Thermodynamics</i>, chapter 12.</p>
+
+    <h3 style="margin-top:28px">Reading the chart, and good habits</h3>
+    <div class="ps-twocol">
+      <ul>
+        <li><strong>Lines on the chart.</strong> Curves of constant relative humidity (gray, every 10%), the saturation curve (&phi; = 100%, black), straight lines of constant enthalpy (blue, kJ/kg dry air) and, as in <code>psychplotting.m</code>, dashed guide lines through the saturation curve every 5 &deg;C. Wet-bulb and specific-volume lines can be switched on above the chart.</li>
+        <li><strong>Why W, not &phi;?</strong> Heating at constant <i>W</i> makes &phi; fall even though no water is removed: the same vapor pressure is a smaller fraction of the saturation pressure. Only a change of <i>W</i> means water was added or removed.</li>
+        <li><strong>Dew point.</strong> Cooling at constant <i>W</i> stops being sensible at the dew point. Further cooling condenses water and the state slides down the saturation curve.</li>
+      </ul>
+      <ul>
+        <li><strong>Real coils.</strong> Air touching the cold fins reaches the coil-surface state; air that slips past does not. The leaving air is a mixture of the two, so it lies on a straight line toward the coil-surface temperature, not on the saturation curve. The bypass factor BF measures how far from the surface it stops.</li>
+        <li><strong>Evaporative cooling.</strong> Liquid water evaporating into the air takes its latent heat from the air, so <i>T</i> falls while <i>h</i> and the wet-bulb temperature stay almost constant. The air can be cooled no lower than its wet-bulb temperature.</li>
+        <li><strong>Assumptions.</strong> Steady flow, ideal-gas mixture, no kinetic or potential energy changes, no fan work, no heat loss. Temperatures from 0 to 60 &deg;C, coil surfaces above freezing.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="section ps-doc" id="activities">
+  <div class="container">
+    <div class="section-head"><h2>Try it yourself</h2></div>
+    <ol class="ps-try">
+      <li>Load the <em>Lecture 5</em> example. Confirm <i>W</i><sub>1</sub> &asymp; 0.0062 and <i>q</i> &asymp; 20.3 kJ/kg dry air. Why does &phi; drop from 80% to about 23%?</li>
+      <li>Choose <em>Sensible cooling</em> and slide the heat removed to its maximum. Read the exit temperature and compare it with the dew point of the inlet air.</li>
+      <li>Switch to <em>Cooling &amp; dehumidification</em> and keep increasing the heat removed. At what value of <i>q</i> does water start to condense? How much of <i>q</i> goes into condensing water (the latent part)?</li>
+      <li>With the <em>Real coil</em> model, lower the coil-surface temperature by 4 &deg;C while keeping <i>T</i><sub>2</sub> fixed. What happens to the bypass factor and to the condensate?</li>
+      <li>Humidify the same winter air once with steam and once with liquid water spray, adding the same amount of water. Explain the different exit temperatures.</li>
+      <li>Load <em>Cooling with dehumidification, then reheat</em>. Why does the coil remove more heat than the room needs? Compare the coil load with the reheat.</li>
+      <li>Change the pressure from sea level to Denver at the same <i>T</i> and &phi;. Which properties change, and why?</li>
+      <li>Run the MATLAB lines under the step-by-step solution and confirm that <code>Psychrometricsnew.m</code> reproduces the simulator&rsquo;s numbers.</li>
+    </ol>
+    <p class="ps-credit">Calculation engine: a JavaScript port of the MATLAB functions <code>Psychrometricsnew.m</code> and <code>psychplotting.m</code> used in MAE 3524. Property equations: ASHRAE <i>Handbook&mdash;Fundamentals</i> (2013), chapter 1. Questions or suggestions: <a href="mailto:sallam@okstate.edu">sallam@okstate.edu</a>.</p>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous" defer></script>
+<script>
+(function () {
+'use strict';
+/* ===== Moist-air model: a JavaScript port of Psychrometricsnew.m =====
+   ASHRAE Handbook 2013 Fundamentals (SI), chapter 1. Units: T in °C, p in kPa,
+   W in kg water per kg dry air, h in kJ per kg dry air, v in m³ per kg dry air. */
+var CA = 1.006, HLG = 2501, CW = 1.86, CL = 4.186, MWR = 0.621945;
+var TMAX = 60, TMIN = 1;
+
+/* Saturation pressure of water vapor, kPa: eq. 6 over liquid water (0 to 200 °C), eq. 5 over ice below 0 °C */
+function pws(T) {
+  var K = T + 273.15;
+  if (T < 0) return Math.exp(-5.6745359e3 / K + 6.3925247 - 9.677843e-3 * K + 6.2215701e-7 * K * K + 2.0747825e-9 * K * K * K - 9.484024e-13 * K * K * K * K + 4.1635019 * Math.log(K)) / 1000;
+  return Math.exp(-5.8002206e3 / K + 1.3914993 - 4.8640239e-2 * K + 4.1764768e-5 * K * K - 1.4452093e-8 * K * K * K + 6.5459673 * Math.log(K)) / 1000;
+}
+/* Bisection for f(x) = 0 on [a, b]; without a sign change it returns the end where |f| is smaller */
+function root(f, a, b, n) {
+  var fa = f(a), fb = f(b), m, fm, i;
+  if (fa === 0) return a;
+  if (fb === 0) return b;
+  if ((fa < 0) === (fb < 0)) return Math.abs(fa) <= Math.abs(fb) ? a : b;
+  for (i = 0; i < (n || 64); i++) {
+    m = 0.5 * (a + b); fm = f(m);
+    if ((fm < 0) === (fa < 0)) { a = m; fa = fm; } else b = m;
+  }
+  return 0.5 * (a + b);
+}
+function Tsat(pw) { return root(function (T) { return pws(T) - pw; }, -100, 200); }   // temperature at which pws = pw
+function wOfPw(pw, P) { return MWR * pw / (P - pw); }                                  // eq. 22
+function pwOfW(W, P) { return W * P / (MWR + W); }                                     // eq. 20, solved for pw
+function Wsat(T, P) { return wOfPw(pws(T), P); }                                       // eq. 23
+function hOf(T, W) { return CA * T + W * (HLG + CW * T); }                             // eq. 32
+function vOf(T, W, P) { return 0.287042 * (T + 273.15) * (1 + 1.607858 * W) / P; }    // eq. 28
+function TofWh(W, h) { return (h - W * HLG) / (CA + W * CW); }                         // eq. 32 solved for T
+function WofTh(T, h) { return (h - CA * T) / (HLG + CW * T); }                         // eq. 32 solved for W
+/* Wet bulb: eq. 35 (above freezing) or eq. 37 (below freezing) gives W from T and the wet-bulb temperature t */
+function WofTwb(T, t, P) {
+  var ws = Wsat(t, P);
+  if (t >= 0) return ((HLG - 2.326 * t) * ws - CA * (T - t)) / (HLG + CW * T - CL * t);
+  return ((2830 - 0.24 * t) * ws - CA * (T - t)) / (2830 + CW * T - 2.1 * t);
+}
+function wetBulb(T, W, P) { return root(function (t) { return WofTwb(T, t, P) - W; }, -60, T); }
+function dewPoint(W, P) { return W > 0 ? Tsat(pwOfW(W, P)) : -Infinity; }
+
+/* All properties of the state (T, W) at pressure P, like the outputs of Psychrometricsnew */
+function props(T, W, P) {
+  var pw = pwOfW(W, P), ps = pws(T);
+  return { T: T, W: W, P: P, pw: pw, pws: ps, phi: 100 * pw / ps, h: hOf(T, W), v: vOf(T, W, P), Tdp: dewPoint(W, P), Twb: wetBulb(T, W, P) };
+}
+/* The second property that fixes the inlet state: relative humidity, wet bulb, dew point or humidity ratio */
+function Wfrom(T, kind, val, P) {
+  if (kind === 'phi') return wOfPw(val / 100 * pws(T), P);
+  if (kind === 'twb') return WofTwb(T, val, P);
+  if (kind === 'tdp') return wOfPw(pws(val), P);
+  return val / 1000;   // 'w' is entered in g/kg
+}
+function specOf(s, kind) {
+  return kind === 'phi' ? s.phi : kind === 'twb' ? s.Twb : kind === 'tdp' ? s.Tdp : 1000 * s.W;
+}
+/* Range of the second property for a given dry-bulb temperature */
+function specRange(T, kind, P) {
+  if (kind === 'phi') return [1, 100];
+  if (kind === 'twb') return [Math.ceil(wetBulb(T, 0.0002, P) * 10) / 10, T];
+  if (kind === 'tdp') return [-20, T];
+  return [0.2, Math.floor(1000 * Wsat(T, P) * 100) / 100];
+}
+
+/* ===== Processes (per kg of dry air; q > 0 means heat added to the air) ===== */
+/* Path of a cooling coil, as a function of the leaving dry-bulb temperature T2.
+   Ideal coil (lecture model): constant W down to the dew point, then along the saturation curve.
+   Real coil: the straight coil line from the entering state toward the coil-surface state (Ts on the
+   saturation curve, the apparatus dew point); if that line would cross the saturation curve, the air
+   follows the saturation curve from there (the extra water condenses as fog). */
+function coilPath(s1, real, Ts) {
+  var P = s1.P, W1 = s1.W, h1 = s1.h, Tdp = s1.Tdp, path = { real: !!real, Ts: Ts };
+  if (!real) {
+    path.lo = TMIN; path.Thit = Math.max(Tdp, TMIN);
+    path.at = function (T2) { return T2 >= Tdp ? { T: T2, W: W1 } : { T: T2, W: Wsat(T2, P) }; };
+    return path;
+  }
+  if (!(Ts < s1.T)) {   // a coil surface at or above the air temperature cannot cool the air
+    path.lo = s1.T; path.Thit = s1.T; path.wet = false; path.fog = false; path.xhit = 1; path.sc = { T: s1.T, W: W1 };
+    path.at = function () { return { T: s1.T, W: W1 }; };
+    return path;
+  }
+  var wet = Ts < Tdp, Wc = wet ? Wsat(Ts, P) : W1, hc = hOf(Ts, Wc);
+  path.lo = Ts; path.wet = wet; path.sc = { T: Ts, W: Wc };
+  var line = function (x) { var W = W1 + x * (Wc - W1), h = h1 + x * (hc - h1); return { T: TofWh(W, h), W: W }; };
+  var g = function (x) { var p = line(x); return p.W - Wsat(p.T, P); };
+  var xhit = 1, k, prev = 0;
+  if (wet) {
+    for (k = 1; k <= 100; k++) {
+      var x = k / 100 * 0.999;
+      if (g(x) > 0) { xhit = root(function (y) { return g(y); }, prev, x, 50); break; }
+      prev = x;
+    }
+  }
+  path.xhit = xhit; path.fog = xhit < 1;
+  path.Thit = xhit < 1 ? line(xhit).T : Ts;
+  path.lineAt = line;
+  path.at = function (T2) {
+    if (T2 < path.Thit) return { T: T2, W: Wsat(T2, P) };
+    var x = root(function (y) { return T2 - line(y).T; }, 0, xhit, 50);   // line(y).T falls as y rises
+    return { T: T2, W: line(x).W };
+  };
+  return path;
+}
+/* Result of a coil (heating or cooling) for a leaving temperature T2 */
+function coilResult(s1, path, T2) {
+  var p = path.at(T2), s2 = props(p.T, p.W, s1.P), mw = Math.max(0, s1.W - s2.W);
+  return { s1: s1, s2: s2, mw: mw, hw: CL * s2.T, q: s2.h - s1.h + mw * CL * s2.T, path: path };
+}
+/* Heat removed (> 0) by a coil for a leaving temperature T2: falls monotonically as T2 rises */
+function coilQout(s1, path, T2) { return -coilResult(s1, path, T2).q; }
+function coilForQ(s1, path, qout) {
+  var T2 = root(function (T) { return qout - coilQout(s1, path, T); }, path.lo, s1.T, 60);
+  return coilResult(s1, path, T2);
+}
+/* Sensible heating at constant W */
+function heatResult(s1, T2) { var s2 = props(T2, s1.W, s1.P); return { s1: s1, s2: s2, mw: 0, q: s2.h - s1.h }; }
+function heatForQ(s1, q) { return heatResult(s1, TofWh(s1.W, s1.h + q)); }
+
+/* Humidification with steam or liquid water, no heat transfer.
+   Steam: h_g ≈ 2501 + 1.86 T (ASHRAE eq. 30); liquid water: h_f ≈ 4.186 T. */
+function hWater(method, Tw) { return method === 'steam' ? HLG + CW * Tw : CL * Tw; }
+function humidResult(s1, method, Tw, dW) {
+  var hw = hWater(method, Tw), W2 = s1.W + dW, h2 = s1.h + dW * hw, s2 = props(TofWh(W2, h2), W2, s1.P);
+  return { s1: s1, s2: s2, mw: dW, hw: hw, q: 0 };
+}
+/* Largest amount of water that can evaporate: the exit air is saturated */
+function humidMax(s1, method, Tw) {
+  var f = function (dW) { return humidResult(s1, method, Tw, dW).s2.phi - 100; };
+  if (f(0) >= 0) return 0;
+  var hi = 0.001;
+  while (f(hi) < 0 && hi < 1) hi *= 2;
+  return root(f, 0, hi, 60);
+}
+function humidForPhi(s1, method, Tw, phi2) {
+  var max = humidMax(s1, method, Tw);
+  return humidResult(s1, method, Tw, root(function (dW) { return humidResult(s1, method, Tw, dW).s2.phi - phi2; }, 0, max, 60));
+}
+function humidForT(s1, Tw, T2) {   // liquid water only: T2 falls as water evaporates
+  var max = humidMax(s1, 'water', Tw);
+  return humidResult(s1, 'water', Tw, root(function (dW) { return T2 - humidResult(s1, 'water', Tw, dW).s2.T; }, 0, max, 60));
+}
+
+/* Altitude in m to standard barometric pressure in kPa (ASHRAE eq. 3) */
+function pAlt(z) { return 101.325 * Math.pow(1 - 2.25577e-5 * z, 5.2559); }
+/* ===== User interface ===== */
+var $ = function (id) { return document.getElementById(id); };
+var SVGNS = 'http://www.w3.org/2000/svg';
+var HOT = '#c8372d', COLD = '#2a78d6', WALL = '#42515e', ACCENT = '#d9541e', NAVY = '#14293d', INK2 = '#52606d';
+
+function S(tag, attrs, parent, text) {
+  var e = document.createElementNS(SVGNS, tag), k;
+  for (k in attrs) if (attrs[k] !== undefined && attrs[k] !== null) e.setAttribute(k, attrs[k]);
+  if (text !== undefined && text !== null) e.textContent = text;
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+function clamp(v, a, b) { return Math.min(b, Math.max(a, v)); }
+function fix(v, d) {
+  if (!isFinite(v)) return '–';
+  if (Math.abs(v) < 0.5 * Math.pow(10, -d)) v = 0;
+  return v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d, useGrouping: Math.abs(v) >= 10000 }).replace('-', '−');
+}
+function sgn(v, d) { var s = fix(v, d); return v > 0 && s !== fix(0, d) ? '+' + s : s; }
+function sig(v, n) { return Number(v.toPrecision(n)); }
+function rnd(v, d) { return Number(v.toFixed(d)); }
+function inp(v, d) { return String(rnd(v, d)); }
+function fT(T) { return fix(T, 1) + ' °C'; }
+function fdp(T) { return fT(T) + (T < 0 ? ' (frost)' : ''); }
+function fPhi(p) { return fix(p, 1) + '%'; }
+function fWg(W) { return fix(1000 * W, 2) + ' g/kg'; }
+function fH(h) { return fix(h, 1) + ' kJ/kg'; }
+function fkW(Q) { var a = Math.abs(Q); return fix(Q, a >= 100 ? 0 : a >= 10 ? 1 : 2) + ' kW'; }
+function n3(v) { return fix(v, 3); }
+
+/* Air temperature colors: ColorBrewer RdBu, cold = blue, warm = red, on a fixed 0 to 50 °C scale */
+var RAMP = [[33, 102, 172], [103, 169, 207], [209, 229, 240], [247, 247, 247], [253, 219, 199], [239, 138, 98], [178, 24, 43]];
+var tlo = 0, thi = 50;
+function tcol(T) {
+  var u = clamp((T - tlo) / (thi - tlo), 0, 1) * (RAMP.length - 1);
+  var i = Math.min(RAMP.length - 2, Math.floor(u)), f = u - i, a = RAMP[i], b = RAMP[i + 1];
+  return 'rgb(' + Math.round(a[0] + f * (b[0] - a[0])) + ',' + Math.round(a[1] + f * (b[1] - a[1])) + ',' + Math.round(a[2] + f * (b[2] - a[2])) + ')';
+}
+
+/* ----- State ----- */
+var PK = { sea: 101.325, bar: 100, tulsa: 98.8, still: 98.1, denver: 83.4 };
+var DEF = { pk: 'sea', P: 101.325, T1: 30, hk: 'phi', hv: 50, flow: 60, fu: 'm3min', oh: true, owb: false, ov: false };
+var NAMES = { heat: 'Sensible heating', cool: 'Sensible cooling', dehum: 'Cooling & dehumidification', humid: 'Humidification' };
+function blankStep(proc) { return { proc: proc || 'dehum', ctl: 'q', q: 35, T2: 12, coil: 'ideal', Ts: 8, hm: 'steam', Tst: 100, Tw: 20, mw: 5, phi2: 50 }; }
+function copy(o) { var r = {}, k; for (k in o) r[k] = o[k]; return r; }
+var st = copy(DEF);
+st.steps = [blankStep('dehum')]; st.sel = 0;
+function pressure() { return st.pk === 'custom' ? st.P : PK[st.pk]; }
+function devName(sp) {
+  if (sp.proc === 'heat') return 'Heating coil';
+  if (sp.proc === 'humid') return sp.hm === 'steam' ? 'Steam humidifier' : 'Water spray';
+  return 'Cooling coil';
+}
+
+/* ----- Slider + number controls ----- */
+function Ctl(parent, id) {
+  var d = document.createElement('div');
+  d.className = 'ps-ctl'; d.id = 'c-' + id;
+  d.innerHTML = '<label for="n-' + id + '" id="l-' + id + '"></label><div class="ps-inrow"><input type="range" id="r-' + id + '">' +
+    '<span class="ps-num"><input type="number" id="n-' + id + '" step="any" inputmode="decimal"><span class="ps-unit" id="u-' + id + '"></span></span></div>';
+  parent.appendChild(d);
+  var c = { el: d, rg: $('r-' + id), nb: $('n-' + id), lab: $('l-' + id), unit: $('u-' + id), min: 0, max: 1, dec: 1, value: 0, onset: function () {} };
+  c.config = function (label, unit, min, max, step, dec, aria) {
+    if (c.lab.innerHTML !== label) c.lab.innerHTML = label;
+    if (c.unit.innerHTML !== unit) c.unit.innerHTML = unit;
+    c.min = min; c.max = max; c.dec = dec;
+    c.rg.min = min; c.rg.max = max; c.rg.step = step; c.rg.setAttribute('aria-label', aria);
+    c.nb.min = rnd(min, dec); c.nb.max = rnd(max, dec);
+    var off = !(max - min > 1e-9);
+    c.rg.disabled = off; c.nb.disabled = off; d.classList.toggle('is-off', off);
+  };
+  c.show = function (v) {
+    c.value = v; c.rg.value = v;
+    if (document.activeElement !== c.nb) { c.nb.value = inp(v, c.dec); c.nb.removeAttribute('aria-invalid'); }
+  };
+  c.rg.addEventListener('input', function () {
+    var v = +c.rg.value; c.nb.value = inp(v, c.dec); c.nb.removeAttribute('aria-invalid'); c.onset(v);
+  });
+  c.nb.addEventListener('input', function () {
+    var v = parseFloat(c.nb.value);
+    if (isFinite(v) && v >= rnd(c.min, c.dec) - 1e-9 && v <= rnd(c.max, c.dec) + 1e-9) { c.nb.removeAttribute('aria-invalid'); c.rg.value = v; c.onset(v); }
+    else c.nb.setAttribute('aria-invalid', 'true');
+  });
+  c.nb.addEventListener('change', function () {
+    var v = parseFloat(c.nb.value);
+    if (!isFinite(v)) v = c.value;
+    v = clamp(v, c.min, c.max);
+    c.nb.value = inp(v, c.dec); c.nb.removeAttribute('aria-invalid'); c.rg.value = v; c.onset(v);
+  });
+  return c;
+}
+var cT1 = Ctl($('ctl-in'), 'T1'), cHv = Ctl($('ctl-in2'), 'hv'), cP = Ctl($('ctl-p'), 'P');
+var cSet = Ctl($('ctl-set'), 'set'), cAux = Ctl($('ctl-set'), 'aux');
+cT1.onset = function (v) { st.T1 = v; changed(); };
+cHv.onset = function (v) { st.hv = v; changed(); };
+cP.onset = function (v) { st.P = v; changed(); };
+cSet.onset = function (v) { var sp = cur(); sp[sp.ctl] = v; changed(); };
+cAux.onset = function (v) { var sp = cur(); sp[auxKey(sp)] = v; changed(); };
+function cur() { return st.steps[st.sel]; }
+function auxKey(sp) { return sp.proc === 'dehum' ? 'Ts' : sp.hm === 'steam' ? 'Tst' : 'Tw'; }
+
+function setRadio(name, v) { var el = document.querySelector('input[name="' + name + '"][value="' + v + '"]'); if (el) el.checked = true; }
+function radios(name, fn) {
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="' + name + '"]'), function (el) {
+    el.addEventListener('change', function () { if (el.checked) fn(el.value); });
+  });
+}
+radios('proc', function (v) { setProc(v); });
+radios('coil', function (v) { cur().coil = v; changed(); });
+radios('hm', function (v) { var sp = cur(); sp.hm = v; if (v === 'steam' && sp.ctl === 'T2') { sp.ctl = 'mw'; sp.mw = rnd(1000 * last.res[st.sel].mw, 2); } changed(); });
+$('seg-ctl').addEventListener('change', function (e) {
+  var el = e.target; if (el.name !== 'ctl' || !el.checked) return;
+  var sp = cur(), r = last.res[st.sel];
+  sp.ctl = el.value;
+  if (el.value === 'q') sp.q = rnd(Math.abs(r.q), 1);
+  else if (el.value === 'T2') sp.T2 = rnd(r.s2.T, 1);
+  else if (el.value === 'mw') sp.mw = rnd(1000 * r.mw, 2);
+  else sp.phi2 = rnd(r.s2.phi, 1);
+  changed();
+});
+$('ps-hk').addEventListener('change', function () {
+  var s1 = last.chain[0];
+  st.hk = this.value;
+  var dec = st.hk === 'w' ? 2 : 1, rg = specRange(s1.T, st.hk, s1.P);
+  st.hv = clamp(rnd(specOf(s1, st.hk), dec), rg[0], rg[1]);
+  changed();
+});
+$('ps-pk').addEventListener('change', function () {
+  if (this.value === 'custom') st.P = pressure();
+  st.pk = this.value; changed();
+});
+['tg-h', 'tg-wb', 'tg-v'].forEach(function (id, i) {
+  $(id).addEventListener('change', function () { st[['oh', 'owb', 'ov'][i]] = this.checked; changed(); });
+});
+
+/* Airflow: kept in the unit the student chose; converted to dry-air mass flow with v1 */
+var FU = { m3min: 1 / 60, m3s: 1, ls: 0.001, cfm: 0.0283168466 / 60, kgmin: 1 / 60, kgs: 1 };
+function isMass(u) { return u === 'kgmin' || u === 'kgs'; }
+function mdot(s1) { var x = st.flow * FU[st.fu]; return isMass(st.fu) ? x : x / s1.v; }
+$('ps-flow').addEventListener('input', function () {
+  var v = parseFloat(this.value);
+  if (isFinite(v) && v > 0 && v < 1e7) { st.flow = v; this.removeAttribute('aria-invalid'); changed(); } else this.setAttribute('aria-invalid', 'true');
+});
+$('ps-flow').addEventListener('change', function () { this.value = sig(st.flow, 6); this.removeAttribute('aria-invalid'); });
+$('ps-fu').addEventListener('change', function () {
+  var s1 = last.chain[0], m = mdot(s1), u = this.value, x = isMass(u) ? m : m * s1.v;
+  st.fu = u; st.flow = sig(x / FU[u], 4); $('ps-flow').value = st.flow; changed();
+});
+
+/* ----- Process switching keeps a sensible process for the current inlet ----- */
+function setProc(p) {
+  var sp = cur(), s1 = last.chain[st.sel], ns = blankStep(p), r;
+  ns.coil = sp.coil; ns.Ts = sp.Ts; ns.hm = sp.hm; ns.Tst = sp.Tst; ns.Tw = sp.Tw;
+  st.steps[st.sel] = ns;
+  r = solveStep(s1, ns, false);
+  if (p === 'heat') { ns.ctl = 'q'; ns.q = rnd(Math.min(15, 0.5 * r.rng.q[1]), 1); }
+  else if (p === 'cool') { ns.ctl = 'q'; ns.q = rnd(0.6 * r.rng.q[1], 1); }
+  else if (p === 'dehum') { ns.ctl = 'q'; ns.q = rnd(r.qdew + 0.5 * (r.rng.q[1] - r.qdew), 1); if (ns.coil === 'real') ns.Ts = rnd(Math.min(ns.Ts, s1.T - 5), 1); }
+  else { ns.ctl = 'mw'; ns.mw = rnd(0.5 * r.rng.mw[1], 2); }
+  changed();
+}
+function addStep() {
+  if (st.steps.length >= 3) return;
+  var n = st.steps.length, prev = st.steps[n - 1], s = last.chain[n], ns;
+  if (prev.proc === 'dehum' || prev.proc === 'cool') { ns = blankStep('heat'); ns.ctl = 'T2'; ns.T2 = rnd(Math.min(TMAX, s.T + 8), 1); }
+  else if (prev.proc === 'heat') { ns = blankStep('humid'); ns.ctl = 'phi2'; ns.phi2 = rnd(Math.min(95, Math.max(s.phi + 10, 45)), 1); }
+  else { ns = blankStep('heat'); ns.ctl = 'q'; ns.q = 10; }
+  st.steps.push(ns); st.sel = n; changed();
+}
+$('ps-add').addEventListener('click', addStep);
+function removeStep() {
+  if (st.steps.length < 2) return;
+  st.steps.splice(st.sel, 1); st.sel = Math.min(st.sel, st.steps.length - 1); changed();
+}
+
+/* ----- Solving ----- */
+/* One process from inlet state s1 with settings sp. commit = true stores clamped settings. */
+function solveStep(s1, sp, commit) {
+  var r = { sp: sp, s1: s1, proc: sp.proc, extra: {} }, P = s1.P, v, res, path, k;
+  var put = function (key, val) { if (commit) sp[key] = val; return val; };
+  if (sp.proc === 'heat') {
+    r.rng = { q: [0, Math.max(0, hOf(TMAX, s1.W) - s1.h)], T2: [s1.T, TMAX] };
+    if (sp.ctl !== 'T2' && sp.ctl !== 'q') sp.ctl = 'q';
+    if (sp.ctl === 'T2') res = heatResult(s1, put('T2', clamp(sp.T2, s1.T, TMAX)));
+    else res = heatForQ(s1, put('q', clamp(sp.q, 0, r.rng.q[1])));
+    r.pts = [[s1.T, s1.W], [res.s2.T, res.s2.W]];
+  } else if (sp.proc === 'cool') {
+    var lo = Math.min(s1.T, Math.max(s1.Tdp, 0));
+    r.rng = { q: [0, Math.max(0, s1.h - hOf(lo, s1.W))], T2: [lo, s1.T] };
+    if (sp.ctl !== 'T2' && sp.ctl !== 'q') sp.ctl = 'q';
+    if (sp.ctl === 'T2') res = heatResult(s1, put('T2', clamp(sp.T2, lo, s1.T)));
+    else { v = put('q', clamp(sp.q, 0, r.rng.q[1])); res = v >= r.rng.q[1] - 1e-9 ? heatResult(s1, lo) : heatForQ(s1, -v); }
+    r.extra.dew = s1.Tdp >= 0 ? [s1.Tdp, s1.W] : null;
+    r.extra.atDew = res.s2.T <= s1.Tdp + 0.02;
+    r.pts = [[s1.T, s1.W], [res.s2.T, res.s2.W]];
+  } else if (sp.proc === 'dehum') {
+    var real = sp.coil === 'real';
+    r.rng = { Ts: [TMIN, Math.max(TMIN, s1.T - 0.5)] };
+    var Ts = real ? put('Ts', clamp(sp.Ts, r.rng.Ts[0], r.rng.Ts[1])) : 0;
+    path = coilPath(s1, real, Ts);
+    var Tlo = Math.min(path.lo, s1.T);
+    r.rng.q = [0, Math.max(0, coilQout(s1, path, Tlo))]; r.rng.T2 = [Tlo, s1.T];
+    if (sp.ctl !== 'T2' && sp.ctl !== 'q') sp.ctl = 'q';
+    if (sp.ctl === 'T2') res = coilResult(s1, path, put('T2', clamp(sp.T2, Tlo, s1.T)));
+    else res = coilForQ(s1, path, put('q', clamp(sp.q, 0, r.rng.q[1])));
+    r.path = path;
+    r.qdew = s1.Tdp > Tlo ? s1.h - hOf(s1.Tdp, s1.W) : r.rng.q[1];
+    // points along the path, with the corner where the air first saturates
+    var Ts2 = [], n = 60, T2 = res.s2.T;
+    for (k = 0; k <= n; k++) Ts2.push(s1.T + (T2 - s1.T) * k / n);
+    if (path.Thit < s1.T && path.Thit > T2) Ts2.push(path.Thit);
+    Ts2.sort(function (a, b) { return b - a; });
+    r.pts = Ts2.map(function (T) { var p = path.at(T); return [p.T, p.W]; });
+    r.pts[r.pts.length - 1] = [T2, res.s2.W];
+    if (s1.Tdp >= 0 && (!real || path.wet)) r.extra.dew = [s1.Tdp, s1.W];
+    if (real) {
+      var sc = path.sc, hs = hOf(sc.T, sc.W);
+      r.extra.sc = [sc.T, sc.W];
+      r.extra.fog = path.fog;
+      r.extra.BF = path.fog && T2 < path.Thit ? NaN : (res.s2.h - hs) / (s1.h - hs);
+      r.extra.hs = hs;
+    }
+  } else {
+    var steam = sp.hm === 'steam', Tw = steam ? put('Tst', clamp(sp.Tst, 100, 150)) : put('Tw', clamp(sp.Tw, 1, 60));
+    var sat = humidMax(s1, sp.hm, Tw), cap = sat, Tcap;
+    var Tof = function (dW) { return humidResult(s1, sp.hm, Tw, dW).s2.T; };
+    if (!steam && Tof(sat) < 0) cap = root(function (dW) { return -Tof(dW); }, 0, sat, 60);
+    if (steam && Tof(sat) > TMAX) cap = root(function (dW) { return Tof(dW) - TMAX; }, 0, sat, 60);
+    r.cap = cap; r.capSat = cap >= sat - 1e-12;
+    var top = humidResult(s1, sp.hm, Tw, cap).s2;
+    r.rng = { mw: [0, 1000 * cap], phi2: [Math.min(s1.phi, top.phi), top.phi], T2: [Math.min(top.T, s1.T), s1.T], Tw: steam ? [100, 150] : [1, 60] };
+    if (steam && sp.ctl === 'T2') sp.ctl = 'mw';
+    if (sp.ctl !== 'mw' && sp.ctl !== 'phi2' && sp.ctl !== 'T2') sp.ctl = 'mw';
+    if (sp.ctl === 'phi2') { v = put('phi2', clamp(sp.phi2, r.rng.phi2[0], r.rng.phi2[1])); res = v >= top.phi - 1e-9 ? humidResult(s1, sp.hm, Tw, cap) : humidForPhi(s1, sp.hm, Tw, v); }
+    else if (sp.ctl === 'T2') { v = put('T2', clamp(sp.T2, r.rng.T2[0], r.rng.T2[1])); res = v <= top.T + 1e-9 ? humidResult(s1, sp.hm, Tw, cap) : humidForT(s1, Tw, v); }
+    else res = humidResult(s1, sp.hm, Tw, put('mw', clamp(sp.mw, 0, 1000 * cap)) / 1000);
+    r.Tw = Tw; r.hw = res.hw;
+    r.pts = [];
+    for (k = 0; k <= 12; k++) { var dW = res.mw * k / 12, W = s1.W + dW; r.pts.push([TofWh(W, s1.h + dW * res.hw), W]); }
+    r.extra.full = res.s2.phi > 99.95;
+  }
+  r.s2 = res.s2; r.q = res.q; r.mw = res.mw;
+  return r;
+}
+/* The whole chain: state 1 from the inlet controls, then each process in turn */
+function solveAll() {
+  var P = pressure(), T1 = clamp(st.T1, 0, 50), rg = specRange(T1, st.hk, P);
+  st.T1 = T1; st.hv = clamp(st.hv, rg[0], rg[1]);
+  var s = props(T1, Wfrom(T1, st.hk, st.hv, P), P), chain = [s], res = [];
+  st.steps.forEach(function (sp, i) {
+    var r = solveStep(s, sp, i === st.sel);
+    res.push(r); s = r.s2; chain.push(s);
+  });
+  return { P: P, chain: chain, res: res };
+}
+
+/* ----- Rendering ----- */
+var last = null, queued = false, touched = false;
+function changed() {
+  touched = true;
+  if (!queued) { queued = true; requestAnimationFrame(function () { queued = false; render(); }); }
+}
+var SPEC = {
+  phi: { lab: 'Relative humidity <span class="ps-sym">φ<sub>1</sub></span>', unit: '%', step: 0.5, dec: 1, aria: 'Inlet relative humidity' },
+  twb: { lab: 'Wet-bulb temperature <span class="ps-sym">T*<sub>1</sub></span>', unit: '°C', step: 0.1, dec: 1, aria: 'Inlet wet-bulb temperature' },
+  tdp: { lab: 'Dew-point temperature <span class="ps-sym">T<sub>dp,1</sub></span>', unit: '°C', step: 0.1, dec: 1, aria: 'Inlet dew-point temperature' },
+  w: { lab: 'Humidity ratio <span class="ps-sym">W<sub>1</sub></span>', unit: 'g/kg', step: 0.05, dec: 2, aria: 'Inlet humidity ratio' }
+};
+var CTLS = {
+  heat: [['q', 'Heat added <i>q</i>'], ['T2', 'Exit temperature <i>T</i><sub>2</sub>']],
+  cool: [['q', 'Heat removed'], ['T2', 'Exit temperature <i>T</i><sub>2</sub>']],
+  dehum: [['q', 'Heat removed'], ['T2', 'Exit temperature <i>T</i><sub>2</sub>']],
+  humid: [['mw', 'Water added'], ['phi2', 'Exit &phi;<sub>2</sub>'], ['T2', 'Exit <i>T</i><sub>2</sub>']]
+};
+var ctlKey = '';
+function syncControls(all) {
+  var sp = cur(), r = all.res[st.sel], s1 = all.chain[0], n = st.steps.length, i;
+  // process radios and sub-options
+  setRadio('proc', sp.proc); setRadio('coil', sp.coil); setRadio('hm', sp.hm);
+  $('sub-coil').hidden = sp.proc !== 'dehum';
+  $('sub-hum').hidden = sp.proc !== 'humid';
+  // chain chips
+  var chain = $('ps-chain');
+  chain.hidden = n < 2;
+  var html = '';
+  for (i = 0; i < n; i++) html += '<button type="button" class="ps-chip" data-i="' + i + '" aria-pressed="' + (i === st.sel) + '"><b>' + (i + 1) + '→' + (i + 2) + '</b> ' + devName(st.steps[i]) + '</button>';
+  if (n > 1) html += '<button type="button" class="ps-chip" id="ps-remove" title="Remove the selected process">✕ Remove ' + (st.sel + 1) + '→' + (st.sel + 2) + '</button>';
+  if (chain.innerHTML !== html) chain.innerHTML = html;
+  var add = $('ps-add');
+  add.disabled = n >= 3;
+  add.textContent = n >= 3 ? 'Up to three processes in a row' : '+ Add a process after state ' + (n + 1);
+  // control-type segment
+  var opts = CTLS[sp.proc].filter(function (o) { return !(sp.proc === 'humid' && sp.hm === 'steam' && o[0] === 'T2'); });
+  var key = sp.proc + sp.hm + opts.length;
+  if (key !== ctlKey) {
+    ctlKey = key;
+    var seg = $('seg-ctl');
+    seg.className = 'ps-seg' + (opts.length === 3 ? ' c3' : '');
+    seg.innerHTML = opts.map(function (o) { return '<label><input type="radio" name="ctl" value="' + o[0] + '"><span><em class="ps-in">' + o[1] + '</em></span></label>'; }).join('');
+  }
+  setRadio('ctl', sp.ctl);
+  $('lg-set').textContent = { heat: 'Heating coil', cool: 'Cooling coil (no condensation)', dehum: 'Cooling coil', humid: 'Humidifier' }[sp.proc];
+  // main setting
+  var rg = r.rng[sp.ctl], name = sp.proc === 'heat' ? 'Heat added' : 'Heat removed';
+  if (sp.ctl === 'q') cSet.config(name + ' per kg of dry air <span class="ps-sym">|q|</span>', 'kJ/kg', rg[0], rg[1], 0.1, 1, name);
+  else if (sp.ctl === 'T2') cSet.config('Exit dry-bulb temperature <span class="ps-sym">T<sub>' + (st.sel + 2) + '</sub></span>', '°C', rg[0], rg[1], 0.1, 1, 'Exit temperature');
+  else if (sp.ctl === 'mw') cSet.config('Water added per kg of dry air <span class="ps-sym">W<sub>2</sub> − W<sub>1</sub></span>', 'g/kg', rg[0], rg[1], 0.05, 2, 'Water added');
+  else cSet.config('Exit relative humidity <span class="ps-sym">φ<sub>' + (st.sel + 2) + '</sub></span>', '%', rg[0], rg[1], 0.1, 1, 'Exit relative humidity');
+  cSet.show(sp[sp.ctl]);
+  // auxiliary setting: coil-surface temperature or water temperature
+  var ak = auxKey(sp);
+  cAux.el.hidden = !(sp.proc === 'humid' || (sp.proc === 'dehum' && sp.coil === 'real'));
+  if (!cAux.el.hidden) {
+    if (ak === 'Ts') cAux.config('Coil-surface temperature <span class="ps-sym">T<sub>s</sub></span>', '°C', r.rng.Ts[0], r.rng.Ts[1], 0.1, 1, 'Coil-surface temperature');
+    else if (ak === 'Tst') cAux.config('Steam temperature <span class="ps-sym">T<sub>steam</sub></span>', '°C', 100, 150, 1, 0, 'Steam temperature');
+    else cAux.config('Water temperature <span class="ps-sym">T<sub>water</sub></span>', '°C', 1, 60, 0.5, 1, 'Water temperature');
+    cAux.show(sp[ak]);
+  }
+  // inlet
+  cT1.config('Dry-bulb temperature <span class="ps-sym">T<sub>1</sub></span>', '°C', 0, 50, 0.1, 1, 'Inlet dry-bulb temperature');
+  cT1.show(st.T1);
+  var sp2 = SPEC[st.hk], hr = specRange(st.T1, st.hk, s1.P);
+  cHv.config(sp2.lab, sp2.unit, hr[0], hr[1], sp2.step, sp2.dec, sp2.aria);
+  cHv.show(st.hv);
+  $('ps-hk').value = st.hk; $('ps-pk').value = st.pk;
+  cP.el.hidden = st.pk !== 'custom';
+  cP.config('Pressure <span class="ps-sym">p</span>', 'kPa', 60, 110, 0.1, 3, 'Pressure');
+  cP.show(pressure());
+  var lock = $('ps-lock');
+  lock.hidden = st.sel === 0;
+  lock.textContent = 'Process ' + (st.sel + 1) + '→' + (st.sel + 2) + ' starts from state ' + (st.sel + 1) + ', the exit of the process before it. These controls set state 1, the air entering the first process.';
+  if (document.activeElement !== $('ps-flow')) $('ps-flow').value = sig(st.flow, 6);
+  $('ps-fu').value = st.fu;
+  $('tg-h').checked = st.oh; $('tg-wb').checked = st.owb; $('tg-v').checked = st.ov;
+}
+
+function render() {
+  var all = solveAll();
+  last = all;
+  syncControls(all);
+  var r = all.res[st.sel], s1 = all.chain[0];
+  $('ps-in-note').innerHTML = '<i>W</i><sub>1</sub> = ' + fWg(s1.W) + ' · <i>h</i><sub>1</sub> = ' + fH(s1.h) + '<br>' +
+    'φ<sub>1</sub> = ' + fPhi(s1.phi) + ' · <i>T</i>*<sub>1</sub> = ' + fT(s1.Twb) + ' · <i>T</i><sub>dp,1</sub> = ' + fdp(s1.Tdp);
+  var m = mdot(s1);
+  $('ps-flow-note').innerHTML = isMass(st.fu) ? 'Dry-air mass flow entered directly: <i>ṁ</i><sub>a</sub> = ' + fix(m, 3) + ' kg/s'
+    : '<i>ṁ</i><sub>a</sub> = <i>V̇</i><sub>1</sub>/<i>v</i><sub>1</sub> = ' + fix(m, 3) + ' kg/s of dry air (<i>v</i><sub>1</sub> = ' + n3(s1.v) + ' m³/kg)';
+  $('ps-set-note').innerHTML = setNote(r);
+  if (touched) writeHash();
+  drawChart(all); drawTiles(all, r); drawNotes(all, r); drawDuct(all);
+  drawStates(all); drawRates(all, r); drawSteps(all, r); drawMatlab(all, r);
+}
+function setNote(r) {
+  var sp = r.sp;
+  if (sp.proc === 'heat') return sp.ctl === 'q' ? 'Exit at ' + fT(r.s2.T) + '. Limited to an exit of ' + TMAX + ' °C.' : 'Heat added: ' + fH(r.q) + ' per kg of dry air.';
+  if (sp.proc === 'cool') {
+    if (!(r.rng.q[1] > 0.05)) return 'The inlet air is already saturated or at 0 °C, so it cannot be cooled without condensing water. Use <b>Cooling &amp; dehumidification</b>.';
+    return 'The most this coil can remove without condensation is ' + fH(r.rng.q[1]) + ' (cooling to the dew point, ' + fdp(r.s1.Tdp) + ').';
+  }
+  if (sp.proc === 'dehum') {
+    var t = sp.ctl === 'q' ? 'Exit at ' + fT(r.s2.T) + '. ' : 'Heat removed: ' + fH(-r.q) + ' per kg of dry air. ';
+    if (sp.coil === 'real') return t + 'The leaving air cannot be colder than the coil surface.';
+    return t + 'Condensation starts after ' + fH(r.qdew) + ' is removed.';
+  }
+  var a = r.sp.hm === 'steam' ? 'steam' : 'water';
+  if (!(r.rng.mw[1] > 0.001)) return 'The inlet air is saturated: no more water can evaporate.';
+  return 'At most ' + fix(r.rng.mw[1], 2) + ' g/kg of ' + a + ' can be added' + (r.capSat ? ' before the air is saturated.' : ' (limited by the chart range).');
+}
+
+/* Shareable links: the setup is kept in the address after the # */
+var SKEYS = ['proc', 'ctl', 'q', 'T2', 'coil', 'Ts', 'hm', 'Tst', 'Tw', 'mw', 'phi2'];
+var CHOICE = { proc: ['heat', 'cool', 'dehum', 'humid'], ctl: ['q', 'T2', 'mw', 'phi2'], coil: ['ideal', 'real'], hm: ['steam', 'water'],
+  pk: ['sea', 'bar', 'tulsa', 'still', 'denver', 'custom'], hk: ['phi', 'twb', 'tdp', 'w'], fu: ['m3min', 'm3s', 'ls', 'cfm', 'kgmin', 'kgs'] };
+function writeHash() {
+  var parts = ['pk=' + st.pk, 'P=' + sig(st.P, 6), 'T1=' + sig(st.T1, 6), 'hk=' + st.hk, 'hv=' + sig(st.hv, 6), 'flow=' + sig(st.flow, 6), 'fu=' + st.fu,
+    's=' + st.steps.map(function (sp) { return SKEYS.map(function (k) { return typeof sp[k] === 'number' ? sig(sp[k], 6) : sp[k]; }).join(','); }).join('~'),
+    'sel=' + st.sel, 'ov=' + (st.oh ? 'h' : '') + (st.owb ? 'w' : '') + (st.ov ? 'v' : '') + '-'];
+  try { history.replaceState(null, '', '#' + parts.join('&')); } catch (e) { /* ignore */ }
+}
+function readHash() {
+  var h = location.hash.slice(1), got = {}, k0;
+  if (h.indexOf('=') < 0) return false;
+  for (k0 in DEF) st[k0] = DEF[k0];
+  st.steps = [blankStep('dehum')]; st.sel = 0;
+  h.split('&').forEach(function (kv) { var i = kv.indexOf('='); if (i > 0) got[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1)); });
+  ['pk', 'hk', 'fu'].forEach(function (k) { if (CHOICE[k].indexOf(got[k]) >= 0) st[k] = got[k]; });
+  var num = function (k, a, b) { var x = parseFloat(got[k]); if (isFinite(x)) st[k] = clamp(x, a, b); };
+  num('P', 60, 110); num('T1', 0, 50); num('hv', -20, 1000); num('flow', 1e-6, 1e7);
+  if (got.s) {
+    var steps = got.s.split('~').filter(function (str) { return str.length > 0; }).slice(0, 3).map(function (str) {
+      var a = str.split(','), sp = blankStep();
+      SKEYS.forEach(function (k, i) {
+        if (a[i] === undefined) return;
+        if (CHOICE[k]) { if (CHOICE[k].indexOf(a[i]) >= 0) sp[k] = a[i]; }
+        else { var x = parseFloat(a[i]); if (isFinite(x)) sp[k] = clamp(x, -50, 1000); }
+      });
+      return sp;
+    });
+    if (steps.length) st.steps = steps;
+  }
+  var sel = parseInt(got.sel, 10); st.sel = isFinite(sel) ? clamp(sel, 0, st.steps.length - 1) : 0;
+  if (got.ov !== undefined) { st.oh = got.ov.indexOf('h') >= 0; st.owb = got.ov.indexOf('w') >= 0; st.ov = got.ov.indexOf('v') >= 0; }
+  return true;
+}
+
+/* Examples */
+var EX = {
+  'default': {},
+  lec5: { pk: 'bar', T1: 10, hv: 80, flow: 150, steps: [{ proc: 'heat', ctl: 'T2', T2: 30 }] },
+  dehum10: { T1: 30, hv: 50, flow: 280, steps: [{ proc: 'dehum', ctl: 'T2', T2: 10 }] },
+  realcoil: { T1: 32, hv: 55, steps: [{ proc: 'dehum', coil: 'real', Ts: 8, ctl: 'T2', T2: 13 }] },
+  reheat: { T1: 32, hv: 60, steps: [{ proc: 'dehum', ctl: 'T2', T2: 12 }, { proc: 'heat', ctl: 'T2', T2: 20 }], sel: 0 },
+  winter: { T1: 5, hv: 60, steps: [{ proc: 'heat', ctl: 'T2', T2: 22 }, { proc: 'humid', hm: 'steam', Tst: 100, ctl: 'phi2', phi2: 45 }], sel: 1 },
+  steam: { T1: 22, hk: 'twb', hv: 9, flow: 90, fu: 'kgmin', steps: [{ proc: 'humid', hm: 'steam', Tst: 110, ctl: 'mw', mw: 9.63 }] },
+  evap: { T1: 38, hv: 10, steps: [{ proc: 'humid', hm: 'water', Tw: 21, ctl: 'T2', T2: 21 }] },
+  sens: { T1: 30, hv: 40, steps: [{ proc: 'cool', ctl: 'T2', T2: 0 }] }
+};
+function apply(o) {
+  var k, keep = { oh: st.oh, owb: st.owb, ov: st.ov };
+  for (k in DEF) st[k] = DEF[k];
+  for (k in keep) st[k] = keep[k];
+  for (k in o) if (k !== 'steps' && k !== 'sel') st[k] = o[k];
+  st.steps = (o.steps || [{ proc: 'dehum' }]).map(function (s) { var b = blankStep(s.proc), j; for (j in s) b[j] = s[j]; return b; });
+  st.sel = o.sel !== undefined ? o.sel : st.steps.length - 1;
+  changed();
+}
+$('ps-example').addEventListener('change', function () { var e = EX[this.value]; if (e) apply(e); this.value = ''; });
+$('ps-reset').addEventListener('click', function () { apply({}); });
+$('ps-link').addEventListener('click', function () {
+  var b = this; writeHash();
+  var done = function (ok) { b.textContent = ok ? 'Link copied' : 'Copy the address-bar link'; setTimeout(function () { b.textContent = 'Copy link to this setup'; }, 2200); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(location.href).then(function () { done(true); }, function () { done(false); });
+  else done(false);
+});
+$('ps-chain').addEventListener('click', function (e) {
+  var b = e.target.closest('button'); if (!b) return;
+  if (b.id === 'ps-remove') { removeStep(); return; }
+  st.sel = +b.getAttribute('data-i'); changed();
+});
+
+/* ----- Psychrometric chart (in the style of psychplotting.m) ----- */
+var CH = null, drag = false, reader = null;
+function ceil5(v) { return Math.ceil(v / 5 - 1e-9) * 5; }
+function pathD(pts, X, Y) {
+  var d = '', i;
+  for (i = 0; i < pts.length; i++) d += (i ? 'L' : 'M') + X(pts[i][0]).toFixed(1) + ' ' + Y(1000 * pts[i][1]).toFixed(1);
+  return d;
+}
+function drawChart(all) {
+  var box = $('ps-chart'), P = all.P, maxT = 0, maxW = 1000 * all.chain[0].W;
+  all.res.forEach(function (r) {
+    r.pts.forEach(function (p) { maxT = Math.max(maxT, p[0]); maxW = Math.max(maxW, 1000 * p[1]); });
+  });
+  var Thi = Math.max(50, ceil5(maxT + 0.3)), Whi = Math.max(30, ceil5(maxW + 0.3));
+  var keep = box.querySelector('.ps-tip'), hadFocus = box.contains(document.activeElement), rd = reader;
+  clear(box);
+  var w = Math.max(300, Math.round(box.clientWidth || 640)), narrow = w < 520;
+  var h = Math.round(clamp(w * 0.66, 320, 560));
+  var m = { l: 8, r: narrow ? 46 : 58, t: 12, b: 46 }, pw = w - m.l - m.r, ph = h - m.t - m.b;
+  var X = function (T) { return m.l + T / Thi * pw; };
+  var Y = function (Wg) { return m.t + ph - Wg / Whi * ph; };
+  CH = { X: X, Y: Y, m: m, pw: pw, ph: ph, Thi: Thi, Whi: Whi, P: P, w: w, h: h };
+  var svg = S('svg', { viewBox: '0 0 ' + w + ' ' + h, role: 'img', tabindex: 0, 'aria-label': chartLabel(all) }, box);
+  var defs = S('defs', {}, svg);
+  var cp = S('clipPath', { id: 'ps-clip' }, defs);
+  S('rect', { x: m.l, y: m.t, width: pw, height: ph }, cp);
+  var g = S('g', { 'clip-path': 'url(#ps-clip)' }, svg), T, k, pts, Ws;
+  // dashed guides through the saturation curve every 5 °C (psychplotting.m)
+  for (T = 5; T < Thi; T += 5) {
+    Ws = 1000 * Wsat(T, P);
+    S('line', { x1: X(T), y1: Y(0), x2: X(T), y2: Y(Math.min(Ws, Whi)), 'class': 'ps-grid' }, g);
+    if (Ws < Whi) S('line', { x1: X(T), y1: Y(Ws), x2: X(Thi), y2: Y(Ws), 'class': 'ps-grid' }, g);
+  }
+  var labs = S('g', {}, svg), hLabs = [], busy = [];
+  // boxes other labels must avoid: the dew-point label of the selected process
+  var rs = all.res[st.sel];
+  if (rs.extra.dew && rs.extra.dew[0] > 0) { var ddx = X(rs.extra.dew[0]), ddy = Y(1000 * rs.extra.dew[1]); busy.push([ddx - 118, ddy - 21, ddx - 4, ddy - 3]); }
+  // constant-enthalpy lines every 10 kJ/kg (blue)
+  if (st.oh) {
+    var hmax = hOf(Thi, Whi / 1000), every = pw > 620 ? 10 : 20;
+    for (var hv = 10; hv <= hmax; hv += 10) {
+      var Tsh = root(function (t) { return hOf(t, Wsat(t, P)) - hv; }, -40, 80), T0 = Math.max(Tsh, 0), Te = Math.min(hv / CA, Thi);
+      if (Te <= T0) continue;
+      pts = [];
+      for (k = 0; k <= 8; k++) { T = T0 + (Te - T0) * k / 8; pts.push([T, WofTh(T, hv)]); }
+      S('path', { d: pathD(pts, X, Y), 'class': 'ps-h' }, g);
+      Ws = 1000 * Wsat(Tsh, P);
+      if (hv % every === 0 && Tsh > 0.8 && Ws < Whi - 0.6) hLabs.push([X(Tsh) - 4, Y(Ws) - 4, hv]);
+    }
+  }
+  // wet-bulb lines every 5 °C (dashed)
+  if (st.owb) {
+    for (var tw = 0; tw <= Thi; tw += 5) {
+      Ws = 1000 * Wsat(tw, P);
+      if (Ws > Whi + 5) break;
+      var Tend = Math.min(Thi, root(function (t) { return -WofTwb(t, tw, P); }, tw, 200));
+      pts = [];
+      for (k = 0; k <= 10; k++) { T = tw + (Tend - tw) * k / 10; pts.push([T, Math.max(0, WofTwb(T, tw, P))]); }
+      S('path', { d: pathD(pts, X, Y), 'class': 'ps-wb' }, g);
+      var Wl = 1000 * WofTwb(Tend, tw, P);
+      if (tw > 0 && Wl < 1.2 && X(Tend) > m.l + 12) S('text', { x: X(Tend) - 3, y: Y(0) - 5, 'text-anchor': 'end', 'class': 'ps-lab' }, labs, tw + '°');
+      else if (tw > 0 && Wl >= 1.2 && Wl < Whi - 1) S('text', { x: X(Thi) - 4, y: Y(Wl) - 4, 'text-anchor': 'end', 'class': 'ps-lab' }, labs, tw + '°');
+    }
+  }
+  // specific-volume lines every 0.02 m³/kg (dotted)
+  if (st.ov) {
+    for (var vv = 0.70; vv <= 1.2; vv = rnd(vv + 0.02, 2)) {
+      var Tv = function (W) { return vv * P / (0.287042 * (1 + 1.607858 * W)) - 273.15; };
+      if (Tv(0) < 0.5 || Tv(0) > Thi - 0.5) continue;
+      var Wtop = root(function (W) { return W - Wsat(Tv(W), P); }, 0, 0.3);
+      pts = [];
+      for (k = 0; k <= 8; k++) { var W8 = Wtop * k / 8; pts.push([Tv(W8), W8]); }
+      S('path', { d: pathD(pts, X, Y), 'class': 'ps-v' }, g);
+      if (!narrow || Math.round(vv * 100) % 4 === 0) S('text', { x: X(Tv(0.0015)) + 3, y: Y(1.5) - 2, 'class': 'ps-lab' }, labs, vv.toFixed(2));
+    }
+  }
+  // constant relative humidity curves, 10 to 100 %
+  var phiLab = narrow ? [20, 40, 60, 80] : [10, 20, 30, 40, 50, 60, 70, 80, 90];
+  for (var phi = 10; phi <= 100; phi += 10) {
+    pts = [];
+    var n = 100;
+    for (k = 0; k <= n; k++) {
+      T = Thi * k / n;
+      var W = Wfrom(T, 'phi', phi, P);
+      pts.push([T, W]);
+      if (1000 * W > Whi) break;
+    }
+    S('path', { d: pathD(pts, X, Y), 'class': phi === 100 ? 'ps-sat' : 'ps-rh' }, g);
+    if (phiLab.indexOf(phi) >= 0 || phi === 100) {
+      var target = Whi * (0.38 + 0.0055 * phi), TL = Thi - 3.5;
+      if (1000 * Wfrom(TL, 'phi', phi, P) > target) TL = root(function (t) { return 1000 * Wfrom(t, 'phi', phi, P) - target; }, 0, Thi);
+      var x0 = X(TL - 0.4), y0 = Y(1000 * Wfrom(TL - 0.4, 'phi', phi, P)), x1 = X(TL + 0.4), y1 = Y(1000 * Wfrom(TL + 0.4, 'phi', phi, P));
+      var ang = Math.atan2(y1 - y0, x1 - x0) * 180 / Math.PI, xl = (x0 + x1) / 2, yl = (y0 + y1) / 2;
+      S('text', { x: xl, y: yl + 3.5, 'text-anchor': 'middle', transform: 'rotate(' + ang.toFixed(1) + ' ' + xl.toFixed(1) + ' ' + yl.toFixed(1) + ')', 'class': phi === 100 ? 'ps-lab dark' : 'ps-lab' }, labs, phi + '%');
+      busy.push([xl - 9, yl - 13, xl + 9, yl + 13]);
+    }
+  }
+  hLabs.forEach(function (L) {
+    var w2 = 7 * String(L[2]).length, bx = [L[0] - w2, L[1] - 10, L[0], L[1]];
+    var clash = busy.some(function (b) { return bx[0] < b[2] && bx[2] > b[0] && bx[1] < b[3] && bx[3] > b[1]; });
+    if (!clash) S('text', { x: L[0], y: L[1], 'text-anchor': 'end', 'class': 'ps-lab' }, labs, L[2]);
+  });
+  svg.appendChild(labs);
+  // axes: dry bulb along the bottom, humidity ratio on the right (as in psychplotting.m)
+  S('line', { x1: m.l, x2: m.l + pw, y1: Y(0), y2: Y(0), 'class': 'ps-axis' }, svg);
+  S('line', { x1: X(Thi), x2: X(Thi), y1: Y(0), y2: Y(Whi), 'class': 'ps-axis' }, svg);
+  var tstep = pw / Thi * 5 < 26 ? 10 : 5;
+  for (T = 0; T <= Thi; T += 1) {
+    var major = T % tstep === 0;
+    S('line', { x1: X(T), x2: X(T), y1: Y(0), y2: Y(0) + (major ? 5 : 3), 'class': 'ps-axis' }, svg);
+    if (major) S('text', { x: X(T), y: Y(0) + 18, 'text-anchor': 'middle', 'class': 'ps-tick' }, svg, T);
+  }
+  var wstep = ph / Whi * 5 < 18 ? 10 : 5;
+  for (k = 0; k <= Whi; k += 1) {
+    var majw = k % wstep === 0;
+    S('line', { x1: X(Thi), x2: X(Thi) + (majw ? 5 : 3), y1: Y(k), y2: Y(k), 'class': 'ps-axis' }, svg);
+    if (majw) S('text', { x: X(Thi) + 8, y: Y(k) + 4, 'class': 'ps-tick' }, svg, k);
+  }
+  S('text', { x: m.l + pw / 2, y: h - 8, 'text-anchor': 'middle', 'class': 'ps-axlab' }, svg, 'Dry-bulb temperature T, °C');
+  S('text', { transform: 'translate(' + (w - 8) + ',' + (m.t + ph / 2) + ') rotate(-90)', 'text-anchor': 'middle', 'class': 'ps-axlab' }, svg, 'Humidity ratio W, g/kg dry air');
+  // processes
+  var marks = [], r, i;
+  all.res.forEach(function (r, i) {
+    var on = i === st.sel, col = on ? ACCENT : NAVY;
+    if (on && r.extra.sc) {
+      var s2 = r.s2, sc = r.extra.sc;
+      S('path', { d: 'M' + X(s2.T) + ' ' + Y(1000 * s2.W) + 'L' + X(sc[0]) + ' ' + Y(1000 * sc[1]), stroke: ACCENT, 'stroke-width': 1.5, 'stroke-dasharray': '5 4', fill: 'none', opacity: 0.8 }, svg);
+    }
+    S('path', { d: pathD(r.pts, X, Y), stroke: '#fff', 'stroke-width': on ? 7 : 6, fill: 'none', 'stroke-linejoin': 'round', 'stroke-linecap': 'round', opacity: 0.9 }, svg);
+    S('path', { d: pathD(r.pts, X, Y), stroke: col, 'stroke-width': on ? 3 : 2.5, fill: 'none', 'stroke-linejoin': 'round', 'stroke-linecap': 'round', opacity: on ? 1 : 0.55 }, svg);
+    arrowHead(svg, r.pts, X, Y, col, on ? 1 : 0.55);
+  });
+  r = all.res[st.sel];
+  if (r.extra.dew && r.extra.dew[0] > 0) {
+    var dx = X(r.extra.dew[0]), dy = Y(1000 * r.extra.dew[1]);
+    S('circle', { cx: dx, cy: dy, r: 4.5, fill: '#fff', stroke: NAVY, 'stroke-width': 2 }, svg);
+    marks.push([dx, dy]);
+    S('text', { x: dx - 8, y: dy - 7, 'text-anchor': 'end', 'class': 'ps-lab dark' }, svg, 'dew point ' + fix(r.extra.dew[0], 1) + ' °C');
+  }
+  if (r.extra.sc) {
+    var cx = X(r.extra.sc[0]), cy = Y(1000 * r.extra.sc[1]);
+    S('path', { d: 'M' + cx + ' ' + (cy - 7) + 'L' + (cx + 7) + ' ' + cy + 'L' + cx + ' ' + (cy + 7) + 'L' + (cx - 7) + ' ' + cy + 'Z', fill: COLD, stroke: '#fff', 'stroke-width': 2 }, svg);
+    marks.push([cx, cy]);
+    S('text', { x: cx + 9, y: cy + 15, 'class': 'ps-lab dark' }, svg, 'coil surface ' + fix(r.extra.sc[0], 1) + ' °C');
+  }
+  all.chain.forEach(function (s, j) {
+    var x = X(s.T), y = Y(1000 * s.W), on = j === st.sel || j === st.sel + 1;
+    S('circle', { cx: x, cy: y, r: on ? 6 : 5, fill: on ? NAVY : '#5b6b7b', stroke: '#fff', 'stroke-width': 2 }, svg);
+    marks.push([x, y]);
+  });
+  // state numbers: on the side away from the process lines that meet at the point
+  var placed = [], dirs = [];
+  for (k = 0; k < 8; k++) dirs.push([Math.cos(k * Math.PI / 4), Math.sin(k * Math.PI / 4)]);
+  all.chain.forEach(function (s, j) {
+    var x = X(s.T), y = Y(1000 * s.W), inc = [], best = [x - 12, y - 10], bestScore = -Infinity;
+    var away = function (q) { var dx = X(q[0]) - x, dy = Y(1000 * q[1]) - y, L = Math.sqrt(dx * dx + dy * dy); if (L > 3) inc.push([dx / L, dy / L]); };
+    if (j < all.res.length) { var pa = all.res[j].pts; for (var u = 1; u < pa.length; u++) { var qa = pa[u]; if (Math.abs(X(qa[0]) - x) + Math.abs(Y(1000 * qa[1]) - y) > 6) { away(qa); break; } } }
+    if (j > 0) { var pb = all.res[j - 1].pts; for (var v2 = pb.length - 2; v2 >= 0; v2--) { var qb = pb[v2]; if (Math.abs(X(qb[0]) - x) + Math.abs(Y(1000 * qb[1]) - y) > 6) { away(qb); break; } } }
+    dirs.forEach(function (d) {
+      var lx = x + d[0] * 15, ly = y + d[1] * 15, score = inc.reduce(function (mn, u) { return Math.min(mn, 1 - (d[0] * u[0] + d[1] * u[1])); }, 2);
+      var hit = placed.concat(marks).some(function (p) { return Math.abs(p[0] - lx) < 12 && Math.abs(p[1] - ly) < 12; });
+      var inside = lx > m.l + 8 && lx < m.l + pw - 6 && ly > m.t + 8 && ly < m.t + ph - 6;
+      if (hit || !inside) score -= 3;
+      if (d[1] > 0.5) score -= 0.15;   // prefer labels beside or above the point
+      if (score > bestScore) { bestScore = score; best = [lx, ly]; }
+    });
+    placed.push(best);
+    S('text', { x: best[0], y: best[1] + 4.5, 'text-anchor': 'middle', 'class': 'ps-plab' }, svg, j + 1);
+  });
+  // point 1 can be dragged
+  var p1 = all.chain[0], hit1 = S('circle', { cx: X(p1.T), cy: Y(1000 * p1.W), r: 15, fill: 'transparent', style: 'cursor:grab;touch-action:none' }, svg);
+  hit1.addEventListener('pointerdown', function (e) {
+    e.preventDefault(); drag = true; hideTip();
+    try { box.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+  });
+  // crosshair reader
+  var cx1 = S('line', { 'class': 'ps-cross', visibility: 'hidden' }, svg), cy1 = S('line', { 'class': 'ps-cross', visibility: 'hidden' }, svg);
+  var dot = S('circle', { r: 3.5, fill: NAVY, visibility: 'hidden', 'pointer-events': 'none' }, svg);
+  CH.cross = [cx1, cy1, dot];
+  var tip = keep || document.createElement('div');
+  tip.className = 'ps-tip'; tip.style.display = 'none'; box.appendChild(tip); CH.tip = tip;
+  svg.insertBefore(S('rect', { x: m.l, y: m.t, width: pw, height: ph, fill: 'transparent', 'class': 'ps-hit' }), hit1);
+  svg.addEventListener('pointermove', function (e) { if (!drag && e.pointerType === 'mouse') readAt(e); });
+  svg.addEventListener('pointerdown', function (e) { if (!drag && e.target !== hit1) readAt(e); });
+  svg.addEventListener('pointerleave', function (e) { if (!drag && e.pointerType === 'mouse') hideTip(); });
+  svg.addEventListener('keydown', chartKey);
+  svg.addEventListener('blur', function () { if (!drag) { reader = null; hideTip(); } });
+  if (hadFocus) { try { svg.focus({ preventScroll: true }); } catch (err) { svg.focus(); } if (rd) showReader(rd.T, rd.Wg, true); }
+  drawLegend(all);
+}
+function chartLabel(all) {
+  var r = all.res[st.sel];
+  return 'Psychrometric chart. ' + NAMES[r.proc] + ' from state ' + (st.sel + 1) + ' (' + fT(r.s1.T) + ', ' + fPhi(r.s1.phi) + ') to state ' + (st.sel + 2) + ' (' + fT(r.s2.T) + ', ' + fPhi(r.s2.phi) + ').';
+}
+function arrowHead(svg, pts, X, Y, col, op) {
+  var nn = pts.length, a = pts[nn - 1], b = null, i;
+  for (i = nn - 2; i >= 0; i--) {
+    var dx = X(a[0]) - X(pts[i][0]), dy = Y(1000 * a[1]) - Y(1000 * pts[i][1]);
+    if (dx * dx + dy * dy > 64) { b = pts[i]; break; }
+  }
+  if (!b) return;
+  var x2 = X(a[0]), y2 = Y(1000 * a[1]), x1 = X(b[0]), y1 = Y(1000 * b[1]), L = Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)), ux = (x2 - x1) / L, uy = (y2 - y1) / L;
+  var tx = x2 - ux * 8, ty = y2 - uy * 8, bx = tx - ux * 11, by = ty - uy * 11;
+  S('path', { d: 'M' + tx.toFixed(1) + ' ' + ty.toFixed(1) + 'L' + (bx - uy * 5.5).toFixed(1) + ' ' + (by + ux * 5.5).toFixed(1) + 'L' + (bx + uy * 5.5).toFixed(1) + ' ' + (by - ux * 5.5).toFixed(1) + 'Z', fill: col, opacity: op, stroke: '#fff', 'stroke-width': 1 }, svg);
+}
+function svgPoint(e) {
+  var svg = $('ps-chart').querySelector('svg'), rc = svg.getBoundingClientRect(), sc = CH.w / rc.width;
+  return { x: (e.clientX - rc.left) * sc, y: (e.clientY - rc.top) * sc };
+}
+function toTW(pt) {
+  return { T: (pt.x - CH.m.l) / CH.pw * CH.Thi, Wg: (CH.m.t + CH.ph - pt.y) / CH.ph * CH.Whi };
+}
+function readAt(e) {
+  var p = toTW(svgPoint(e));
+  if (p.T < 0 || p.T > CH.Thi || p.Wg < 0 || p.Wg > CH.Whi) { hideTip(); return; }
+  showReader(p.T, p.Wg, false);
+}
+function hideTip() {
+  if (!CH) return;
+  CH.tip.style.display = 'none';
+  CH.cross.forEach(function (el) { el.setAttribute('visibility', 'hidden'); });
+}
+function showReader(T, Wg, keyb) {
+  T = clamp(T, 0, CH.Thi); Wg = clamp(Wg, 0, CH.Whi);
+  reader = keyb ? { T: T, Wg: Wg } : null;
+  var x = CH.X(T), y = CH.Y(Wg), c = CH.cross;
+  c[0].setAttribute('x1', x); c[0].setAttribute('x2', x); c[0].setAttribute('y1', CH.m.t); c[0].setAttribute('y2', CH.m.t + CH.ph);
+  c[1].setAttribute('y1', y); c[1].setAttribute('y2', y); c[1].setAttribute('x1', CH.m.l); c[1].setAttribute('x2', CH.m.l + CH.pw);
+  c[2].setAttribute('cx', x); c[2].setAttribute('cy', y);
+  c.forEach(function (el) { el.setAttribute('visibility', 'visible'); });
+  var W = Wg / 1000, html = '<div class="hd">' + fT(T) + ' · ' + fix(Wg, 2) + ' g/kg</div>';
+  if (W > Wsat(T, CH.P) * 1.0005) html += '<div class="warn">Above the saturation curve: the air cannot hold this much vapor (it would form fog).</div>';
+  else {
+    var s = props(T, W, CH.P);
+    html += row('Relative humidity φ', fPhi(s.phi)) + row('Enthalpy h', fH(s.h)) + row('Wet bulb T*', fT(s.Twb)) + row('Dew point', fdp(s.Tdp)) + row('Specific volume v', n3(s.v) + ' m³/kg');
+  }
+  var tip = CH.tip, bw = $('ps-chart').clientWidth, sc = bw / CH.w;
+  tip.innerHTML = html; tip.style.display = 'block';
+  var tw = tip.offsetWidth, th = tip.offsetHeight, left = x * sc + 14, top = y * sc - th - 10;
+  if (left + tw > bw) left = x * sc - tw - 14;
+  if (top < 0) top = y * sc + 14;
+  tip.style.left = Math.max(0, left) + 'px'; tip.style.top = top + 'px';
+}
+function row(k, v) { return '<div class="row"><i>' + k + '</i><b>' + v + '</b></div>'; }
+function chartKey(e) {
+  var r = reader || { T: last.chain[0].T, Wg: 1000 * last.chain[0].W }, d = e.shiftKey ? 2 : 0.5;
+  if (e.key === 'ArrowLeft') r.T -= d; else if (e.key === 'ArrowRight') r.T += d;
+  else if (e.key === 'ArrowUp') r.Wg += d; else if (e.key === 'ArrowDown') r.Wg -= d;
+  else if (e.key === 'Escape') { reader = null; hideTip(); return; }
+  else if (e.key === 'Enter' && reader) { moveInlet(reader.T, reader.Wg); return; }
+  else return;
+  e.preventDefault();
+  showReader(r.T, r.Wg, true);
+}
+function moveInlet(T, Wg) {
+  var P = pressure();
+  T = rnd(clamp(T, 0, 50), 1);
+  var W = clamp(Wg / 1000, 0.0002, Wsat(T, P)), s = props(T, W, P), dec = st.hk === 'w' ? 2 : 1, rg = specRange(T, st.hk, P);
+  st.T1 = T; st.hv = clamp(rnd(specOf(s, st.hk), dec), rg[0], rg[1]);
+  changed();
+}
+(function () {
+  var box = $('ps-chart');
+  box.addEventListener('pointermove', function (e) { if (drag) { var p = toTW(svgPoint(e)); moveInlet(p.T, p.Wg); } });
+  var stop = function (e) { if (drag) { drag = false; try { box.releasePointerCapture(e.pointerId); } catch (err) { /* ignore */ } } };
+  box.addEventListener('pointerup', stop); box.addEventListener('pointercancel', stop);
+})();
+function drawLegend(all) {
+  var items = ['<span><i class="ps-key" style="border-color:' + ACCENT + ';border-top-width:3px"></i>Process ' + (st.sel + 1) + '→' + (st.sel + 2) + '</span>'];
+  if (all.res.length > 1) items.push('<span><i class="ps-key" style="border-color:' + NAVY + ';opacity:.55"></i>Other processes</span>');
+  items.push('<span><i class="ps-key" style="border-color:#1f2933"></i>Saturation, φ = 100%</span>');
+  items.push('<span><i class="ps-key" style="border-color:#6b7682;border-top-width:1px"></i>Relative humidity, every 10%</span>');
+  if (st.oh) items.push('<span><i class="ps-key" style="border-color:rgba(42,120,214,.6);border-top-width:1px"></i>Enthalpy, kJ/kg dry air</span>');
+  if (st.owb) items.push('<span><i class="ps-key dash" style="border-color:#1baf7a"></i>Wet bulb, every 5 °C</span>');
+  if (st.ov) items.push('<span><i class="ps-key dot" style="border-color:#8a7f72"></i>Specific volume, m³/kg dry air</span>');
+  var r = all.res[st.sel];
+  if (r.extra.dew && r.extra.dew[0] > 0) items.push('<span><i class="ps-dotkey" style="border:2px solid ' + NAVY + ';background:#fff;box-sizing:border-box"></i>Dew point of the inlet air</span>');
+  if (r.extra.sc) items.push('<span><i class="ps-dotkey" style="background:' + COLD + ';border-radius:2px;transform:rotate(45deg) scale(.8)"></i>Coil-surface state</span>');
+  $('ps-legend').innerHTML = items.join('');
+}
+
+/* ----- Result tiles and notes ----- */
+function tile(k, v, s, sw) {
+  return '<div class="ps-tile"><div class="k">' + (sw ? '<span class="ps-swatch" style="background:' + sw + '"></span>' : '') +
+    '<span>' + k + '</span></div><div class="v">' + v + '</div><div class="s">' + s + '</div></div>';
+}
+function tons(Q) { return fix(Math.abs(Q) / 3.516853, 2) + ' tons'; }
+function btuh(Q) { var x = Q * 3412.142; return fix(Math.abs(x) >= 1000 ? sig(x, 3) : x, 0) + ' Btu/h'; }
+function kgh(x) { return fix(x * 3600, x * 3600 >= 100 ? 0 : 1) + ' kg/h'; }
+function drawTiles(all, r) {
+  var s1 = r.s1, s2 = r.s2, a = st.sel + 1, b = st.sel + 2, md = mdot(all.chain[0]), Q = md * r.q, mw = md * r.mw, t = '';
+  t += tile('Exit temperature, <i>T</i><sub>' + b + '</sub>', fT(s2.T), 'Δ<i>T</i> = ' + sgn(s2.T - s1.T, 1) + ' K', tcol(s2.T));
+  t += tile('Exit relative humidity, φ<sub>' + b + '</sub>', fPhi(s2.phi), 'Inlet φ<sub>' + a + '</sub> = ' + fPhi(s1.phi));
+  if (r.proc === 'humid') {
+    t += tile('Water added, <i>W</i><sub>' + b + '</sub> − <i>W</i><sub>' + a + '</sub>', fix(1000 * r.mw, 2) + ' g/kg', 'per kg of dry air, as ' + (r.sp.hm === 'steam' ? 'steam at ' + fT(r.Tw) : 'liquid water at ' + fT(r.Tw)));
+    t += tile('Enthalpy change, <i>h</i><sub>' + b + '</sub> − <i>h</i><sub>' + a + '</sub>', sgn(s2.h - s1.h, 2) + ' kJ/kg', r.sp.hm === 'steam' ? 'Energy brought in by the steam (<i>q</i> = 0)' : 'Almost zero: adiabatic, <i>q</i> = 0');
+    t += tile((r.sp.hm === 'steam' ? 'Steam' : 'Water') + ' use, <i>ṁ</i><sub>w</sub>', kgh(mw), '≈ ' + fix(mw * 3600 / 3.785412, 1) + ' gal/h of water');
+    t += tile('Exit wet bulb, <i>T</i>*<sub>' + b + '</sub>', fT(s2.Twb), 'Inlet <i>T</i>*<sub>' + a + '</sub> = ' + fT(s1.Twb));
+  } else {
+    t += tile('Heat transfer, <i>q</i>', sgn(r.q, 1) + ' kJ/kg', r.q > 0.005 ? 'added to the air, per kg of dry air' : r.q < -0.005 ? 'removed from the air, per kg of dry air' : 'no heat transfer');
+    if (r.proc === 'dehum' && r.mw > 0) t += tile('Water condensed, <i>W</i><sub>' + a + '</sub> − <i>W</i><sub>' + b + '</sub>', fix(1000 * r.mw, 2) + ' g/kg', 'per kg of dry air; leaves as liquid at ' + fT(s2.T));
+    else t += tile('Humidity ratio, <i>W</i><sub>' + b + '</sub> = <i>W</i><sub>' + a + '</sub>', fix(1000 * s2.W, 2) + ' g/kg', r.proc === 'heat' ? 'No water added or removed' : 'No condensation: above the dew point, ' + fdp(s1.Tdp));
+    t += tile(r.q >= 0 ? 'Heating rate, <i>Q̇</i>' : 'Cooling capacity, <i>Q̇</i>', fkW(Math.abs(Q)), r.q >= 0 ? btuh(Q) : tons(Q) + ' · ' + btuh(-Q));
+    if (r.proc === 'dehum' && r.mw > 0) t += tile('Condensate, <i>ṁ</i><sub>w</sub>', kgh(mw), '≈ ' + fix(mw * 3600, 1) + ' L/h · ' + fix(mw * 3600 / 3.785412, 1) + ' gal/h');
+    else t += tile('Dry-air flow, <i>ṁ</i><sub>a</sub>', fix(md, 3) + ' kg/s', kgh(md) + ' of dry air');
+  }
+  $('ps-tiles').innerHTML = t;
+  $('sk-t').textContent = fT(s2.T); $('sk-phi').textContent = fPhi(s2.phi);
+  $('sk-q').textContent = sgn(r.q, 1);
+  $('sk-wl').firstChild.nodeValue = r.proc === 'humid' ? 'Water added' : r.proc === 'dehum' ? 'Condensed' : 'W, g/kg';
+  $('sk-w').textContent = r.proc === 'humid' || r.proc === 'dehum' ? fix(1000 * r.mw, 2) + ' g/kg' : fix(1000 * s2.W, 2);
+  $('ps-title').textContent = NAMES[r.proc] + (r.proc === 'dehum' ? (r.sp.coil === 'real' ? ', real coil' : ', ideal coil') : r.proc === 'humid' ? (r.sp.hm === 'steam' ? ' with steam' : ' with water spray') : '');
+  $('ps-tag').textContent = 'state ' + a + ' → ' + b;
+}
+function drawNotes(all, r) {
+  var n = [], s1 = r.s1, s2 = r.s2, sp = r.sp, wv = '';
+  if (r.proc === 'heat') {
+    if (s2.T - s1.T > 0.5) n.push('<b>Relative humidity falls</b> from ' + fPhi(s1.phi) + ' to ' + fPhi(s2.phi) + ' although no water is removed: the vapor pressure stays at ' + fix(s1.pw, 3) + ' kPa while the saturation pressure rises from ' + fix(s1.pws, 3) + ' to ' + fix(s2.pws, 3) + ' kPa.');
+    if (s2.phi < 25) n.push('<b>Dry air.</b> Below about 30% RH people feel dry skin and eyes; winter heating is usually followed by humidification.');
+  } else if (r.proc === 'cool') {
+    if (r.extra.atDew) n.push('<b>Dew point reached.</b> The air is saturated at ' + fdp(s1.Tdp) + '. Removing more heat would condense water: switch to <i>Cooling &amp; dehumidification</i>.');
+    else n.push('<b>Relative humidity rises</b> as the air cools at constant <i>W</i>. Water would start to condense at the dew point, ' + fdp(s1.Tdp) + '.');
+  } else if (r.proc === 'dehum') {
+    if (r.mw <= 0) n.push('<b>No condensation yet.</b> The air is still above its dew point (' + fdp(s1.Tdp) + '). ' + (sp.coil === 'real' && !r.path.wet ? 'The coil surface is warmer than the dew point, so this coil can only cool the air.' : 'Remove more than ' + fH(r.qdew) + ' to start condensing water.'));
+    else {
+      if (sp.coil === 'real') {
+        var bf = r.extra.BF;
+        if (isFinite(bf)) n.push('<b>Bypass factor ' + fix(bf, 2) + '.</b> The leaving air behaves like a mixture of ' + fix(100 * (1 - bf), 0) + '% air brought to the coil-surface state (saturated at ' + fT(sp.Ts) + ') and ' + fix(100 * bf, 0) + '% air that missed the coil.');
+        if (r.extra.fog) n.push('<b>Fog.</b> The straight coil line from state ' + (st.sel + 1) + ' to the coil surface crosses the saturation curve at ' + fT(r.path.Thit) + ', so very humid air forms fog in the coil. Beyond that point the air is taken to follow the saturation curve.');
+      } else n.push('<b>Condensation starts at the dew point</b>, ' + fdp(s1.Tdp) + '. Below it the air stays saturated and slides down the saturation curve; <i>W</i> falls from ' + fWg(s1.W) + ' to ' + fWg(s2.W) + '.');
+      var a = hOf(s2.T, s1.W), qs = s1.h - a, qt = s1.h - s2.h;
+      if (qt > 0.01) n.push('<b>Sensible heat ratio ' + fix(qs / qt, 2) + '.</b> Of the enthalpy removed from the air, ' + fix(100 * qs / qt, 0) + '% lowers its temperature (sensible) and ' + fix(100 - 100 * qs / qt, 0) + '% condenses water (latent).');
+    }
+  } else {
+    if (sp.hm === 'steam') n.push('<b>Steam brings energy with it.</b> The air gains ' + fix(1000 * r.mw, 2) + ' g/kg of water and warms by ' + fix(s2.T - s1.T, 2) + ' K; the process line runs almost straight up.');
+    else n.push('<b>Evaporative cooling.</b> Evaporating the water takes its latent heat from the air, which cools by ' + fix(s1.T - s2.T, 1) + ' K. The enthalpy and the wet-bulb temperature (' + fT(s1.Twb) + ') stay almost constant.');
+    if (r.extra.full) n.push('<b>Saturated.</b> The air leaves at φ = 100%; any more ' + (sp.hm === 'steam' ? 'steam' : 'water') + ' would stay as droplets or fog.' + (sp.hm === 'water' ? ' Spray humidification cannot cool the air below its wet-bulb temperature.' : ''));
+  }
+  $('ps-notes').innerHTML = n.slice(0, 3).map(function (s) { return '<li>' + s + '</li>'; }).join('');
+}
+
+/* ----- Duct schematic: air colored by temperature ----- */
+function arrow(svg, x1, y1, x2, y2, color, wd) {
+  var dx = x2 - x1, dy = y2 - y1, L = Math.sqrt(dx * dx + dy * dy) || 1, ux = dx / L, uy = dy / L, bx = x2 - ux * 10, by = y2 - uy * 10;
+  S('line', { x1: x1, y1: y1, x2: bx, y2: by, stroke: color, 'stroke-width': wd || 3, 'stroke-linecap': 'round' }, svg);
+  S('path', { d: 'M' + x2 + ' ' + y2 + 'L' + (bx - uy * 6.5) + ' ' + (by + ux * 6.5) + 'L' + (bx + uy * 6.5) + ' ' + (by - ux * 6.5) + 'Z', fill: color }, svg);
+}
+function txt(svg, x, y, anchor, cls, s, f) { return S('text', { x: x, y: y, 'text-anchor': anchor, 'font-size': (cls === 'v' ? 15 : cls === 'k' ? 12.5 : 11.5) * f, 'font-weight': cls === 'v' ? 600 : 400, fill: cls === 'v' ? '#1f2933' : INK2 }, svg, s); }
+function drawDuct(all) {
+  var svg = $('ps-svg'), n = all.res.length, cw = svg.parentNode.clientWidth || 600, narrow = cw < 560, H = 236, y0 = 104, y1 = 164, k;
+  var Wv = narrow && n === 1 ? 440 : [600, 820, 1040][n - 1], f = narrow && n === 1 ? 1.15 : [1, 1.22, 1.42][n - 1];
+  svg.style.minWidth = narrow && n > 1 ? (n === 2 ? 540 : 700) + 'px' : '';
+  clear(svg);
+  svg.setAttribute('viewBox', '0 0 ' + Wv + ' ' + H);
+  var desc = S('desc', { id: 'ps-svg-desc' }, svg), defs = S('defs', {}, svg);
+  var segW = (Wv - 180) / n, xs = [], xd = [];
+  for (k = 0; k <= n; k++) xs.push(90 + k * segW);
+  for (k = 0; k < n; k++) xd.push((xs[k] + xs[k + 1]) / 2);
+  var gr = S('linearGradient', { id: 'ps-air', gradientUnits: 'userSpaceOnUse', x1: 30, y1: 0, x2: Wv - 30, y2: 0 }, defs);
+  var stop = function (x, T) { S('stop', { offset: clamp((x - 30) / (Wv - 60), 0, 1).toFixed(4), 'stop-color': tcol(T) }, gr); };
+  stop(30, all.chain[0].T);
+  for (k = 0; k < n; k++) { stop(xd[k] - 20, all.chain[k].T); stop(xd[k] + 20, all.chain[k + 1].T); }
+  stop(Wv - 30, all.chain[n].T);
+  S('rect', { x: 30, y: y0, width: Wv - 60, height: y1 - y0, rx: 6, fill: 'url(#ps-air)', stroke: WALL, 'stroke-width': 2.5 }, svg);
+  arrow(svg, 0, (y0 + y1) / 2, 26, (y0 + y1) / 2, '#7b8794');
+  arrow(svg, Wv - 26, (y0 + y1) / 2, Wv, (y0 + y1) / 2, '#7b8794');
+  var words = [];
+  for (k = 0; k < n; k++) {
+    var r = all.res[k], sp = r.sp, x = xd[k], on = k === st.sel, z, pts = '';
+    if (sp.proc === 'humid') {
+      S('line', { x1: x, y1: y0 - 16, x2: x, y2: y0 + 24, stroke: WALL, 'stroke-width': 4 }, svg);
+      S('rect', { x: x - 9, y: y0 + 22, width: 18, height: 6, rx: 2, fill: WALL }, svg);
+      if (sp.hm === 'steam') [[16, 24, 6], [28, 17, 7.5], [30, 36, 6.5], [44, 27, 8], [58, 19, 6], [60, 38, 7]].forEach(function (c) {
+        if (r.mw > 0) S('circle', { cx: x + c[0], cy: y0 + c[1] + 4, r: c[2], fill: '#fff', stroke: '#aab5c0', 'stroke-width': 1.2, opacity: 0.92 }, svg);
+      });
+      else for (z = 0; z < 16 && r.mw > 0; z++) S('circle', { cx: x + 8 + (z % 4) * 9 + (z % 3) * 2, cy: y0 + 30 + Math.floor(z / 4) * 6 + (z % 2) * 2, r: 2.2, fill: COLD }, svg);
+      txt(svg, x, 58, 'middle', 'k', sp.hm === 'steam' ? 'Steam humidifier' : 'Water spray', f);
+      txt(svg, x, 78, 'middle', 'v', '+' + fix(1000 * r.mw, 2) + ' g/kg', f);
+      txt(svg, x, y1 + 26, 'middle', 'k', (sp.hm === 'steam' ? 'steam at ' : 'water at ') + fT(r.Tw), f);
+    } else {
+      for (z = 0; z <= 8; z++) pts += (z ? 'L' : 'M') + (x + (z % 2 ? 11 : -11)) + ' ' + (y0 + 8 + z * (y1 - y0 - 16) / 8);
+      S('line', { x1: x - 11, y1: y0 - 14, x2: x - 11, y2: y0 + 8, stroke: WALL, 'stroke-width': 3 }, svg);
+      S('path', { d: pts, fill: 'none', stroke: WALL, 'stroke-width': 6.5, 'stroke-linejoin': 'round' }, svg);
+      S('path', { d: pts, fill: 'none', stroke: sp.proc === 'heat' ? HOT : COLD, 'stroke-width': 4, 'stroke-linejoin': 'round' }, svg);
+      txt(svg, x, 58, 'middle', 'k', sp.proc === 'heat' ? 'Heating coil' : 'Cooling coil', f);
+      txt(svg, x, 78, 'middle', 'v', 'q = ' + sgn(r.q, 1) + ' kJ/kg', f);
+      if (sp.proc === 'dehum' && r.mw > 0) {
+        S('rect', { x: x - 26, y: y1, width: 52, height: 7, rx: 2, fill: '#c9d6e3', stroke: WALL, 'stroke-width': 1.5 }, svg);
+        S('line', { x1: x + 16, y1: y1 + 7, x2: x + 16, y2: y1 + 24, stroke: WALL, 'stroke-width': 3 }, svg);
+        [32, 44].forEach(function (dy) { S('path', { d: 'M' + (x + 16) + ' ' + (y1 + dy - 5) + 'q4 6 0 8q-4 -2 0 -8Z', fill: COLD }, svg); });
+        txt(svg, x + 6, y1 + 28, 'end', 'k', 'condensate', f);
+        txt(svg, x + 6, y1 + 48, 'end', 'v', fix(1000 * r.mw, 2) + ' g/kg', f);
+      }
+    }
+    var bx0 = x - 40, bx1 = sp.proc === 'humid' ? x + 72 : x + 40;
+    if (on && n > 1) S('rect', { x: bx0, y: y0 - 7, width: bx1 - bx0, height: y1 - y0 + 14, rx: 9, fill: 'none', stroke: ACCENT, 'stroke-width': 2.5, 'stroke-dasharray': '6 4' }, svg);
+    var hit = S('rect', { x: x - 48, y: y0 - 64, width: 96, height: y1 - y0 + 90, fill: 'transparent', style: n > 1 ? 'cursor:pointer' : null }, svg);
+    if (n > 1) hit.addEventListener('click', (function (i) { return function () { st.sel = i; changed(); }; })(k));
+    words.push(devName(sp).toLowerCase());
+  }
+  for (k = 0; k <= n; k++) {
+    var s = all.chain[k], xk = xs[k], hot = k === st.sel || k === st.sel + 1;
+    S('line', { x1: xk, y1: y0 - 6, x2: xk, y2: y1 + 6, stroke: NAVY, 'stroke-width': 1.5, 'stroke-dasharray': '4 3', opacity: 0.6 }, svg);
+    S('circle', { cx: xk, cy: 24, r: 12 * Math.sqrt(f), fill: hot ? NAVY : '#5b6b7b' }, svg);
+    S('text', { x: xk, y: 24 + 4.5 * f, 'text-anchor': 'middle', 'font-size': 13 * f, 'font-weight': 700, fill: '#fff', style: 'paint-order:normal;stroke:none' }, svg, k + 1);
+    txt(svg, xk, 60, 'middle', 'v', fT(s.T), f);
+    txt(svg, xk, 80, 'middle', 'k', 'φ ' + fix(s.phi, 0) + '%', f);
+  }
+  $('sch-title').textContent = n > 1 ? 'Air-handling unit, ' + n + ' processes in a row' : 'In the duct';
+  desc.textContent = 'Duct with a ' + words.join(', then a ') + '. ' + all.chain.map(function (s, i) { return 'State ' + (i + 1) + ': ' + fT(s.T) + ', ' + fPhi(s.phi); }).join('; ') + '.';
+  var bar = [], i;
+  for (i = 0; i <= 12; i++) bar.push(tcol(tlo + (thi - tlo) * i / 12) + ' ' + (100 * i / 12).toFixed(1) + '%');
+  $('ps-cbar').style.background = 'linear-gradient(90deg,' + bar.join(',') + ')';
+  var tk = $('ps-cbar-ticks'); clear(tk);
+  for (i = tlo; i <= thi; i += 10) { var sp2 = document.createElement('span'); sp2.style.left = (100 * (i - tlo) / (thi - tlo)) + '%'; sp2.textContent = i; tk.appendChild(sp2); }
+}
+
+/* ----- Tables: states and HVAC rates ----- */
+function drawStates(all) {
+  var c = all.chain, a = st.sel, rows = [
+    ['Dry-bulb temperature <i>T</i>', '°C', function (s) { return fix(s.T, 2); }],
+    ['Relative humidity φ', '%', function (s) { return fix(s.phi, 2); }],
+    ['Humidity ratio <i>W</i>', 'g/kg dry air', function (s) { return fix(1000 * s.W, 3); }],
+    ['Enthalpy <i>h</i>', 'kJ/kg dry air', function (s) { return fix(s.h, 2); }],
+    ['Wet-bulb temperature <i>T</i>*', '°C', function (s) { return fix(s.Twb, 2); }],
+    ['Dew-point temperature <i>T</i><sub>dp</sub>', '°C', function (s) { return fix(s.Tdp, 2) + (s.Tdp < 0 ? '*' : ''); }],
+    ['Specific volume <i>v</i>', 'm³/kg dry air', function (s) { return fix(s.v, 4); }],
+    ['Vapor pressure <i>p</i><sub>w</sub>', 'kPa', function (s) { return fix(s.pw, 4); }],
+    ['Saturation pressure <i>p</i><sub>ws</sub>(<i>T</i>)', 'kPa', function (s) { return fix(s.pws, 4); }]
+  ];
+  var cls = function (j) { return j === a || j === a + 1 ? ' class="is-cur"' : ''; };
+  var h = '<table class="ps-table"><thead><tr><th>Property</th>' + c.map(function (s, j) { return '<th' + cls(j) + '>State ' + (j + 1) + '</th>'; }).join('') + '</tr></thead><tbody>';
+  rows.forEach(function (rw) {
+    h += '<tr><td>' + rw[0] + ' <small>' + rw[1] + '</small></td>' + c.map(function (s, j) { return '<td' + cls(j) + '>' + rw[2](s) + '</td>'; }).join('') + '</tr>';
+  });
+  h += '</tbody></table>';
+  if (c.some(function (s) { return s.Tdp < 0; })) h += '<p class="ps-sub-note" style="margin-top:6px">* Below 0 °C the vapor would form frost, not dew: this is the frost point.</p>';
+  h += '<p class="ps-sub-note" style="margin-top:6px">Pressure <i>p</i> = ' + fix(all.P, 3) + ' kPa.</p>';
+  $('ps-states').innerHTML = h;
+}
+function dd(k, v, s) { return '<div><dt>' + k + '</dt><dd>' + v + (s ? '<small>' + s + '</small>' : '') + '</dd></div>'; }
+function drawRates(all, r) {
+  var s1 = all.chain[0], md = mdot(s1), Vs = md * s1.v, Q = md * r.q, mw = md * r.mw, a = st.sel + 1, b = st.sel + 2, h = '';
+  $('ps-rates-note').innerHTML = (isMass(st.fu) ? 'Dry-air mass flow entered directly.' : 'The airflow at state 1 is turned into a dry-air mass flow with the specific volume there, <i>v</i><sub>1</sub> = ' + fix(s1.v, 4) + ' m³/kg dry air.') +
+    ' Rates for process ' + a + '→' + b + '.';
+  h += dd('Dry-air mass flow, <i>ṁ</i><sub>a</sub>', fix(md, 3) + ' kg/s', kgh(md));
+  h += dd('Airflow at state 1, <i>V̇</i><sub>1</sub>', fix(Vs, 3) + ' m³/s', fix(Vs * 60, 1) + ' m³/min · ' + fix(Vs / 0.0283168466 * 60, 0) + ' CFM');
+  if (r.proc === 'humid') {
+    h += dd((r.sp.hm === 'steam' ? 'Steam' : 'Water') + ' added, <i>ṁ</i><sub>w</sub>', kgh(mw), fix(mw * 3600 * 2.204623, 1) + ' lb/h · ' + fix(mw * 3600 / 3.785412, 2) + ' gal/h of water');
+    h += dd('Enthalpy flow added, <i>ṁ</i><sub>a</sub>(<i>h</i><sub>' + b + '</sub> − <i>h</i><sub>' + a + '</sub>)', fkW(md * (r.s2.h - r.s1.h)), r.sp.hm === 'steam' ? 'carried in by the steam; no heat transfer to the duct' : 'carried in by the water; no heat transfer to the duct');
+  } else {
+    h += dd('Heat transfer rate, <i>Q̇</i> = <i>ṁ</i><sub>a</sub><i>q</i>', fkW(Q), (Q < 0 ? tons(Q) + ' of cooling · ' : '') + btuh(Q));
+    if (r.proc === 'dehum') {
+      h += dd('Condensate, <i>ṁ</i><sub>w</sub>', kgh(mw), fix(mw * 3600 * 2.204623, 1) + ' lb/h · ' + fix(mw * 3600 / 3.785412, 2) + ' gal/h');
+      var qs = r.s1.h - hOf(r.s2.T, r.s1.W), ql = hOf(r.s2.T, r.s1.W) - r.s2.h;
+      if (r.mw > 0) h += dd('Sensible and latent load', 'SHR = ' + fix(qs / (qs + ql), 2), 'sensible ' + fkW(md * qs) + ' · latent ' + fkW(md * ql));
+    }
+  }
+  $('ps-rates').innerHTML = h;
+  // several processes: one row each
+  var tb = '';
+  if (all.res.length > 1) {
+    var tot = { q: 0, Q: 0 };
+    tb = '<table class="ps-table"><thead><tr><th>Process</th><th><i>q</i>, kJ/kg</th><th><i>Q̇</i>, kW</th><th>Water, g/kg</th><th>Water, kg/h</th></tr></thead><tbody>';
+    all.res.forEach(function (rr, i) {
+      var dw = rr.proc === 'humid' ? rr.mw : -rr.mw;
+      tot.q += rr.q; tot.Q += md * rr.q;
+      tb += '<tr><td' + (i === st.sel ? ' class="is-cur"' : '') + '>' + (i + 1) + '→' + (i + 2) + ' ' + devName(rr.sp) + '</td><td>' + sgn(rr.q, 2) + '</td><td>' + sgn(md * rr.q, 2) + '</td><td>' + sgn(1000 * dw, 2) + '</td><td>' + sgn(3600 * md * dw, 1) + '</td></tr>';
+    });
+    var dW = all.chain[all.chain.length - 1].W - s1.W;
+    tb += '<tr class="tot"><td>Net, state 1→' + all.chain.length + '</td><td>' + sgn(tot.q, 2) + '</td><td>' + sgn(tot.Q, 2) + '</td><td>' + sgn(1000 * dW, 2) + '</td><td>' + sgn(3600 * md * dW, 1) + '</td></tr></tbody></table>' +
+      '<p class="ps-sub-note" style="margin-top:6px">Water: + added, − condensed. <i>q</i> &gt; 0 is heat added to the air.</p>';
+  }
+  $('ps-chain-table').innerHTML = tb;
+}
+
+/* ----- Step-by-step solution ----- */
+function li(lbl, eq, res, pre) { return '<li><span class="lbl">' + lbl + '</span><span class="eq">' + eq + '</span>' + (res ? ' <span class="res">' + (pre || '=') + ' ' + res + '</span>' : '') + '</li>'; }
+function sb(sym, i) { return sym + '<sub>' + i + '</sub>'; }
+function drawSteps(all, r) {
+  var s1 = r.s1, s2 = r.s2, P = all.P, a = st.sel + 1, b = st.sel + 2, sp = r.sp, h = [], md = mdot(all.chain[0]);
+  var T = function (i) { return sb('<i>T</i>', i); }, W = function (i) { return sb('<i>W</i>', i); }, H = function (i) { return sb('<i>h</i>', i); };
+  var PW = '<i>p</i><sub>w</sub>', PWS = '<i>p</i><sub>ws</sub>', w6 = function (x) { return fix(x, 6); };
+  var hEq = function (s, i) { return H(i) + ' = 1.006 ' + T(i) + ' + ' + W(i) + '(2501 + 1.86 ' + T(i) + ') = 1.006 × ' + fix(s.T, 2) + ' + ' + w6(s.W) + ' × (2501 + 1.86 × ' + fix(s.T, 2) + ')'; };
+  var phiEq = function (s, i) { return 'φ<sub>' + i + '</sub> = ' + PW + '/' + PWS + '(' + T(i) + ') = ' + fix(s.pw, 4) + '/' + fix(s.pws, 4); };
+  $('steps-title').textContent = 'Step-by-step solution, process ' + a + '→' + b;
+  // inlet state
+  if (st.sel === 0) {
+    h.push(li('Saturation pressure at ' + T(1) + ' (ASHRAE eq. 6)', PWS + '(' + fix(s1.T, 2) + ' °C)', fix(s1.pws, 4) + ' kPa'));
+    if (st.hk === 'phi') h.push(li('Partial pressure of the water vapor', PW + ' = φ<sub>1</sub> ' + PWS + ' = ' + fix(s1.phi / 100, 4) + ' × ' + fix(s1.pws, 4), fix(s1.pw, 4) + ' kPa'));
+    if (st.hk === 'tdp') h.push(li('At the dew point the vapor is saturated', PW + ' = ' + PWS + '(' + fix(s1.Tdp, 2) + ' °C)', fix(s1.pw, 4) + ' kPa'));
+    if (st.hk === 'phi' || st.hk === 'tdp') h.push(li('Humidity ratio (ASHRAE eq. 22)', W(1) + ' = 0.621945 ' + PW + '/(<i>p</i> − ' + PW + ') = 0.621945 × ' + fix(s1.pw, 4) + '/(' + fix(P, 3) + ' − ' + fix(s1.pw, 4) + ')', w6(s1.W) + ' kg/kg'));
+    if (st.hk === 'twb') {
+      var ws = Wsat(st.hv, P);
+      h.push(li('Saturation humidity ratio at the wet bulb, ' + PWS + '(' + fix(st.hv, 2) + ' °C) = ' + fix(pws(st.hv), 4) + ' kPa', '<i>W</i><sub>s</sub>* = 0.621945 ' + PWS + '/(<i>p</i> − ' + PWS + ')', w6(ws)));
+      h.push(li('Humidity ratio from the wet bulb (ASHRAE eq. 35)', W(1) + ' = [(2501 − 2.326 <i>T</i>*)<i>W</i><sub>s</sub>* − 1.006(' + T(1) + ' − <i>T</i>*)]/(2501 + 1.86 ' + T(1) + ' − 4.186 <i>T</i>*)', w6(s1.W) + ' kg/kg'));
+    }
+    if (st.hk === 'w') h.push(li('Given humidity ratio', W(1) + ' = ' + fix(st.hv, 2) + ' g/kg', w6(s1.W) + ' kg/kg'));
+    if (st.hk !== 'phi') h.push(li('Relative humidity, with ' + PW + ' = ' + W(1) + '<i>p</i>/(0.621945 + ' + W(1) + ') = ' + fix(s1.pw, 4) + ' kPa', phiEq(s1, 1), fPhi(s1.phi)));
+    h.push(li('Enthalpy per kg of dry air (ASHRAE eq. 32)', hEq(s1, 1), fix(s1.h, 2) + ' kJ/kg'));
+  } else {
+    h.push(li('State ' + a + ' is the exit of process ' + (a - 1) + '→' + a, T(a) + ' = ' + fT(s1.T) + ', ' + W(a) + ' = ' + w6(s1.W) + ' kg/kg', H(a) + ' = ' + fix(s1.h, 2) + ' kJ/kg'));
+  }
+  var dew = function () { h.push(li('Dew point of the entering air: the temperature where ' + PWS + ' = ' + PW + ' = ' + fix(s1.pw, 4) + ' kPa', sb('<i>T</i>', 'dp'), fdp(s1.Tdp))); };
+  var tOut = function (s, i) { h.push(li('Exit temperature (eq. 32 solved for <i>T</i>)', T(i) + ' = (' + H(i) + ' − 2501 ' + W(i) + ')/(1.006 + 1.86 ' + W(i) + ') = (' + fix(s.h, 2) + ' − 2501 × ' + w6(s.W) + ')/(1.006 + 1.86 × ' + w6(s.W) + ')', fT(s.T))); };
+  if (r.proc === 'heat' || r.proc === 'cool' || (r.proc === 'dehum' && r.mw <= 0 && sp.coil !== 'real')) {
+    if (r.proc !== 'heat') dew();
+    if (sp.ctl === 'q') { h.push(li('Energy balance at constant <i>W</i> (no water added or removed)', H(b) + ' = ' + H(a) + ' + <i>q</i> = ' + fix(s1.h, 2) + ' + (' + sgn(r.q, 2) + ')', fix(s2.h, 2) + ' kJ/kg')); tOut(s2, b); }
+    else { h.push(li('Exit state at constant <i>W</i>, ' + W(b) + ' = ' + W(a), hEq(s2, b), fix(s2.h, 2) + ' kJ/kg')); h.push(li('Energy balance', '<i>q</i> = ' + H(b) + ' − ' + H(a) + ' = ' + fix(s2.h, 2) + ' − ' + fix(s1.h, 2), sgn(r.q, 2) + ' kJ/kg')); }
+    h.push(li('Exit relative humidity, same vapor pressure', phiEq(s2, b), fPhi(s2.phi)));
+  } else if (r.proc === 'dehum') {
+    dew();
+    if (sp.coil !== 'real') {
+      h.push(li('Heat removed before condensation starts (cooling to the dew point at constant <i>W</i>)', H(a) + ' − <i>h</i>(' + sb('<i>T</i>', 'dp') + ', ' + W(a) + ')', fix(r.qdew, 2) + ' kJ/kg'));
+      if (sp.ctl === 'q') h.push(li('The exit air is saturated; ' + T(b) + ' is the one unknown in the energy balance, solved numerically', '<i>h</i><sub>s</sub>(' + T(b) + ') − ' + H(a) + ' + [' + W(a) + ' − <i>W</i><sub>s</sub>(' + T(b) + ')] 4.186 ' + T(b) + ' = <i>q</i> = ' + sgn(r.q, 2), T(b) + ' = ' + fix(s2.T, 2) + ' °C', '⇒'));
+      h.push(li('Saturated exit air at ' + T(b) + ', ' + PWS + '(' + fix(s2.T, 2) + ' °C) = ' + fix(s2.pws, 4) + ' kPa', W(b) + ' = 0.621945 ' + PWS + '/(<i>p</i> − ' + PWS + ')', w6(s2.W) + ' kg/kg'));
+    } else {
+      var sc = r.extra.sc;
+      h.push(li(r.path.wet ? 'Coil-surface state s, saturated at <i>T</i><sub>s</sub> = ' + fT(sc[0]) : 'Coil-surface state s at <i>T</i><sub>s</sub> = ' + fT(sc[0]) + ' and ' + W(a) + ' (dry coil: the surface is above the dew point)',
+        '<i>W</i><sub>s</sub> = ' + w6(sc[1]) + ' kg/kg, <i>h</i><sub>s</sub>', fix(r.extra.hs, 2) + ' kJ/kg'));
+      if (r.extra.fog && s2.T < r.path.Thit) h.push(li('The coil line crosses the saturation curve at ' + fT(r.path.Thit) + '; below that the air stays saturated', W(b) + ' = <i>W</i><sub>s</sub>(' + T(b) + ')', w6(s2.W) + ' kg/kg'));
+      else h.push(li('Leaving air on the straight line from ' + a + ' to s' + (sp.ctl === 'q' ? ', at the point that satisfies the energy balance' : ' at ' + T(b) + ' = ' + fT(s2.T)),
+        'BF = (' + H(b) + ' − <i>h</i><sub>s</sub>)/(' + H(a) + ' − <i>h</i><sub>s</sub>) = (' + fix(s2.h, 2) + ' − ' + fix(r.extra.hs, 2) + ')/(' + fix(s1.h, 2) + ' − ' + fix(r.extra.hs, 2) + ')', fix(r.extra.BF, 3)));
+      h.push(li('Leaving air', W(b) + ' = <i>W</i><sub>s</sub> + BF(' + W(a) + ' − <i>W</i><sub>s</sub>) = ' + w6(s2.W) + ' kg/kg, ' + T(b) + ' = ' + fT(s2.T) + ', ' + H(b), fix(s2.h, 2) + ' kJ/kg'));
+    }
+    h.push(li('Enthalpy of the exit air', hEq(s2, b), fix(s2.h, 2) + ' kJ/kg'));
+    if (sp.coil === 'real') h.push(li('Exit relative humidity', phiEq(s2, b), fPhi(s2.phi)));
+    if (r.mw > 0) {
+      h.push(li('Water condensed (mass balance for water)', '<i>m</i><sub>w</sub>/<i>m</i><sub>a</sub> = ' + W(a) + ' − ' + W(b) + ' = ' + w6(s1.W) + ' − ' + w6(s2.W), w6(r.mw) + ' kg/kg'));
+      h.push(li('Energy balance; the condensate leaves at ' + T(b) + ' with <i>h</i><sub>f</sub> = 4.186 × ' + fix(s2.T, 2) + ' = ' + fix(CL * s2.T, 2) + ' kJ/kg',
+        '<i>q</i> = ' + H(b) + ' − ' + H(a) + ' + (' + W(a) + ' − ' + W(b) + ')<i>h</i><sub>f</sub> = ' + fix(s2.h, 2) + ' − ' + fix(s1.h, 2) + ' + ' + w6(r.mw) + ' × ' + fix(CL * s2.T, 2), sgn(r.q, 2) + ' kJ/kg'));
+    } else h.push(li('No water condenses (above the dew point); energy balance', '<i>q</i> = ' + H(b) + ' − ' + H(a), sgn(r.q, 2) + ' kJ/kg'));
+  } else {
+    var steam = sp.hm === 'steam';
+    h.push(li(steam ? 'Enthalpy of the steam (ASHRAE eq. 30)' : 'Enthalpy of the liquid water', steam ? '<i>h</i><sub>g</sub> ≈ 2501 + 1.86 <i>T</i><sub>steam</sub> = 2501 + 1.86 × ' + fix(r.Tw, 1) : '<i>h</i><sub>f</sub> ≈ 4.186 <i>T</i><sub>water</sub> = 4.186 × ' + fix(r.Tw, 1), fix(r.hw, 2) + ' kJ/kg'));
+    if (sp.ctl !== 'mw') h.push(li('Water added, solved numerically so that ' + (sp.ctl === 'phi2' ? 'φ<sub>' + b + '</sub> = ' + fPhi(sp.phi2) : T(b) + ' = ' + fT(sp.T2)), '<i>m</i><sub>w</sub>/<i>m</i><sub>a</sub>', w6(r.mw) + ' kg/kg'));
+    h.push(li('Mass balance for water', W(b) + ' = ' + W(a) + ' + <i>m</i><sub>w</sub>/<i>m</i><sub>a</sub> = ' + w6(s1.W) + ' + ' + w6(r.mw), w6(s2.W) + ' kg/kg'));
+    h.push(li('Energy balance, no heat transfer', H(b) + ' = ' + H(a) + ' + (' + W(b) + ' − ' + W(a) + ')<i>h</i><sub>w</sub> = ' + fix(s1.h, 2) + ' + ' + w6(r.mw) + ' × ' + fix(r.hw, 2), fix(s2.h, 2) + ' kJ/kg'));
+    tOut(s2, b);
+    h.push(li('Exit relative humidity, with ' + PW + ' = ' + W(b) + '<i>p</i>/(0.621945 + ' + W(b) + ') = ' + fix(s2.pw, 4) + ' kPa', phiEq(s2, b), fPhi(s2.phi)));
+  }
+  // HVAC rates
+  var s0 = all.chain[0];
+  h.push(li('Dry-air mass flow', isMass(st.fu) ? 'given: ' + fix(st.flow, 3) + (st.fu === 'kgs' ? ' kg/s' : ' kg/min') : '<i>ṁ</i><sub>a</sub> = <i>V̇</i><sub>1</sub>/<i>v</i><sub>1</sub> = ' + fix(md * s0.v, 4) + ' m³/s ÷ ' + fix(s0.v, 4) + ' m³/kg', fix(md, 4) + ' kg/s'));
+  if (r.proc !== 'humid') h.push(li('Heat transfer rate', '<i>Q̇</i> = <i>ṁ</i><sub>a</sub><i>q</i> = ' + fix(md, 4) + ' × (' + sgn(r.q, 2) + ')', fkW(md * r.q) + (r.q < 0 ? ' (' + tons(md * r.q) + ')' : '')));
+  if (r.mw > 0) h.push(li(r.proc === 'humid' ? 'Water consumption' : 'Condensate flow', '<i>ṁ</i><sub>w</sub> = <i>ṁ</i><sub>a</sub> × ' + w6(r.mw) + ' × 3600 s/h', kgh(md * r.mw)));
+  $('ps-steps').innerHTML = h.join('');
+}
+
+/* ----- MATLAB check with Psychrometricsnew.m ----- */
+function m6(x) { return String(rnd(x, 6)); }
+function m2(x) { return String(rnd(x, 2)); }
+function drawMatlab(all, r) {
+  var a = st.sel + 1, b = st.sel + 2, sp = r.sp, s1 = r.s1, s2 = r.s2, L = [], Ta = 'T' + a, wa = 'w' + a, ha = 'h' + a, Tb = 'T' + b, wb = 'w' + b, hb = 'h' + b;
+  var NL = String.fromCharCode(10), c = function (t) { L.push('% ' + t); };
+  c('pressure in kPa; enthalpies come back in J/kg dry air');
+  L.push('P = ' + String(rnd(all.P, 3)) + ';');
+  var outs = '[' + Ta + ',' + wa + ',phi' + a + ',' + ha + ',Tdp' + a + '] = Psychrometricsnew(';
+  if (st.sel > 0) { c('state ' + a + ' = exit of process ' + (a - 1) + '->' + a); L.push(outs + "'tdb'," + m2(s1.T) + ",'w'," + m6(s1.W) + ",'p',P);"); }
+  else if (st.hk === 'phi') { c('state 1'); L.push(outs + "'tdb'," + m2(s1.T) + ",'phi'," + m2(st.hv) + ",'p',P);"); }
+  else if (st.hk === 'twb') { c('state 1 from the dry-bulb and wet-bulb temperatures'); L.push(outs + "'tdb'," + m2(s1.T) + ",'twb'," + m2(st.hv) + ",'p',P);"); }
+  else { c(st.hk === 'tdp' ? 'state 1 (W from the dew point, ' + m2(st.hv) + ' °C)' : 'state 1'); L.push(outs + "'tdb'," + m2(s1.T) + ",'w'," + m6(s1.W) + ",'p',P);"); }
+  var plotT = Ta + ' ' + Tb, plotW = wa + ' ' + wb;
+  if (r.proc === 'heat' || r.proc === 'cool' || (r.proc === 'dehum' && r.mw <= 0 && sp.coil !== 'real')) {
+    if (sp.ctl === 'q') {
+      c('heat transfer in kJ/kg dry air; W stays constant');
+      L.push('q = ' + m2(r.q) + ';');
+      L.push('[' + Tb + ',' + wb + ',phi' + b + ',' + hb + "] = Psychrometricsnew('w'," + wa + ",'h'," + ha + " + q*1000,'p',P)");
+    } else {
+      c('exit temperature in °C; W stays constant');
+      L.push(Tb + ' = ' + m2(s2.T) + ';');
+      L.push('[~,' + wb + ',phi' + b + ',' + hb + "] = Psychrometricsnew('tdb'," + Tb + ",'w'," + wa + ",'p',P)");
+      L.push('q = (' + hb + ' - ' + ha + ')/1000');
+    }
+  } else if (r.proc === 'dehum') {
+    if (sp.coil !== 'real') {
+      c('saturated exit air at the temperature found by the simulator');
+      L.push(Tb + ' = ' + m2(s2.T) + ';');
+      L.push('[~,' + wb + ',phi' + b + ',' + hb + "] = Psychrometricsnew('tdb'," + Tb + ",'phi',100,'p',P);");
+      plotT = Ta + ' Tdp' + a + ' ' + Tb; plotW = wa + ' ' + wa + ' ' + wb;
+    } else {
+      c('coil-surface state s');
+      L.push('Ts = ' + m2(sp.Ts) + ';');
+      if (r.path.wet) L.push("[~,ws,~,hs] = Psychrometricsnew('tdb',Ts,'phi',100,'p',P);");
+      else L.push("[~,ws,~,hs] = Psychrometricsnew('tdb',Ts,'w'," + wa + ",'p',P);   % dry coil");
+      c('leaving air found by the simulator');
+      L.push(Tb + ' = ' + m2(s2.T) + '; ' + wb + ' = ' + m6(s2.W) + ';');
+      L.push('[~,~,phi' + b + ',' + hb + "] = Psychrometricsnew('tdb'," + Tb + ",'w'," + wb + ",'p',P)");
+      L.push('BF = (' + hb + ' - hs)/(' + ha + ' - hs)');
+    }
+    c('condensate (kg/kg dry air) and heat transfer (kJ/kg dry air)');
+    L.push('mw = ' + wa + ' - ' + wb);
+    L.push('q = (' + hb + ' - ' + ha + ' + mw*4186*' + Tb + ')/1000');
+  } else {
+    c('water added (kg/kg dry air) and its enthalpy (J/kg): ' + (sp.hm === 'steam' ? 'steam' : 'liquid water'));
+    L.push('mw = ' + m6(r.mw) + ';');
+    L.push('hw = ' + (sp.hm === 'steam' ? '(2501 + 1.86*' + m2(r.Tw) + ')*1000;' : '4186*' + m2(r.Tw) + ';'));
+    L.push('[' + Tb + ',' + wb + ',phi' + b + ',' + hb + "] = Psychrometricsnew('w'," + wa + " + mw,'h'," + ha + " + mw*hw,'p',P)");
+  }
+  c('simulator: ' + Tb + ' = ' + fix(s2.T, 2) + ' °C, phi' + b + ' = ' + fix(s2.phi, 2) + ' %' + (r.proc === 'humid' ? '' : ', q = ' + fix(r.q, 3).replace('−', '-') + ' kJ/kg'));
+  c('chart and process line (psychplotting needs label.m from the File Exchange)');
+  L.push('psychplotting(0,' + CH.Thi + ',0,' + CH.Whi + ',P); hold on');
+  L.push('plot([' + plotT + '],[' + plotW + "]*1000,'r-o','LineWidth',1.5)");
+  $('ps-matlab').textContent = L.join(NL);
+}
+
+/* ----- Start ----- */
+var lastW = 0, rt = null;
+window.addEventListener('resize', function () {
+  clearTimeout(rt);
+  rt = setTimeout(function () { var w = $('ps-chart').clientWidth; if (w !== lastW) { lastW = w; render(); } }, 120);
+});
+window.addEventListener('hashchange', function () { if (readHash()) render(); });
+readHash();
+render();
+lastW = $('ps-chart').clientWidth;
+function renderTex() {
+  if (!window.katex) return;
+  Array.prototype.forEach.call(document.querySelectorAll('.tex-d'), function (el) {
+    try { window.katex.render(el.getAttribute('data-tex'), el, { displayMode: true, throwOnError: false }); } catch (e) { /* keep the source text */ }
+  });
+}
+Array.prototype.forEach.call(document.querySelectorAll('.tex-d'), function (el) { if (!el.textContent) el.textContent = el.getAttribute('data-tex'); });
+if (window.katex) renderTex(); else window.addEventListener('load', renderTex);
+})();
+</script>
+{% endraw %}
