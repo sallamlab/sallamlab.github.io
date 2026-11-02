@@ -15,6 +15,29 @@ description: Courses taught by Dr. Khaled A. Sallam at Oklahoma State University
   </div>
 </section>
 
+{%- if t.tools and t.tools.size > 0 -%}
+<section class="section" id="tools">
+  <div class="container">
+    <div class="section-head"><h2>Interactive learning tools</h2></div>
+    {%- for tool in t.tools -%}
+    {%- if tool.url contains '://' -%}{%- assign tool_url = tool.url -%}{%- else -%}{%- assign tool_url = tool.url | relative_url -%}{%- endif -%}
+    <div class="feature"{% unless forloop.last %} style="margin-bottom:36px"{% endunless %}>
+      <div>
+        <span class="eyebrow">{{ tool.label | default: 'Interactive tool' }}</span>
+        <h3 style="font-size:1.6rem">{{ tool.title }}</h3>
+        <p>{{ tool.text }}</p>
+        {%- if tool.courses -%}<p class="muted small">{{ tool.courses }}</p>{%- endif -%}
+        <a class="btn btn-primary" href="{{ tool_url }}">{{ tool.button | default: 'Open' }}</a>
+      </div>
+      {%- if tool.image -%}
+      <a href="{{ tool_url }}" tabindex="-1" aria-hidden="true" style="justify-self:center;width:100%;max-width:480px"><img src="{{ '/assets/img/' | append: tool.image | relative_url }}" alt="" loading="lazy"></a>
+      {%- endif -%}
+    </div>
+    {%- endfor -%}
+  </div>
+</section>
+{%- endif -%}
+
 <section class="section">
   <div class="container">
     <div class="section-head"><h2>Courses</h2></div>

@@ -1,0 +1,1238 @@
+---
+layout: default
+title: Heat Exchanger Simulator
+permalink: /teaching/heat-exchanger/
+description: Interactive effectiveness-NTU simulator for parallel-flow, counterflow, shell-and-tube and crossflow heat exchangers, with a short explanation of the equations. MAE 3524 Thermal Fluids Design, Oklahoma State University.
+---
+{% raw %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<style>
+/* Heat exchanger simulator: page styles. Site tokens (colors, fonts) come from /assets/css/site.css. */
+.hx { --hot: #c8372d; --cold: #2a78d6; --wall: #42515e; }
+.hx-hero .hx-crumb { margin: 0 0 10px; font-size: .92rem; color: #c3cfdb; }
+.hx-hero .hx-crumb a { color: #ffb48f; }
+.hx-app { display: grid; gap: 24px; grid-template-columns: minmax(290px, 360px) minmax(0, 1fr); align-items: start; }
+.hx-panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px; min-width: 0; }
+.hx-controls { padding: 18px 18px 6px; }
+.hx-intro { font-size: .9rem; color: var(--ink-soft); margin: 0 0 14px; }
+.hx-group { border: 0; padding: 0; margin: 0 0 18px; min-width: 0; }
+.hx-group legend { font-family: var(--serif); font-weight: 600; color: var(--navy); font-size: 1.05rem; padding: 0; margin: 0 0 8px; display: flex; align-items: center; gap: 8px; }
+.hx-swatch { width: 12px; height: 12px; border-radius: 50%; display: inline-block; flex: none; }
+.hx-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.hx-seg.c3 { grid-template-columns: repeat(3, 1fr); }
+.hx-seg.c4 { grid-template-columns: repeat(4, 1fr); }
+.hx-seg label { position: relative; display: block; cursor: pointer; }
+.hx-seg input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.hx-seg span { display: block; text-align: center; padding: 8px 4px; border: 1px solid var(--line); border-radius: 8px; font-size: .86rem; font-weight: 500; line-height: 1.25; background: #fff; color: var(--ink); transition: background .15s, border-color .15s; }
+.hx-seg label:hover span { border-color: var(--ink-faint); }
+.hx-seg input:checked + span { background: var(--navy); border-color: var(--navy); color: #fff; }
+.hx-seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.hx-sub { margin-top: 10px; }
+.hx-sub[hidden] { display: none; }
+.hx-sublabel { display: block; font-size: .82rem; color: var(--ink-soft); margin-bottom: 4px; }
+.hx-ctl { margin-bottom: 12px; }
+.hx-ctl > label { display: block; font-size: .9rem; margin-bottom: 1px; }
+.hx-sym { color: var(--ink-soft); margin-left: 3px; }
+.hx-inrow { display: flex; align-items: center; gap: 10px; }
+.hx-inrow input[type=range] { flex: 1; min-width: 0; margin: 0; height: 26px; accent-color: var(--accent); cursor: pointer; }
+.hx-num { display: inline-flex; align-items: center; gap: 5px; flex: none; }
+.hx-num input { width: 76px; font: inherit; font-size: .92rem; text-align: right; padding: 4px 6px; border: 1px solid #cbd2d9; border-radius: 6px; background: #fff; color: var(--ink); font-variant-numeric: tabular-nums; }
+.hx-num input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.hx-num input[aria-invalid=true] { border-color: #d03b3b; background: #fdecec; }
+.hx-unit { font-size: .8rem; color: var(--ink-soft); width: 50px; }
+.hx-ctl.is-off { opacity: .45; }
+.hx-ctl.is-off .hx-note-inf { display: inline; }
+.hx-note-inf { display: none; font-size: .8rem; color: var(--ink-soft); margin-left: 6px; }
+.hx-derived { font-size: .85rem; color: var(--ink-soft); margin: -4px 0 0; }
+.hx-field { display: block; font-size: .9rem; margin-bottom: 12px; }
+.hx-field select { display: block; width: 100%; margin-top: 4px; font: inherit; font-size: .9rem; padding: 7px 8px; border: 1px solid #cbd2d9; border-radius: 8px; background: #fff; color: var(--ink); }
+.hx-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.hx-btn { font: inherit; font-size: .86rem; font-weight: 600; padding: 6px 14px; border-radius: 999px; border: 2px solid var(--navy); background: #fff; color: var(--navy); cursor: pointer; }
+.hx-btn:hover { background: var(--navy); color: #fff; }
+.hx-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.hx-out { display: grid; gap: 18px; min-width: 0; transition: opacity .2s; }
+.hx-out.is-invalid > :not(.hx-alert) { opacity: .35; pointer-events: none; }
+.hx-alert { display: none; background: #fdecec; border-left: 4px solid #d03b3b; border-radius: 0 10px 10px 0; padding: 12px 16px; font-size: .95rem; }
+.hx-out.is-invalid .hx-alert { display: block; }
+.hx-card-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin-bottom: 8px; }
+.hx-card-head h2, .hx-card-head h3 { margin: 0; font-size: 1.22rem; }
+.hx-code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .8rem; color: var(--ink); background: #f3f1ec; padding: 2px 7px; border-radius: 6px; }
+.hx-svg { display: block; width: 100%; height: auto; }
+.hx-svg text { font-family: var(--sans); paint-order: stroke; stroke: #fff; stroke-width: 4px; stroke-linejoin: round; }
+.hx-svg .t-k { font-size: 12.5px; fill: var(--ink-soft); }
+.hx-svg .t-v { font-size: 15px; font-weight: 600; fill: var(--ink); }
+.hx-svg .t-s { font-size: 11.5px; fill: var(--ink-soft); }
+.hx-cbar { margin: 8px auto 0; max-width: 460px; font-size: .78rem; color: var(--ink-soft); }
+.hx-cbar-bar { height: 10px; border-radius: 5px; border: 1px solid rgba(20,41,61,.15); }
+.hx-cbar-ticks { position: relative; height: 16px; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.hx-cbar-ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.hx-cbar-title { text-align: center; margin-bottom: 3px; }
+.hx-notes { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.hx-notes li { font-size: .9rem; background: #f3f1ec; border-radius: 8px; padding: 8px 12px; }
+.hx-notes li b { color: var(--navy); }
+.hx-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.hx-tile { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 11px 14px 12px; min-width: 0; }
+.hx-tile .k { font-size: .82rem; color: var(--ink-soft); display: flex; align-items: center; gap: 6px; }
+.hx-tile .v { font-size: 1.5rem; font-weight: 600; color: var(--navy); line-height: 1.25; margin-top: 2px; white-space: nowrap; }
+.hx-tile .s { font-size: .78rem; color: var(--ink-soft); line-height: 1.35; }
+.hx-chart { position: relative; }
+.hx-chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.hx-chart svg:focus { outline: none; }
+.hx-chart:focus-within { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
+.hx-grid { stroke: #eceef1; stroke-width: 1; }
+.hx-axis { stroke: #c3c2b7; stroke-width: 1; }
+.hx-tick { font-size: 11.5px; fill: #7b8794; font-family: var(--sans); font-variant-numeric: tabular-nums; }
+.hx-axlab { font-size: 12.5px; fill: var(--ink-soft); font-family: var(--sans); }
+.hx-clab { font-size: 11.5px; fill: var(--ink-soft); font-family: var(--sans); paint-order: stroke; stroke: #fff; stroke-width: 3px; }
+.hx-cross { stroke: var(--navy); stroke-width: 1; opacity: .5; }
+.hx-tip { position: absolute; z-index: 5; pointer-events: none; background: #fff; border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: 8px 10px; font-size: .8rem; line-height: 1.4; min-width: 150px; display: none; }
+.hx-tip .hd { color: var(--ink-soft); margin-bottom: 3px; }
+.hx-tip .row { display: flex; align-items: center; gap: 8px; }
+.hx-tip .row b { font-variant-numeric: tabular-nums; min-width: 52px; }
+.hx-tip .row i { font-style: normal; color: var(--ink-soft); }
+.hx-key { display: inline-block; width: 14px; height: 0; border-top: 2px solid; vertical-align: middle; flex: none; }
+.hx-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: .82rem; color: var(--ink-soft); margin-top: 6px; }
+.hx-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.hx-row2 { display: grid; gap: 18px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 18px; align-items: start; }
+.hx-col { display: grid; gap: 18px; min-width: 0; }
+.hx-sub-note { font-size: .82rem; color: var(--ink-soft); margin: 2px 0 6px; }
+details.hx-data { margin-top: 10px; font-size: .85rem; }
+details.hx-data summary { cursor: pointer; color: var(--navy); font-weight: 600; }
+.hx-scroll { overflow-x: auto; }
+.hx-table { width: 100%; border-collapse: collapse; font-size: .88rem; font-variant-numeric: tabular-nums; }
+.hx-table th, .hx-table td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.hx-table th:first-child, .hx-table td:first-child { text-align: left; white-space: normal; }
+.hx-table thead th { font-weight: 600; color: var(--ink-soft); font-size: .8rem; }
+.hx-cmp tbody tr { cursor: pointer; }
+.hx-cmp tbody tr:hover { background: #f7f6f2; }
+.hx-cmp tbody tr.is-cur { background: var(--accent-soft); }
+.hx-cmp tbody tr.is-cur td:first-child { font-weight: 600; }
+.hx-cmp td:first-child small { display: block; color: var(--ink-soft); font-weight: 400; }
+.hx-cmp td:first-child { min-width: 150px; }
+.hx-bar { display: inline-block; height: 8px; border-radius: 0 4px 4px 0; background: var(--cold); vertical-align: middle; margin-right: 8px; }
+.hx-cmp tr.is-cur .hx-bar { background: var(--accent); }
+.hx-steps { list-style: none; counter-reset: st; margin: 0; padding: 0; font-size: .9rem; }
+.hx-steps li { counter-increment: st; position: relative; padding: 7px 0 7px 30px; border-bottom: 1px dashed var(--line); }
+.hx-steps li::before { content: counter(st); position: absolute; left: 0; top: 8px; width: 21px; height: 21px; border-radius: 50%; background: var(--navy); color: #fff; font-size: .72rem; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+.hx-steps .lbl { display: block; font-size: .78rem; color: var(--ink-soft); }
+.hx-steps .eq { overflow-wrap: anywhere; }
+.hx-steps .res { font-weight: 600; color: var(--navy); white-space: nowrap; }
+.hx-check { font-size: .86rem; margin: 10px 0 0; color: var(--ink); }
+.hx-matlab { margin: 10px 0 0; font-size: .8rem; }
+.hx-matlab pre { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: break-word; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: #14293d; color: #e6edf3; padding: 10px 12px; border-radius: 8px; font-size: .78rem; line-height: 1.5; }
+.hx-sticky { display: none; }
+.hx-doc .tex-d { overflow-x: auto; overflow-y: hidden; padding: 2px 0; }
+.hx-doc .tex-d .katex-display { margin: .4em 0; }
+.hx-eqs { width: 100%; border-collapse: collapse; margin: 8px 0 4px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
+.hx-eqs th, .hx-eqs td { text-align: left; vertical-align: middle; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.hx-eqs tr:last-child th, .hx-eqs tr:last-child td { border-bottom: 0; }
+.hx-eqs th { font-weight: 600; font-size: .92rem; color: var(--navy); width: 30%; }
+.hx-eqs th small { display: block; font-weight: 400; color: var(--ink-soft); }
+.hx-eqs td { min-width: 0; max-width: 0; width: 70%; }
+.hx-steps-doc { padding-left: 1.4em; }
+.hx-steps-doc li { margin-bottom: 14px; }
+.hx-twocol { display: grid; gap: 8px 40px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); }
+.hx-twocol ul { margin: 0; }
+.hx-twocol li { margin-bottom: 10px; }
+.hx-try { counter-reset: tr; list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+.hx-try li { counter-increment: tr; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px 14px 52px; position: relative; font-size: .97rem; }
+.hx-try li::before { content: counter(tr); position: absolute; left: 14px; top: 13px; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: #9a3a0f; font-weight: 700; font-size: .85rem; display: flex; align-items: center; justify-content: center; }
+.hx-credit { font-size: .88rem; color: var(--ink-soft); margin-top: 28px; }
+@media (max-width: 1020px) { .hx-row2 { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 920px) {
+  .hx-app { grid-template-columns: minmax(0, 1fr); }
+  .hx-sticky { display: flex; position: sticky; top: 71px; z-index: 40; justify-content: space-between; gap: 10px; background: rgba(255,255,255,.97); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); padding: 7px 12px; font-size: .8rem; color: var(--ink-soft); }
+  .hx-sticky b { display: block; color: var(--navy); font-size: .95rem; font-variant-numeric: tabular-nums; }
+}
+@media (max-width: 560px) {
+  .hx-svg .t-k { font-size: 17px; } .hx-svg .t-v { font-size: 20px; } .hx-svg .t-s { font-size: 15px; }
+  .hx-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hx-panel { padding: 14px; }
+  .hx-tile .v { font-size: 1.3rem; }
+  .hx-eqs, .hx-eqs tbody, .hx-eqs tr, .hx-eqs th, .hx-eqs td { display: block; width: 100%; max-width: none; }
+  .hx-eqs th { padding-bottom: 0; border-bottom: 0; }
+}
+</style>
+
+<section class="page-hero hx-hero">
+  <div class="container">
+    <p class="hx-crumb"><a href="/teaching/">Teaching</a> <span aria-hidden="true">&rsaquo;</span> MAE 3524 Thermal Fluids Design</p>
+    <h1>Heat exchanger simulator</h1>
+    <p>Predict the outlet temperatures of parallel-flow, counterflow, shell-and-tube and crossflow heat exchangers with the effectiveness&ndash;NTU method. Change the inlet temperatures and flow rates and watch the exchanger respond.</p>
+  </div>
+</section>
+
+<section class="section hx" id="simulator" aria-label="Heat exchanger simulator">
+  <div class="container">
+    <noscript><p class="callout">The simulator needs JavaScript. The equations it uses are explained <a href="#equations">below</a>.</p></noscript>
+    <div class="hx-app">
+      <div class="hx-sticky" id="hx-sticky" aria-hidden="true">
+        <span>Hot out<b id="sk-tho">&ndash;</b></span><span>Cold out<b id="sk-tco">&ndash;</b></span><span>&epsilon;<b id="sk-eps">&ndash;</b></span><span>Q&#775;<b id="sk-q">&ndash;</b></span>
+      </div>
+
+      <form class="hx-panel hx-controls" id="hx-form" autocomplete="off" onsubmit="return false">
+        <p class="hx-intro">Choose an arrangement, then drag a slider or type a value. Everything on the page updates as you go.</p>
+        <fieldset class="hx-group">
+          <legend>Flow arrangement</legend>
+          <div class="hx-seg" id="seg-type">
+            <label><input type="radio" name="type" value="par"><span>Parallel flow</span></label>
+            <label><input type="radio" name="type" value="cf"><span>Counterflow</span></label>
+            <label><input type="radio" name="type" value="st"><span>Shell &amp; tube</span></label>
+            <label><input type="radio" name="type" value="cx"><span>Crossflow</span></label>
+          </div>
+          <div class="hx-sub" id="sub-st" hidden>
+            <span class="hx-sublabel" id="lab-shells">Shell passes <i>N</i> (2<i>N</i> tube passes)</span>
+            <div class="hx-seg c4" role="radiogroup" aria-labelledby="lab-shells">
+              <label><input type="radio" name="shells" value="1"><span>1</span></label>
+              <label><input type="radio" name="shells" value="2"><span>2</span></label>
+              <label><input type="radio" name="shells" value="3"><span>3</span></label>
+              <label><input type="radio" name="shells" value="4"><span>4</span></label>
+            </div>
+          </div>
+          <div class="hx-sub" id="sub-cx" hidden>
+            <span class="hx-sublabel" id="lab-mix">Which fluid is mixed?</span>
+            <div class="hx-seg c3" role="radiogroup" aria-labelledby="lab-mix">
+              <label><input type="radio" name="mix" value="none"><span>Neither</span></label>
+              <label><input type="radio" name="mix" value="hot"><span>Hot</span></label>
+              <label><input type="radio" name="mix" value="cold"><span>Cold</span></label>
+            </div>
+          </div>
+        </fieldset>
+        <fieldset class="hx-group">
+          <legend><span class="hx-swatch" style="background:var(--hot)"></span>Hot fluid</legend>
+          <div id="ctl-hot"></div>
+        </fieldset>
+        <fieldset class="hx-group">
+          <legend><span class="hx-swatch" style="background:var(--cold)"></span>Cold fluid</legend>
+          <div id="ctl-cold"></div>
+        </fieldset>
+        <fieldset class="hx-group">
+          <legend>Heat exchanger</legend>
+          <div id="ctl-hx"></div>
+          <p class="hx-derived" id="hx-ua"></p>
+        </fieldset>
+        <fieldset class="hx-group">
+          <legend>Options</legend>
+          <label class="hx-field">Phase change
+            <select id="hx-phase">
+              <option value="none">None: no phase change</option>
+              <option value="hot">Hot fluid condenses (constant temperature)</option>
+              <option value="cold">Cold fluid boils (constant temperature)</option>
+            </select>
+          </label>
+          <label class="hx-field">Load an example
+            <select id="hx-example">
+              <option value="">Choose an example&hellip;</option>
+              <option value="default">Water&ndash;water counterflow (default)</option>
+              <option value="lec11">Lecture 11: crossflow, both unmixed, NTU = 2</option>
+              <option value="cr1">Equal capacity rates, large area (parallel flow)</option>
+              <option value="condenser">Steam condenser (C_r = 0)</option>
+              <option value="oil">Engine-oil cooler, shell &amp; tube</option>
+            </select>
+          </label>
+          <div class="hx-buttons">
+            <button type="button" class="hx-btn" id="hx-reset">Reset</button>
+            <button type="button" class="hx-btn" id="hx-link">Copy link to this setup</button>
+          </div>
+        </fieldset>
+      </form>
+
+      <div class="hx-out" id="hx-out">
+        <div class="hx-alert" role="alert">The hot fluid must enter hotter than the cold fluid. Raise <i>T</i><sub>h,in</sub> or lower <i>T</i><sub>c,in</sub>.</div>
+        <div class="hx-panel">
+          <div class="hx-card-head"><h2 id="hx-title">Counterflow</h2><span class="hx-code" id="hx-type"></span></div>
+          <svg class="hx-svg" id="hx-svg" viewBox="0 0 640 270" role="img" aria-labelledby="hx-svg-desc"><desc id="hx-svg-desc">Heat exchanger schematic</desc></svg>
+          <div class="hx-cbar" aria-hidden="true">
+            <div class="hx-cbar-title">Fluid temperature, &deg;C</div>
+            <div class="hx-cbar-bar" id="hx-cbar"></div>
+            <div class="hx-cbar-ticks" id="hx-cbar-ticks"></div>
+          </div>
+          <ul class="hx-notes" id="hx-notes" aria-live="polite"></ul>
+        </div>
+        <div class="hx-tiles" id="hx-tiles" aria-live="polite"></div>
+        <div class="hx-panel">
+          <div class="hx-card-head"><h3>Effectiveness&ndash;NTU chart</h3></div>
+          <p class="hx-sub-note" id="eps-note"></p>
+          <div class="hx-chart" id="chart-eps"></div>
+          <div class="hx-legend" id="eps-legend"></div>
+          <details class="hx-data"><summary>Show the chart values</summary><div class="hx-scroll" id="eps-table"></div></details>
+        </div>
+      </div>
+    </div>
+
+    <div class="hx-row2">
+      <div class="hx-col">
+        <div class="hx-panel">
+          <div class="hx-card-head"><h3 id="prof-title">Temperature along the exchanger</h3></div>
+          <p class="hx-sub-note" id="prof-note"></p>
+          <div class="hx-chart" id="chart-prof"></div>
+          <div class="hx-legend" id="prof-legend"></div>
+          <details class="hx-data"><summary>Show the chart values</summary><div class="hx-scroll" id="prof-table"></div></details>
+        </div>
+        <div class="hx-panel">
+          <div class="hx-card-head"><h3>Compare flow arrangements</h3></div>
+          <p class="hx-sub-note">Same fluids and the same <i>UA</i>. Click a row to switch to it.</p>
+          <div class="hx-scroll"><table class="hx-table hx-cmp" id="hx-cmp"></table></div>
+        </div>
+      </div>
+      <div class="hx-panel">
+        <div class="hx-card-head"><h3>Step-by-step solution</h3></div>
+        <ol class="hx-steps" id="hx-steps"></ol>
+        <p class="hx-check" id="hx-check"></p>
+        <div class="hx-matlab">Check your MATLAB code with the same inputs (SI units, <i>c<sub>p</sub></i> in J/kg&middot;K):<pre id="hx-matlab"></pre></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt hx-doc" id="equations">
+  <div class="container">
+    <div class="section-head"><h2>How the simulator works</h2></div>
+    <p class="measure">The simulator solves the <em>rating</em> problem: the exchanger is known (its flow arrangement, <i>U</i> and <i>A</i>) and so are both inlet streams, but the outlet temperatures are not. The effectiveness&ndash;NTU method finds them directly, without iteration, in five steps. The calculation follows the MATLAB functions <code>HeatExchanger.m</code> and <code>effectiveness.m</code> used in MAE 3524.</p>
+    <ol class="hx-steps-doc measure">
+      <li><strong>Heat capacity rates.</strong> The fluid with the smaller rate, <i>C</i><sub>min</sub>, undergoes the larger temperature change.
+        <div class="tex-d" data-tex="C_h=\dot m_h\,c_{p,h},\qquad C_c=\dot m_c\,c_{p,c},\qquad C_r=\frac{C_{min}}{C_{max}}=\frac{\min(C_h,C_c)}{\max(C_h,C_c)}"></div></li>
+      <li><strong>Number of transfer units</strong>, the thermal size of the exchanger relative to the stream that limits it:
+        <div class="tex-d" data-tex="\mathrm{NTU}=\frac{UA}{C_{min}}"></div></li>
+      <li><strong>Effectiveness</strong>, the fraction of the thermodynamically possible heat transfer that the exchanger achieves, from the relation for its flow arrangement (table below):
+        <div class="tex-d" data-tex="\varepsilon=\frac{\dot Q}{\dot Q_{max}}=f\left(\mathrm{NTU},\,C_r,\ \text{flow arrangement}\right)"></div></li>
+      <li><strong>Heat transfer rate.</strong> Only the <i>C</i><sub>min</sub> stream could, in an infinitely long counterflow exchanger, swing through the full inlet temperature difference:
+        <div class="tex-d" data-tex="\dot Q_{max}=C_{min}\left(T_{h,in}-T_{c,in}\right),\qquad \dot Q=\varepsilon\,\dot Q_{max}"></div></li>
+      <li><strong>Outlet temperatures</strong> from an energy balance on each stream:
+        <div class="tex-d" data-tex="T_{h,out}=T_{h,in}-\frac{\dot Q}{C_h},\qquad T_{c,out}=T_{c,in}+\frac{\dot Q}{C_c}"></div></li>
+    </ol>
+
+    <h3 style="margin-top:28px">Effectiveness relations</h3>
+    <table class="hx-eqs">
+      <tr><th>Parallel flow</th><td><div class="tex-d" data-tex="\varepsilon=\frac{1-\exp\left[-\mathrm{NTU}\,(1+C_r)\right]}{1+C_r}"></div></td></tr>
+      <tr><th>Counterflow<small>For C<sub>r</sub> = 1 the general form is 0/0; its limit is used.</small></th><td><div class="tex-d" data-tex="\varepsilon=\frac{1-\exp\left[-\mathrm{NTU}\,(1-C_r)\right]}{1-C_r\exp\left[-\mathrm{NTU}\,(1-C_r)\right]}\quad(C_r<1),\qquad \varepsilon=\frac{\mathrm{NTU}}{1+\mathrm{NTU}}\quad(C_r=1)"></div></td></tr>
+      <tr><th>Shell &amp; tube, one shell pass<small>2, 4, 6&hellip; tube passes</small></th><td><div class="tex-d" data-tex="\varepsilon_1=2\left\{1+C_r+\sqrt{1+C_r^2}\;\frac{1+\exp\left[-\mathrm{NTU}\sqrt{1+C_r^2}\right]}{1-\exp\left[-\mathrm{NTU}\sqrt{1+C_r^2}\right]}\right\}^{-1}"></div></td></tr>
+      <tr><th>Shell &amp; tube, <i>N</i> shell passes<small>&epsilon;<sub>1</sub> evaluated at NTU/<i>N</i>; for C<sub>r</sub> = 1, &epsilon; = <i>N</i>&epsilon;<sub>1</sub>/[1 + (<i>N</i> &minus; 1)&epsilon;<sub>1</sub>]</small></th><td><div class="tex-d" data-tex="\varepsilon=\left[\left(\frac{1-\varepsilon_1 C_r}{1-\varepsilon_1}\right)^{N}-1\right]\left[\left(\frac{1-\varepsilon_1 C_r}{1-\varepsilon_1}\right)^{N}-C_r\right]^{-1}"></div></td></tr>
+      <tr><th>Crossflow, both fluids unmixed</th><td><div class="tex-d" data-tex="\varepsilon=1-\exp\left[\frac{\mathrm{NTU}^{0.22}}{C_r}\left\{\exp\left(-C_r\,\mathrm{NTU}^{0.78}\right)-1\right\}\right]"></div></td></tr>
+      <tr><th>Crossflow, <i>C</i><sub>max</sub> mixed, <i>C</i><sub>min</sub> unmixed</th><td><div class="tex-d" data-tex="\varepsilon=\frac{1}{C_r}\left(1-\exp\left\{-C_r\left[1-\exp(-\mathrm{NTU})\right]\right\}\right)"></div></td></tr>
+      <tr><th>Crossflow, <i>C</i><sub>min</sub> mixed, <i>C</i><sub>max</sub> unmixed</th><td><div class="tex-d" data-tex="\varepsilon=1-\exp\left\{-\frac{1}{C_r}\left[1-\exp\left(-C_r\,\mathrm{NTU}\right)\right]\right\}"></div></td></tr>
+      <tr><th>Every arrangement, <i>C</i><sub>r</sub> = 0<small>one fluid boils or condenses</small></th><td><div class="tex-d" data-tex="\varepsilon=1-\exp(-\mathrm{NTU})"></div></td></tr>
+    </table>
+    <p class="small muted">Relations from Incropera et al., <i>Fundamentals of Heat and Mass Transfer</i>, Section 11.4. For a crossflow exchanger with one mixed fluid, first find which fluid is <i>C</i><sub>min</sub>, then pick the row by whether that fluid is the mixed one; the simulator does this for you and shows the case it used.</p>
+
+    <h3 style="margin-top:28px">Special cases and good habits</h3>
+    <div class="hx-twocol">
+      <ul>
+        <li><strong><i>C</i><sub>r</sub> = 0.</strong> A boiling or condensing stream stays at its saturation temperature, as if its heat capacity rate were infinite. The flow direction of the other stream then no longer matters, and every arrangement collapses onto &epsilon; = 1 &minus; e<sup>&minus;NTU</sup>. Try it with the <em>Phase change</em> option.</li>
+        <li><strong><i>C</i><sub>r</sub> = 1.</strong> The counterflow and <i>N</i>-shell relations become 0/0. Their limits (L&rsquo;H&ocirc;pital&rsquo;s rule) are used instead, which is why code needs a separate branch for this case.</li>
+        <li><strong>Units.</strong> <i>c<sub>p</sub></i> is entered in kJ/kg&middot;K but converted to J/kg&middot;K, so <i>C</i> and <i>UA</i> are in W/K and <i>Q&#775;</i> is in W: SI base units throughout.</li>
+      </ul>
+      <ul>
+        <li><strong>Cross-check with the LMTD method.</strong> The same heat rate must satisfy <i>Q&#775;</i> = <i>UA F</i> &Delta;<i>T</i><sub>lm</sub>. The solution panel reports the equivalent correction factor <i>F</i> (<i>F</i> = 1 for parallel flow and counterflow).</li>
+        <li><strong>Assumptions.</strong> Steady state, constant <i>c<sub>p</sub></i> and <i>U</i>, no heat loss to the surroundings, negligible kinetic and potential energy changes.</li>
+        <li><strong>About the picture.</strong> Colors show the local fluid temperature on a fixed scale. The parallel-flow, counterflow and shell-and-tube distributions are analytic solutions of the energy balances; the crossflow core is solved numerically and matched to the &epsilon;&ndash;NTU heat rate.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="section hx-doc" id="activities">
+  <div class="container">
+    <div class="section-head"><h2>Try it yourself</h2></div>
+    <ol class="hx-try">
+      <li>Load the <em>Lecture 11</em> example. Read &epsilon; off the chart, then compare it with the computed value and with the textbook chart (&asymp; 0.74).</li>
+      <li>Give both fluids the same flow rate (<i>C</i><sub>r</sub> = 1) and keep increasing <i>A</i>. What is the highest effectiveness parallel flow can reach? Now switch to counterflow.</li>
+      <li>With counterflow selected, find the NTU beyond which doubling the area raises <i>Q&#775;</i> by less than 5%. Is NTU &asymp; 3 a sensible design limit?</li>
+      <li>Turn on <em>Hot fluid condenses</em> and look at the comparison table. Why do all arrangements give the same answer?</li>
+      <li>Fouling lowers <i>U</i>. Reduce <i>U</i> by 20% and record how <i>T</i><sub>c,out</sub> and <i>Q&#775;</i> change. Where does the operating point move on the &epsilon;&ndash;NTU chart?</li>
+      <li>Find a temperature cross (<i>T</i><sub>c,out</sub> &gt; <i>T</i><sub>h,out</sub>) in counterflow. Can parallel flow ever produce one? Explain from the temperature plot.</li>
+      <li>Run <code>HeatExchanger.m</code> with the MATLAB call shown under the step-by-step solution and confirm that your code reproduces the simulator&rsquo;s numbers.</li>
+    </ol>
+    <p class="hx-credit">Calculation engine: a JavaScript port of the MATLAB functions <code>HeatExchanger.m</code> and <code>effectiveness.m</code> (S.&nbsp;A. Hedayat Mofidi) used in MAE 3524. Equations: Incropera et al., <i>Fundamentals of Heat and Mass Transfer</i>, Section 11.4. Questions or suggestions: <a href="mailto:sallam@okstate.edu">sallam@okstate.edu</a>.</p>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous" defer></script>
+<script>
+(function () {
+'use strict';
+/* ===== Effectiveness-NTU model: a JavaScript port of effectiveness.m and HeatExchanger.m =====
+   (Incropera, Section 11.4). Units are SI base units throughout: kg/s, J/(kg K), W/(m^2 K), m^2,
+   so heat capacity rates are in W/K and heat rates in W. A stream that boils or condenses is
+   given an infinite heat capacity rate (C = Infinity), which makes C_r = 0. */
+var TOL = 1e-9;
+
+function shellPassEffectiveness(NTU, C_r) {
+  // One shell pass with 2, 4, ... tube passes
+  if (!(NTU > 0)) return 0;
+  var s = Math.sqrt(1 + C_r * C_r), e = Math.exp(-NTU * s);
+  return 2 / (1 + C_r + s * (1 + e) / (1 - e));
+}
+
+function effectiveness(NTU, C_r, HE_Type, N) {
+  if (N === undefined) N = 1;
+  if (!(NTU > 0)) return 0;
+  // Special case of boiling or condensing (C_max = infinity): the same for every type
+  if (C_r === 0) return -Math.expm1(-NTU);
+  var x, e1, r;
+  switch (HE_Type) {
+    case 'Parallel Flow':
+      return -Math.expm1(-NTU * (1 + C_r)) / (1 + C_r);
+    case 'Counter Flow':
+      if (Math.abs(1 - C_r) < TOL) return NTU / (1 + NTU);          // limit for C_r = 1
+      x = NTU * (1 - C_r);
+      return -Math.expm1(-x) / (-Math.expm1(-x) + (1 - C_r) * Math.exp(-x));
+    case 'One Shell Pass':
+      return shellPassEffectiveness(NTU, C_r);
+    case 'N Shell Pass':
+      e1 = shellPassEffectiveness(NTU / N, C_r);                    // each shell sees NTU/N
+      if (Math.abs(1 - C_r) < TOL) return N * e1 / (1 + (N - 1) * e1); // limit for C_r = 1
+      r = Math.pow((1 - e1 * C_r) / (1 - e1), N);
+      return (r - 1) / (r - C_r);
+    case 'Cross Both Unmixed':
+      return 1 - Math.exp(1 / C_r * Math.pow(NTU, 0.22) * (Math.exp(-C_r * Math.pow(NTU, 0.78)) - 1));
+    case 'Cross Cmax Mixed':
+      return 1 / C_r * (1 - Math.exp(-C_r * (1 - Math.exp(-NTU))));
+    case 'Cross Cmin Mixed':
+      return 1 - Math.exp(-1 / C_r * (1 - Math.exp(-C_r * NTU)));
+    default:
+      return 0; // the type is not in the list: no heat exchanger
+  }
+}
+
+function heatExchanger(m_dot_hot, c_p_hot, T_hot_in, m_dot_cold, c_p_cold, T_cold_in, U, A, HE_Type, N) {
+  var C_hot = m_dot_hot * c_p_hot;
+  var C_cold = m_dot_cold * c_p_cold;
+  var C_min = Math.min(C_hot, C_cold);   // flow with the larger temperature change
+  var C_max = Math.max(C_hot, C_cold);
+  var C_r = C_min / C_max;
+  var NTU = U * A / C_min;
+  var epsilon = effectiveness(NTU, C_r, HE_Type, N);
+  var Q_max = C_min * (T_hot_in - T_cold_in);
+  var Q = epsilon * Q_max;
+  return {
+    C_hot: C_hot, C_cold: C_cold, C_min: C_min, C_max: C_max, C_r: C_r, UA: U * A, NTU: NTU,
+    epsilon: epsilon, Q_max: Q_max, Q: Q, type: HE_Type, N: N,
+    T_hot_in: T_hot_in, T_cold_in: T_cold_in,
+    T_hot_out: T_hot_in - Q / C_hot,
+    T_cold_out: T_cold_in + Q / C_cold
+  };
+}
+
+// Which crossflow relation applies when one named fluid is mixed
+function crossType(mix, C_hot, C_cold) {
+  if (mix === 'hot') return C_hot >= C_cold ? 'Cross Cmax Mixed' : 'Cross Cmin Mixed';
+  if (mix === 'cold') return C_cold > C_hot ? 'Cross Cmax Mixed' : 'Cross Cmin Mixed';
+  return 'Cross Both Unmixed';
+}
+
+/* ----- Temperature distributions used by the schematic and the profile chart ----- */
+function phi(z) { return Math.abs(z) < 1e-12 ? 1 - z / 2 : -Math.expm1(-z) / z; } // (1 - e^-z)/z
+
+// Parallel flow: both fluids enter at x = 0
+function profileParallel(r, n) {
+  var a = 1 / r.C_hot + 1 / r.C_cold, d0 = r.T_hot_in - r.T_cold_in, p = { x: [], Th: [], Tc: [] }, i, x, q;
+  for (i = 0; i <= n; i++) {
+    x = i / n; q = d0 * r.UA * x * phi(r.UA * a * x);
+    p.x.push(x); p.Th.push(r.T_hot_in - q / r.C_hot); p.Tc.push(r.T_cold_in + q / r.C_cold);
+  }
+  return p;
+}
+
+// Counterflow: hot enters at x = 0, cold enters at x = 1
+function profileCounter(r, n) {
+  var b = 1 / r.C_hot - 1 / r.C_cold, k = r.UA * b, d0 = r.T_hot_in - r.T_cold_out,
+      d1 = r.T_hot_out - r.T_cold_in, p = { x: [], Th: [], Tc: [] }, i, x, q, d;
+  for (i = 0; i <= n; i++) {
+    x = i / n;
+    if (Math.abs(k) < 1e-9) q = r.UA * d0 * x;                 // C_hot = C_cold: uniform temperature difference
+    else { d = k > 0 ? d0 * Math.exp(-k * x) : d1 * Math.exp(-k * (x - 1)); q = (d0 - d) / b; }
+    p.x.push(x); p.Th.push(r.T_hot_in - q / r.C_hot); p.Tc.push(r.T_cold_out - q / r.C_cold);
+  }
+  return p;
+}
+
+// One shell with two tube passes, solved analytically. Shell fluid (capacity Cs) enters at x = 0 when
+// dir = +1 and at x = 1 when dir = -1; tube fluid (Ct) enters pass 1 at x = 0 and leaves pass 2 at x = 0.
+function shellOne(UA, Cs, Ct, Tsin, tin, dir, n) {
+  var as = UA / 2 / Cs, at = UA / 2 / Ct, p = { x: [], Ts: [], t1: [], t2: [] }, i, x;
+  if (at === 0) {                                            // tube fluid with infinite capacity
+    for (i = 0; i <= n; i++) {
+      x = i / n;
+      p.x.push(x); p.Ts.push(tin + (Tsin - tin) * Math.exp(-2 * as * (dir > 0 ? x : 1 - x))); p.t1.push(tin); p.t2.push(tin);
+    }
+    return p;
+  }
+  var rho = Math.sqrt(as * as + at * at), l1 = -dir * as + rho, l2 = -dir * as - rho;
+  var E2 = Math.exp(l2), Em1 = Math.exp(-l1);
+  var J1 = function (s) { return l1 < 1e-12 ? s : (Math.exp(l1 * (s - 1)) - Em1) / l1; };
+  var J2 = function (s) { return l2 > -1e-12 ? s : Math.expm1(l2 * s) / l2; };
+  var wW0 = -E2 * l1 * Em1 + l2, wD0 = at * (1 - E2 * Em1), kappa = E2 * Em1 - 1, c2, T0;
+  if (dir > 0) { T0 = Tsin; c2 = 2 * (tin - Tsin) / (wD0 - wW0); }
+  else { c2 = 2 * (tin - Tsin) / (wD0 - wW0 - 2 * as * kappa); T0 = Tsin - as * c2 * kappa; }
+  var S0 = 2 * T0 - c2 * wW0, g1, g2, D, IW, ID, S;
+  for (i = 0; i <= n; i++) {
+    x = i / n; g1 = Math.exp(l1 * (x - 1)); g2 = Math.exp(l2 * x);
+    D = c2 * at * (g2 - E2 * g1);
+    IW = c2 * (l2 * J2(x) - E2 * l1 * J1(x));
+    ID = c2 * at * (J2(x) - E2 * J1(x));
+    S = S0 - at * ID;
+    p.x.push(x); p.Ts.push(T0 - dir * as * IW); p.t1.push((S + D) / 2); p.t2.push((S - D) / 2);
+  }
+  return p;
+}
+
+// N shells in series (overall counterflow): hot fluid on the shell side flows shell 1 -> N,
+// cold fluid in the tubes flows shell N -> 1. Odd shells take the shell fluid at x = 0, even ones at x = 1.
+function profileShell(r, N, n) {
+  var shells = [], Th = r.T_hot_in, tco = r.T_cold_out, k, tci, q, dir, sp,
+      e1 = r.C_r === 0 ? -Math.expm1(-r.NTU / N) : shellPassEffectiveness(r.NTU / N, r.C_r);
+  for (k = 0; k < N; k++) {
+    tci = r.C_cold === Infinity ? r.T_cold_in : (e1 * r.C_min * Th - r.C_cold * tco) / (e1 * r.C_min - r.C_cold);
+    dir = k % 2 === 0 ? 1 : -1;
+    sp = shellOne(r.UA / N, r.C_hot, r.C_cold, Th, tci, dir, n);
+    q = e1 * r.C_min * (Th - tci);
+    sp.dir = dir; sp.Thin = Th; sp.Thout = Th - q / r.C_hot; sp.tin = tci; sp.tout = tco;
+    shells.push(sp);
+    Th = sp.Thout; tco = tci;
+  }
+  return shells;
+}
+
+// Crossflow core on a unit square: hot flows in +x, cold flows in +y. Mixed streams use the closed-form
+// solution; for both fluids unmixed the core is marched cell by cell and scaled to the e-NTU heat rate.
+function crossField(r, mix, n) {
+  var Thi = r.T_hot_in, Tci = r.T_cold_in, Ch = r.C_hot, Cc = r.C_cold, UA = r.UA,
+      Th = [], Tc = [], hotOut = [], coldOut = [], i, j, x, y, t, g;
+  for (j = 0; j < n; j++) { Th.push([]); Tc.push([]); }
+  if (mix === 'hot') {
+    g = UA / Ch * phi(UA / Cc);
+    for (i = 0; i < n; i++) {
+      x = (i + 0.5) / n; t = Tci + (Thi - Tci) * Math.exp(-g * x);
+      for (j = 0; j < n; j++) { y = (j + 0.5) / n; Th[j][i] = t; Tc[j][i] = t - (t - Tci) * Math.exp(-UA / Cc * y); }
+      t = Tci + (Thi - Tci) * Math.exp(-g * x);
+      coldOut.push(t - (t - Tci) * Math.exp(-UA / Cc));
+    }
+    t = Tci + (Thi - Tci) * Math.exp(-g);
+    for (j = 0; j < n; j++) hotOut.push(t);
+  } else if (mix === 'cold') {
+    g = UA / Cc * phi(UA / Ch);
+    for (j = 0; j < n; j++) {
+      y = (j + 0.5) / n; t = Thi - (Thi - Tci) * Math.exp(-g * y);
+      for (i = 0; i < n; i++) { x = (i + 0.5) / n; Tc[j][i] = t; Th[j][i] = t + (Thi - t) * Math.exp(-UA / Ch * x); }
+      hotOut.push(t + (Thi - t) * Math.exp(-UA / Ch));
+    }
+    t = Thi - (Thi - Tci) * Math.exp(-g);
+    for (i = 0; i < n; i++) coldOut.push(t);
+  } else {
+    var ch = Ch / n, cc = Cc / n, ua = UA / (n * n), cmin = Math.min(ch, cc), cr = cmin / Math.max(ch, cc),
+        eps = -Math.expm1(-ua / cmin * (1 + cr)) / (1 + cr), hin, cin = [], hout, cout, qc, sumH = 0, sumC = 0, f;
+    for (i = 0; i < n; i++) cin.push(Tci);
+    for (j = 0; j < n; j++) {
+      hin = Thi;
+      for (i = 0; i < n; i++) {
+        qc = eps * cmin * (hin - cin[i]);
+        hout = hin - qc / ch; cout = cin[i] + qc / cc;
+        Th[j][i] = (hin + hout) / 2; Tc[j][i] = (cin[i] + cout) / 2;
+        hin = hout; cin[i] = cout;
+      }
+      hotOut.push(hin);
+    }
+    for (i = 0; i < n; i++) coldOut.push(cin[i]);
+    for (j = 0; j < n; j++) { sumH += Thi - hotOut[j]; sumC += coldOut[j] - Tci; }
+    var Qf = isFinite(Cc) ? Cc * sumC / n : Ch * sumH / n;
+    f = Math.abs(Qf) > 1e-12 ? r.Q / Qf : 1;
+    for (j = 0; j < n; j++) {
+      hotOut[j] = Thi - f * (Thi - hotOut[j]); coldOut[j] = Tci + f * (coldOut[j] - Tci);
+      for (i = 0; i < n; i++) { Th[j][i] = Thi - f * (Thi - Th[j][i]); Tc[j][i] = Tci + f * (Tc[j][i] - Tci); }
+    }
+  }
+  return { Th: Th, Tc: Tc, hotOut: hotOut, coldOut: coldOut, n: n };
+}
+/* ===== User interface ===== */
+var $ = function (id) { return document.getElementById(id); };
+var SVGNS = 'http://www.w3.org/2000/svg';
+var HOT = '#c8372d', COLD = '#2a78d6', WALL = '#42515e', ACCENT = '#d9541e';
+
+function S(tag, attrs, parent, text) {
+  var e = document.createElementNS(SVGNS, tag), k;
+  for (k in attrs) if (attrs[k] !== undefined && attrs[k] !== null) e.setAttribute(k, attrs[k]);
+  if (text !== undefined && text !== null) e.textContent = text;
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+function fix(v, d) { return isFinite(v) ? v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }) : '∞'; }
+function sig(v, n) { return Number(v.toPrecision(n)); }
+function fT(T) { return fix(T, 1) + ' °C'; }
+function fW(W) { return !isFinite(W) ? '∞' : W >= 1e4 ? fix(W, 0) : W >= 100 ? fix(W, 1) : fix(W, 2); }
+function fQ(W) { var k = W / 1000, a = Math.abs(k); return fix(k, a >= 1000 ? 0 : a >= 10 ? 1 : a >= 1 ? 2 : 3) + ' kW'; }
+function num(v) { return String(Number(v.toFixed(2))); }
+function same(a, b) { return a === b || (isFinite(a) && isFinite(b) && Math.abs(a - b) <= 1e-9 * Math.max(Math.abs(a), Math.abs(b))); }
+
+/* Temperature colors: ColorBrewer RdBu, cold = blue, hot = red, on a fixed scale */
+var RAMP = [[33, 102, 172], [103, 169, 207], [209, 229, 240], [247, 247, 247], [253, 219, 199], [239, 138, 98], [178, 24, 43]];
+var lo = 0, hi = 100;
+function tcol(T) {
+  var u = Math.max(0, Math.min(1, (T - lo) / (hi - lo))) * (RAMP.length - 1);
+  var i = Math.min(RAMP.length - 2, Math.floor(u)), f = u - i, a = RAMP[i], b = RAMP[i + 1];
+  return 'rgb(' + Math.round(a[0] + f * (b[0] - a[0])) + ',' + Math.round(a[1] + f * (b[1] - a[1])) + ',' + Math.round(a[2] + f * (b[2] - a[2])) + ')';
+}
+
+/* ----- State and inputs ----- */
+var DEF = { type: 'cf', shells: 1, mix: 'none', phase: 'none', Thi: 80, Tci: 20, mh: 0.5, mc: 0.3, cph: 4.186, cpc: 4.186, U: 1000, A: 2 };
+var P = [
+  { id: 'Thi', g: 'hot', name: 'Inlet temperature', sym: 'T<sub>h,in</sub>', unit: '°C', min: 0, max: 200, step: 0.5, dec: 2 },
+  { id: 'mh', g: 'hot', name: 'Mass flow rate', sym: 'ṁ<sub>h</sub>', unit: 'kg/s', min: 0.01, max: 5, log: 1, dec: 4, inf: 1 },
+  { id: 'cph', g: 'hot', name: 'Specific heat', sym: 'c<sub>p,h</sub>', unit: 'kJ/kg·K', min: 0.5, max: 10, step: 0.001, dec: 3 },
+  { id: 'Tci', g: 'cold', name: 'Inlet temperature', sym: 'T<sub>c,in</sub>', unit: '°C', min: 0, max: 200, step: 0.5, dec: 2 },
+  { id: 'mc', g: 'cold', name: 'Mass flow rate', sym: 'ṁ<sub>c</sub>', unit: 'kg/s', min: 0.01, max: 5, log: 1, dec: 4, inf: 1 },
+  { id: 'cpc', g: 'cold', name: 'Specific heat', sym: 'c<sub>p,c</sub>', unit: 'kJ/kg·K', min: 0.5, max: 10, step: 0.001, dec: 3 },
+  { id: 'U', g: 'hx', name: 'Overall heat transfer coefficient', sym: 'U', unit: 'W/m²·K', min: 10, max: 5000, log: 1, dec: 1 },
+  { id: 'A', g: 'hx', name: 'Heat transfer area', sym: 'A', unit: 'm²', min: 0.05, max: 50, log: 1, dec: 3 }
+];
+var GROUP = { hot: 'Hot fluid', cold: 'Cold fluid', hx: 'Heat exchanger' };
+var st = {}, key;
+for (key in DEF) st[key] = DEF[key];
+
+function toS(p, v) { return p.log ? Math.round(1000 * Math.log(v / p.min) / Math.log(p.max / p.min)) : v; }
+function fromS(p, s) { return p.log ? sig(p.min * Math.pow(p.max / p.min, s / 1000), 3) : +s; }
+function show(p, v) { return String(Number(v.toFixed(p.dec))); }
+
+P.forEach(function (p) {
+  var d = document.createElement('div');
+  d.className = 'hx-ctl'; d.id = 'c-' + p.id;
+  d.innerHTML = '<label for="n-' + p.id + '">' + p.name + ' <span class="hx-sym">' + p.sym + '</span>' +
+    (p.inf ? '<span class="hx-note-inf">C = ∞ (phase change)</span>' : '') + '</label>' +
+    '<div class="hx-inrow"><input type="range" id="r-' + p.id + '" min="' + (p.log ? 0 : p.min) + '" max="' + (p.log ? 1000 : p.max) +
+    '" step="' + (p.log ? 1 : p.step) + '" aria-label="' + GROUP[p.g] + ' ' + p.name.toLowerCase() + '">' +
+    '<span class="hx-num"><input type="number" id="n-' + p.id + '" min="' + p.min + '" max="' + p.max + '" step="any" inputmode="decimal">' +
+    '<span class="hx-unit">' + p.unit + '</span></span></div>';
+  $('ctl-' + p.g).appendChild(d);
+  var rg = $('r-' + p.id), nb = $('n-' + p.id);
+  rg.addEventListener('input', function () {
+    st[p.id] = fromS(p, rg.value); nb.value = show(p, st[p.id]); nb.removeAttribute('aria-invalid'); changed();
+  });
+  nb.addEventListener('input', function () {
+    var v = parseFloat(nb.value);
+    if (isFinite(v) && v >= p.min && v <= p.max) { st[p.id] = v; rg.value = toS(p, v); nb.removeAttribute('aria-invalid'); changed(); }
+    else nb.setAttribute('aria-invalid', 'true');
+  });
+  nb.addEventListener('change', function () {
+    var v = parseFloat(nb.value);
+    if (!isFinite(v)) v = st[p.id];
+    v = Math.min(p.max, Math.max(p.min, v));
+    st[p.id] = v; nb.value = show(p, v); rg.value = toS(p, v); nb.removeAttribute('aria-invalid'); changed();
+  });
+});
+
+function radios(name, k, num) {
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="' + name + '"]'), function (el) {
+    el.addEventListener('change', function () { if (el.checked) { st[k] = num ? +el.value : el.value; changed(); } });
+  });
+}
+radios('type', 'type'); radios('shells', 'shells', true); radios('mix', 'mix');
+$('hx-phase').addEventListener('change', function () { st.phase = this.value; changed(); });
+
+var EX = {
+  'default': {},
+  lec11: { type: 'cx', mix: 'none', Thi: 80, Tci: 30, mh: 4 / 4.186, mc: 2 / 4.186, U: 1000, A: 4 },
+  cr1: { type: 'par', mh: 0.5, mc: 0.5, A: 5 },
+  condenser: { type: 'st', phase: 'hot', Thi: 100, Tci: 20, mc: 1, U: 2000, A: 3 },
+  oil: { type: 'st', Thi: 110, Tci: 25, mh: 0.4, cph: 2.1, mc: 0.25, U: 300, A: 6 }
+};
+function apply(o) { var k; for (k in DEF) st[k] = DEF[k]; for (k in o) st[k] = o[k]; syncInputs(); changed(); }
+$('hx-example').addEventListener('change', function () { var e = EX[this.value]; if (e) apply(e); this.value = ''; });
+$('hx-reset').addEventListener('click', function () { apply({}); });
+$('hx-link').addEventListener('click', function () {
+  var b = this; writeHash();
+  var done = function (ok) { b.textContent = ok ? 'Link copied' : 'Copy the address-bar link'; setTimeout(function () { b.textContent = 'Copy link to this setup'; }, 2200); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(location.href).then(function () { done(true); }, function () { done(false); });
+  else done(false);
+});
+
+function setRadio(name, v) { var el = document.querySelector('input[name="' + name + '"][value="' + v + '"]'); if (el) el.checked = true; }
+function syncInputs() {
+  P.forEach(function (p) { var nb = $('n-' + p.id); nb.value = show(p, st[p.id]); nb.removeAttribute('aria-invalid'); $('r-' + p.id).value = toS(p, st[p.id]); });
+  setRadio('type', st.type); setRadio('shells', String(st.shells)); setRadio('mix', st.mix);
+  $('hx-phase').value = st.phase;
+}
+
+/* Shareable links: the setup is kept in the address after the # */
+var KEYS = ['type', 'shells', 'mix', 'phase', 'Thi', 'Tci', 'mh', 'mc', 'cph', 'cpc', 'U', 'A'];
+var CHOICES = { type: ['par', 'cf', 'st', 'cx'], mix: ['none', 'hot', 'cold'], phase: ['none', 'hot', 'cold'], shells: ['1', '2', '3', '4'] };
+function writeHash() {
+  try { history.replaceState(null, '', '#' + KEYS.map(function (k) { return k + '=' + encodeURIComponent(typeof st[k] === 'number' ? sig(st[k], 6) : st[k]); }).join('&')); } catch (e) { /* ignore */ }
+}
+function readHash() {
+  var h = location.hash.slice(1);
+  if (h.indexOf('=') < 0) return;
+  h.split('&').forEach(function (kv) {
+    var i = kv.indexOf('='), k = kv.slice(0, i), v = decodeURIComponent(kv.slice(i + 1));
+    if (KEYS.indexOf(k) < 0) return;
+    if (CHOICES[k]) { if (CHOICES[k].indexOf(v) >= 0) st[k] = k === 'shells' ? +v : v; return; }
+    var x = parseFloat(v), p = P.filter(function (q) { return q.id === k; })[0];
+    if (isFinite(x) && p) st[k] = Math.min(p.max, Math.max(p.min, x));
+  });
+}
+
+/* ----- Solving ----- */
+function inputs(s) {
+  return { mh: s.phase === 'hot' ? Infinity : s.mh, mc: s.phase === 'cold' ? Infinity : s.mc, cph: s.cph * 1000, cpc: s.cpc * 1000 };
+}
+function typeOf(s, Ch, Cc) {
+  if (s.type === 'par') return 'Parallel Flow';
+  if (s.type === 'cf') return 'Counter Flow';
+  if (s.type === 'st') return s.shells > 1 ? 'N Shell Pass' : 'One Shell Pass';
+  return crossType(s.mix, Ch, Cc);
+}
+function solve(s, forceType, forceN) {
+  var q = inputs(s), t = forceType || typeOf(s, q.mh * q.cph, q.mc * q.cpc);
+  return heatExchanger(q.mh, q.cph, s.Thi, q.mc, q.cpc, s.Tci, s.U, s.A, t, forceN || (s.type === 'st' ? s.shells : 1));
+}
+
+var queued = false, touched = false;
+function changed() {
+  touched = true;
+  if (!queued) { queued = true; requestAnimationFrame(function () { queued = false; render(); }); }
+}
+function offCtl(id, off) { $('c-' + id).classList.toggle('is-off', off); $('r-' + id).disabled = off; $('n-' + id).disabled = off; }
+
+function render() {
+  $('sub-st').hidden = st.type !== 'st';
+  $('sub-cx').hidden = st.type !== 'cx';
+  offCtl('mh', st.phase === 'hot'); offCtl('cph', st.phase === 'hot');
+  offCtl('mc', st.phase === 'cold'); offCtl('cpc', st.phase === 'cold');
+  var r = solve(st);
+  $('hx-ua').innerHTML = '<i>UA</i> = ' + fix(r.UA, r.UA < 100 ? 1 : 0) + ' W/K';
+  var bad = !(st.Thi > st.Tci);
+  $('hx-out').classList.toggle('is-invalid', bad);
+  if (touched) writeHash();
+  if (bad) { ['sk-tho', 'sk-tco', 'sk-eps', 'sk-q'].forEach(function (id) { $(id).textContent = '–'; }); return; }
+  lo = Math.min(0, Math.floor(st.Tci / 10) * 10);
+  hi = st.Thi <= 100 ? 100 : Math.ceil(st.Thi / 50) * 50;
+  drawSchematic(r); drawColorbar(); drawNotes(r); drawTiles(r);
+  drawEps(r); drawProfile(r); drawSteps(r); drawCompare(r);
+}
+
+/* ----- Schematic ----- */
+function vb(svg, w, h) { svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h); }
+function grad(defs, id, x1, y1, x2, y2, stops) {
+  var g = S('linearGradient', { id: id, gradientUnits: 'userSpaceOnUse', x1: x1, y1: y1, x2: x2, y2: y2 }, defs);
+  stops.forEach(function (s) { S('stop', { offset: Math.max(0, Math.min(1, s[0])).toFixed(4), 'stop-color': s[1] }, g); });
+  return 'url(#' + id + ')';
+}
+function pstops(xs, Ts, o0, o1) {
+  var out = [], n = xs.length - 1, step = Math.max(1, Math.round(n / 12)), i;
+  for (i = 0; i <= n; i += step) out.push([o0 + (o1 - o0) * xs[i], tcol(Ts[i])]);
+  if (n % step) out.push([o1, tcol(Ts[n])]);
+  return out;
+}
+function lbl(svg, x, y, anchor, k, v) {
+  var t = S('text', { x: x, y: y, 'text-anchor': anchor }, svg);
+  S('tspan', { x: x, 'class': 't-k' }, t, k);
+  S('tspan', { x: x, dy: '1.25em', 'class': 't-v' }, t, v);
+  return t;
+}
+function small(svg, x, y, anchor, s) { return S('text', { x: x, y: y, 'text-anchor': anchor, 'class': 't-s' }, svg, s); }
+function arrow(svg, x1, y1, x2, y2, color) {
+  var dx = x2 - x1, dy = y2 - y1, L = Math.sqrt(dx * dx + dy * dy) || 1, ux = dx / L, uy = dy / L, bx = x2 - ux * 10, by = y2 - uy * 10;
+  S('line', { x1: x1, y1: y1, x2: bx, y2: by, stroke: color, 'stroke-width': 3, 'stroke-linecap': 'round' }, svg);
+  S('path', { d: 'M' + x2 + ' ' + y2 + 'L' + (bx - uy * 6.5) + ' ' + (by + ux * 6.5) + 'L' + (bx + uy * 6.5) + ' ' + (by - ux * 6.5) + 'Z', fill: color }, svg);
+}
+function chev(svg, x, y, dir, s) {
+  s = s || 6;
+  var d = 'M' + (x - dir * s) + ' ' + (y - s) + 'L' + (x + dir * s * 0.25) + ' ' + y + 'L' + (x - dir * s) + ' ' + (y + s);
+  S('path', { d: d, fill: 'none', stroke: 'rgba(20,41,61,.45)', 'stroke-width': 4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, svg);
+  S('path', { d: d, fill: 'none', stroke: '#fff', 'stroke-width': 1.8, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, svg);
+}
+
+var TITLES = { par: 'Parallel flow', cf: 'Counterflow', st: 'Shell & tube', cx: 'Crossflow' };
+function drawSchematic(r) {
+  var svg = $('hx-svg'), title = TITLES[st.type];
+  clear(svg);
+  var desc = S('desc', { id: 'hx-svg-desc' }, svg), defs = S('defs', {}, svg);
+  if (st.type === 'par' || st.type === 'cf') { title += ', concentric tube'; drawPipe(svg, defs, r, st.type === 'cf'); }
+  else if (st.type === 'st') { title += ', ' + st.shells + ' shell pass' + (st.shells > 1 ? 'es' : '') + ', ' + 2 * st.shells + ' tube passes'; drawShell(svg, defs, r, st.shells); }
+  else { title += st.mix === 'none' ? ', both fluids unmixed' : st.mix === 'hot' ? ', hot fluid mixed' : ', cold fluid mixed'; drawCross(svg, defs, r, st.mix); }
+  $('hx-title').textContent = title;
+  $('hx-type').textContent = "HE_Type = '" + r.type + "'" + (r.type === 'N Shell Pass' ? ', N = ' + r.N : '');
+  desc.textContent = title + ' heat exchanger. The hot fluid enters at ' + fT(r.T_hot_in) + ' and leaves at ' + fT(r.T_hot_out) +
+    '; the cold fluid enters at ' + fT(r.T_cold_in) + ' and leaves at ' + fT(r.T_cold_out) + '.';
+}
+
+function drawPipe(svg, defs, r, counter) {
+  vb(svg, 640, 262);
+  var p = counter ? profileCounter(r, 48) : profileParallel(r, 48);
+  var x0 = 150, x1 = 530, yc = 150, ro = 44, ri = 15, e = 46, tx0 = x0 - e, tx1 = x1 + e, L = x1 - x0, TL = tx1 - tx0, k;
+  var gc = grad(defs, 'hxg-c', x0, 0, x1, 0, pstops(p.x, p.Tc, 0, 1));
+  var gh = grad(defs, 'hxg-h', tx0, 0, tx1, 0, [[0, tcol(r.T_hot_in)]].concat(pstops(p.x, p.Th, e / TL, (e + L) / TL), [[1, tcol(r.T_hot_out)]]));
+  var nL = x0 + 36, nR = x1 - 36, nTop = yc - ro - 38, cin = counter ? nR : nL, cout = counter ? nL : nR;
+  S('rect', { x: cin - 11, y: nTop, width: 22, height: 42, fill: tcol(r.T_cold_in), stroke: WALL, 'stroke-width': 2 }, svg);
+  S('rect', { x: cout - 11, y: nTop, width: 22, height: 42, fill: tcol(r.T_cold_out), stroke: WALL, 'stroke-width': 2 }, svg);
+  S('rect', { x: x0, y: yc - ro, width: L, height: 2 * ro, rx: 10, fill: gc, stroke: WALL, 'stroke-width': 3 }, svg);
+  S('rect', { x: cin - 9, y: yc - ro - 2, width: 18, height: 5, fill: tcol(r.T_cold_in) }, svg);
+  S('rect', { x: cout - 9, y: yc - ro - 2, width: 18, height: 5, fill: tcol(r.T_cold_out) }, svg);
+  S('rect', { x: tx0, y: yc - ri, width: TL, height: 2 * ri, fill: gh, stroke: WALL, 'stroke-width': 2 }, svg);
+  for (k = 0; k < 6; k++) {
+    chev(svg, x0 + 78 + k * 46, yc - (ro + ri) / 2, counter ? -1 : 1);
+    chev(svg, x0 + 78 + k * 46, yc + (ro + ri) / 2, counter ? -1 : 1);
+  }
+  for (k = 0; k < 5; k++) chev(svg, x0 + 58 + k * 66, yc, 1, 5);
+  arrow(svg, tx0 - 40, yc, tx0 - 3, yc, HOT);
+  arrow(svg, tx1 + 3, yc, tx1 + 40, yc, HOT);
+  arrow(svg, cin, nTop - 34, cin, nTop - 3, COLD);
+  arrow(svg, cout, nTop - 3, cout, nTop - 34, COLD);
+  lbl(svg, tx0 - 20, yc - 50, 'middle', 'Hot in', fT(r.T_hot_in));
+  lbl(svg, tx1 + 20, yc - 50, 'middle', 'Hot out', fT(r.T_hot_out));
+  lbl(svg, cin + (counter ? -18 : 18), nTop - 24, counter ? 'end' : 'start', 'Cold in', fT(r.T_cold_in));
+  lbl(svg, cout + (counter ? 18 : -18), nTop - 24, counter ? 'start' : 'end', 'Cold out', fT(r.T_cold_out));
+  small(svg, 340, yc + ro + 36, 'middle', 'Hot fluid in the inner tube, cold fluid in the annulus');
+}
+
+function drawShell(svg, defs, r, N) {
+  var sh = profileShell(r, N, 48);
+  var hb = N === 1 ? 160 : N === 2 ? 122 : 100, gap = N === 1 ? 0 : 42, top = 66, bot = 86;
+  var H = top + N * hb + (N - 1) * gap + bot;
+  vb(svg, 640, H);
+  var hx0 = 152, hx1 = 194, hxc = 173, bx0 = 194, bx1 = 600, X0 = 200, xa = 250, xb = 520, yT = [], yB = [];
+  sh.forEach(function (s, k) {
+    var h = hb, yt = top + k * (hb + gap), yb = yt + h, yc = yt + h / 2, id = 'hxg-s' + k, m, X1 = bx1 - 10 - h * 0.34;
+    yT.push(yt); yB.push(yb);
+    var gS = grad(defs, id + 'f', X0, 0, X1, 0, pstops(s.x, s.Ts, 0, 1));
+    var g1 = grad(defs, id + 'a', X0, 0, X1, 0, pstops(s.x, s.t1, 0, 1));
+    var g2 = grad(defs, id + 'b', X0, 0, X1, 0, pstops(s.x, s.t2, 0, 1));
+    var sin = s.dir > 0 ? xa : xb, sout = s.dir > 0 ? xb : xa;
+    S('rect', { x: sin - 10, y: yt - 16, width: 20, height: 20, fill: tcol(s.Thin), stroke: WALL, 'stroke-width': 2 }, svg);
+    S('rect', { x: sout - 10, y: yb - 4, width: 20, height: 20, fill: tcol(s.Thout), stroke: WALL, 'stroke-width': 2 }, svg);
+    S('rect', { x: hxc - 9, y: yt - 16, width: 18, height: 20, fill: tcol(s.tout), stroke: WALL, 'stroke-width': 2 }, svg);
+    S('rect', { x: hxc - 9, y: yb - 4, width: 18, height: 20, fill: tcol(s.tin), stroke: WALL, 'stroke-width': 2 }, svg);
+    S('path', { d: 'M' + bx0 + ' ' + yt + 'H' + (bx1 - 30) + 'Q' + bx1 + ' ' + yt + ' ' + bx1 + ' ' + yc + 'Q' + bx1 + ' ' + yb + ' ' + (bx1 - 30) + ' ' + yb + 'H' + bx0 + 'Z', fill: gS, stroke: WALL, 'stroke-width': 3 }, svg);
+    S('rect', { x: sin - 8, y: yt - 2, width: 16, height: 5, fill: tcol(s.Thin) }, svg);
+    S('rect', { x: sout - 8, y: yb - 3, width: 16, height: 5, fill: tcol(s.Thout) }, svg);
+    for (m = 1; m <= 5; m++) {
+      var bx = X0 + (X1 - X0) * m / 6, fromTop = m % 2 === 1;
+      S('line', { x1: bx, x2: bx, y1: fromTop ? yt + 1.5 : yt + h * 0.27, y2: fromTop ? yb - h * 0.27 : yb - 1.5, stroke: WALL, 'stroke-width': 3, opacity: 0.7 }, svg);
+    }
+    [0.12, 0.23, 0.34].forEach(function (o) {
+      var yu = yc - h * o, yl = yc + h * o, rr = h * o, dB = 'M' + X1 + ' ' + yu + 'A' + rr + ' ' + rr + ' 0 0 1 ' + X1 + ' ' + yl;
+      [[yu, g2], [yl, g1]].forEach(function (a) {
+        S('line', { x1: bx0, x2: X1, y1: a[0], y2: a[0], stroke: WALL, 'stroke-width': 8.5 }, svg);
+        S('line', { x1: bx0, x2: X1, y1: a[0], y2: a[0], stroke: a[1], 'stroke-width': 5.5 }, svg);
+      });
+      S('path', { d: dB, fill: 'none', stroke: WALL, 'stroke-width': 8.5 }, svg);
+      S('path', { d: dB, fill: 'none', stroke: tcol(s.t1[s.t1.length - 1]), 'stroke-width': 5.5 }, svg);
+    });
+    for (m = 0; m < 6; m++) chev(svg, X0 + (X1 - X0) * (m + 0.5) / 6, yc, s.dir, 5);
+    S('path', { d: 'M' + hx1 + ' ' + yt + 'H' + (hx0 + 12) + 'Q' + hx0 + ' ' + yt + ' ' + hx0 + ' ' + (yt + 12) + 'V' + yc + 'H' + hx1 + 'Z', fill: tcol(s.tout) }, svg);
+    S('path', { d: 'M' + hx1 + ' ' + yc + 'H' + hx0 + 'V' + (yb - 12) + 'Q' + hx0 + ' ' + yb + ' ' + (hx0 + 12) + ' ' + yb + 'H' + hx1 + 'Z', fill: tcol(s.tin) }, svg);
+    S('path', { d: 'M' + hx1 + ' ' + yt + 'H' + (hx0 + 12) + 'Q' + hx0 + ' ' + yt + ' ' + hx0 + ' ' + (yt + 12) + 'V' + (yb - 12) + 'Q' + hx0 + ' ' + yb + ' ' + (hx0 + 12) + ' ' + yb + 'H' + hx1, fill: 'none', stroke: WALL, 'stroke-width': 3 }, svg);
+    S('line', { x1: hx0, x2: hx1, y1: yc, y2: yc, stroke: WALL, 'stroke-width': 3 }, svg);
+    S('line', { x1: bx0, x2: bx0, y1: yt - 4, y2: yb + 4, stroke: WALL, 'stroke-width': 5 }, svg);
+    if (N > 1) small(svg, hx0 - 10, yc + 4, 'end', 'Shell ' + (k + 1));
+  });
+  for (var k = 0; k < N - 1; k++) {
+    var xs = sh[k].dir > 0 ? xb : xa, y1 = yB[k] + 15, y2 = yT[k + 1] - 15, ym = (y1 + y2) / 2 + 4;
+    S('rect', { x: xs - 8, y: y1, width: 16, height: y2 - y1, fill: tcol(sh[k].Thout), stroke: WALL, 'stroke-width': 2 }, svg);
+    small(svg, xs + 15, ym, 'start', fT(sh[k].Thout));
+    S('rect', { x: hxc - 7, y: y1, width: 14, height: y2 - y1, fill: tcol(sh[k + 1].tout), stroke: WALL, 'stroke-width': 2 }, svg);
+    small(svg, hxc - 14, ym, 'end', fT(sh[k + 1].tout));
+  }
+  var last = N - 1, outX = sh[last].dir > 0 ? xb : xa;
+  arrow(svg, xa, yT[0] - 50, xa, yT[0] - 18, HOT);
+  lbl(svg, xa + 16, yT[0] - 44, 'start', 'Hot in', fT(r.T_hot_in));
+  arrow(svg, outX, yB[last] + 18, outX, yB[last] + 50, HOT);
+  lbl(svg, outX === xb ? outX - 16 : outX + 16, yB[last] + 30, outX === xb ? 'end' : 'start', 'Hot out', fT(r.T_hot_out));
+  arrow(svg, hxc, yB[last] + 50, hxc, yB[last] + 18, COLD);
+  lbl(svg, hxc - 16, yB[last] + 30, 'end', 'Cold in', fT(r.T_cold_in));
+  arrow(svg, hxc, yT[0] - 18, hxc, yT[0] - 50, COLD);
+  lbl(svg, hxc - 16, yT[0] - 44, 'end', 'Cold out', fT(r.T_cold_out));
+  small(svg, 396, H - 10, 'middle', N === 1 ? 'Hot fluid on the shell side, cold fluid in the tubes' : 'Hot fluid: shell side, top to bottom. Cold: tubes, upward');
+}
+
+function drawCross(svg, defs, r, mix) {
+  vb(svg, 640, 376);
+  var n = 40, F = crossField(r, mix, n), cx0 = 200, cx1 = 460, cy0 = 92, cy1 = 288, W = cx1 - cx0, Hc = cy1 - cy0, yc = (cy0 + cy1) / 2, k, i, j;
+  S('rect', { x: 112, y: yc - 11, width: 52, height: 22, fill: tcol(r.T_hot_in), stroke: WALL, 'stroke-width': 2 }, svg);
+  S('rect', { x: 496, y: yc - 11, width: 52, height: 22, fill: tcol(r.T_hot_out), stroke: WALL, 'stroke-width': 2 }, svg);
+  S('rect', { x: cx0 - 40, y: cy0 - 8, width: 46, height: Hc + 16, rx: 10, fill: tcol(r.T_hot_in), stroke: WALL, 'stroke-width': 3 }, svg);
+  S('rect', { x: cx1 - 6, y: cy0 - 8, width: 46, height: Hc + 16, rx: 10, fill: tcol(r.T_hot_out), stroke: WALL, 'stroke-width': 3 }, svg);
+  var NS = 20, sw = W / NS;
+  for (k = 0; k < NS; k++) {
+    var stops = [];
+    for (j = 0; j < n; j += 3) stops.push([(j + 0.5) / n, tcol((F.Tc[j][2 * k] + F.Tc[j][2 * k + 1]) / 2)]);
+    S('rect', { x: cx0 + k * sw, y: cy0, width: sw + 0.6, height: Hc, fill: grad(defs, 'hxg-x' + k, 0, cy1, 0, cy0, stops) }, svg);
+  }
+  if (mix !== 'cold') for (k = 1; k < NS; k++) S('line', { x1: cx0 + k * sw, x2: cx0 + k * sw, y1: cy0, y2: cy1, stroke: 'rgba(255,255,255,.75)', 'stroke-width': 1 }, svg);
+  S('rect', { x: cx0, y: cy0, width: W, height: Hc, fill: 'none', stroke: WALL, 'stroke-width': 2 }, svg);
+  for (k = 0; k < 7; k++) {
+    var ty = cy1 - (k + 0.5) * Hc / 7, row = Math.min(n - 1, Math.floor((k + 0.5) * n / 7)), hs = [];
+    for (i = 0; i < n; i += 3) hs.push([(i + 0.5) / n, tcol(F.Th[row][i])]);
+    if (mix !== 'hot') S('rect', { x: cx0 - 4, y: ty - 8, width: W + 8, height: 16, rx: 3, fill: WALL }, svg);
+    S('rect', { x: cx0 - 4, y: ty - 6, width: W + 8, height: 12, rx: 2, fill: grad(defs, 'hxg-t' + k, cx0, 0, cx1, 0, hs) }, svg);
+  }
+  for (k = 0; k < 6; k++) {
+    var ax = cx0 + W * (k + 0.5) / 6;
+    arrow(svg, ax, cy1 + 46, ax, cy1 + 12, COLD);
+    arrow(svg, ax, cy0 - 12, ax, cy0 - 46, COLD);
+  }
+  arrow(svg, 72, yc, 108, yc, HOT);
+  arrow(svg, 552, yc, 590, yc, HOT);
+  lbl(svg, 112, yc - 42, 'middle', 'Hot in', fT(r.T_hot_in));
+  lbl(svg, 548, yc - 42, 'middle', 'Hot out', fT(r.T_hot_out));
+  lbl(svg, cx0 - 26, cy1 + 30, 'end', 'Cold in', fT(r.T_cold_in));
+  lbl(svg, cx0 - 26, cy0 - 42, 'end', 'Cold out', fT(r.T_cold_out));
+  small(svg, cx1 + 26, cy0 - 30, 'start', mix === 'cold' ? 'Cold fluid mixed' : 'Cold fluid unmixed');
+  small(svg, cx1 + 26, cy1 + 36, 'start', mix === 'hot' ? 'Hot fluid mixed' : 'Hot fluid unmixed');
+  small(svg, cx0 + W / 2 + 20, cy1 + 78, 'middle', 'Hot fluid flows left to right, cold fluid upward');
+}
+
+function drawColorbar() {
+  var stops = [], i, t, ticks = $('hx-cbar-ticks'), step = hi - lo > 120 ? 50 : 25;
+  for (i = 0; i <= 12; i++) stops.push(tcol(lo + (hi - lo) * i / 12) + ' ' + (100 * i / 12).toFixed(1) + '%');
+  $('hx-cbar').style.background = 'linear-gradient(90deg,' + stops.join(',') + ')';
+  clear(ticks);
+  for (t = Math.ceil(lo / step) * step; t <= hi + 1e-9; t += step) {
+    var s = document.createElement('span');
+    s.style.left = (100 * (t - lo) / (hi - lo)) + '%'; s.textContent = t; ticks.appendChild(s);
+  }
+}
+
+function drawNotes(r) {
+  var notes = [];
+  if (st.phase !== 'none') notes.push('<b>C<sub>r</sub> = 0.</b> The ' + (st.phase === 'hot' ? 'condensing hot' : 'boiling cold') + ' fluid stays at constant temperature (C → ∞), so every flow arrangement gives ε = 1 − e<sup>−NTU</sup>.');
+  if (r.T_cold_out > r.T_hot_out + 0.05) notes.push('<b>Temperature cross.</b> The cold fluid leaves ' + fix(r.T_cold_out - r.T_hot_out, 1) + ' K hotter than the hot fluid leaves. Parallel flow can never do this.');
+  if (st.type === 'par' && r.C_r > 0.97 && r.epsilon > 0.45) notes.push('<b>Parallel-flow ceiling.</b> With C<sub>r</sub> ≈ 1, ε can never exceed 0.5, however large the exchanger.');
+  if (r.NTU > 3) notes.push('<b>Diminishing returns.</b> NTU = ' + fix(r.NTU, 2) + ': extra area now adds little heat transfer.');
+  if (r.NTU < 0.3) notes.push('<b>Small exchanger.</b> NTU = ' + fix(r.NTU, 2) + ', so ε is low for every arrangement. More area or a higher U is needed.');
+  $('hx-notes').innerHTML = notes.slice(0, 2).map(function (s) { return '<li>' + s + '</li>'; }).join('');
+}
+
+function tile(k, v, s, sw) {
+  return '<div class="hx-tile"><div class="k">' + (sw ? '<span class="hx-swatch" style="background:' + sw + ';box-shadow:0 0 0 1px rgba(20,41,61,.3)"></span>' : '') +
+    '<span>' + k + '</span></div><div class="v">' + v + '</div><div class="s">' + s + '</div></div>';
+}
+function drawTiles(r) {
+  var who = same(r.C_hot, r.C_cold) ? 'Equal capacity rates' : 'C<sub>min</sub> is the ' + (r.C_hot < r.C_cold ? 'hot' : 'cold') + ' fluid';
+  $('hx-tiles').innerHTML =
+    tile('Hot outlet, T<sub>h,out</sub>', fT(r.T_hot_out), st.phase === 'hot' ? 'Condensing at constant T' : 'ΔT<sub>h</sub> = ' + fix(r.T_hot_in - r.T_hot_out, 1) + ' K', tcol(r.T_hot_out)) +
+    tile('Cold outlet, T<sub>c,out</sub>', fT(r.T_cold_out), st.phase === 'cold' ? 'Boiling at constant T' : 'ΔT<sub>c</sub> = ' + fix(r.T_cold_out - r.T_cold_in, 1) + ' K', tcol(r.T_cold_out)) +
+    tile('Heat transfer rate, Q̇', fQ(r.Q), 'Q̇<sub>max</sub> = ' + fQ(r.Q_max)) +
+    tile('Effectiveness, ε', fix(r.epsilon, 3), 'ε = Q̇ / Q̇<sub>max</sub>') +
+    tile('NTU', fix(r.NTU, r.NTU < 100 ? 3 : 1), 'UA / C<sub>min</sub>') +
+    tile('Capacity ratio, C<sub>r</sub>', fix(r.C_r, 3), who);
+  $('sk-tho').textContent = fT(r.T_hot_out); $('sk-tco').textContent = fT(r.T_cold_out);
+  $('sk-eps').textContent = fix(r.epsilon, 3); $('sk-q').textContent = fQ(r.Q);
+}
+
+/* ----- Charts (inline SVG with a crosshair readout) ----- */
+var hover = {};
+function rich(t, parts) {
+  parts.forEach(function (p) {
+    if (typeof p === 'string') S('tspan', {}, t, p);
+    else { S('tspan', { dy: 4, 'font-size': '82%' }, t, p[0]); S('tspan', { dy: -4 }, t, ' '); }
+  });
+}
+function chart(box, o) {
+  clear(box);
+  var w = Math.max(280, Math.round(box.clientWidth || 560)), h = Math.round(Math.max(230, Math.min(320, w * 0.56))), m = { l: 50, r: 18, t: 14, b: 46 }, pw = w - m.l - m.r, ph = h - m.t - m.b;
+  var X = function (v) { return m.l + (v - o.x[0]) / (o.x[1] - o.x[0]) * pw; };
+  var Y = function (v) { return m.t + ph - (v - o.y[0]) / (o.y[1] - o.y[0]) * ph; };
+  var svg = S('svg', { viewBox: '0 0 ' + w + ' ' + h, role: 'img', 'aria-label': o.aria, tabindex: 0 }, box);
+  o.yt.forEach(function (t) {
+    S('line', { x1: m.l, x2: m.l + pw, y1: Y(t), y2: Y(t), 'class': 'hx-grid' }, svg);
+    S('text', { x: m.l - 8, y: Y(t) + 4, 'text-anchor': 'end', 'class': 'hx-tick' }, svg, o.yf(t));
+  });
+  o.xt.forEach(function (t) { S('text', { x: X(t), y: m.t + ph + 18, 'text-anchor': 'middle', 'class': 'hx-tick' }, svg, o.xf(t)); });
+  S('line', { x1: m.l, x2: m.l + pw, y1: m.t + ph, y2: m.t + ph, 'class': 'hx-axis' }, svg);
+  rich(S('text', { x: m.l + pw / 2, y: h - 6, 'text-anchor': 'middle', 'class': 'hx-axlab' }, svg), o.xl);
+  rich(S('text', { transform: 'translate(13,' + (m.t + ph / 2) + ') rotate(-90)', 'text-anchor': 'middle', 'class': 'hx-axlab' }, svg), o.yl);
+  if (o.before) o.before(svg, X, Y, m, pw, ph);
+  o.series.forEach(function (s) {
+    var d = '', pen = false, i;
+    for (i = 0; i < s.x.length; i++) {
+      if (!isFinite(s.y[i])) { pen = false; continue; }
+      d += (pen ? 'L' : 'M') + X(s.x[i]).toFixed(1) + ' ' + Y(Math.max(o.y[0], Math.min(o.y[1], s.y[i]))).toFixed(1); pen = true;
+    }
+    S('path', { d: d, fill: 'none', stroke: s.color, 'stroke-width': s.width || 2, 'stroke-opacity': s.op || 1, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, svg);
+  });
+  var placed = [];
+  o.series.forEach(function (s) {
+    if (!s.short) return;
+    for (var i = s.x.length - 1; i >= 0 && !isFinite(s.y[i]); i--) { /* last drawn point */ }
+    if (i < 0) return;
+    var yy = Y(s.y[i]) - 7, clash = placed.some(function (p) { return Math.abs(p - yy) < 14; });
+    if (clash) return;
+    placed.push(yy);
+    S('text', { x: X(s.x[i]) - 2, y: yy, 'text-anchor': 'end', 'class': 'hx-clab', style: 'font-weight:600' }, svg, s.short);
+  });
+  if (o.after) o.after(svg, X, Y, m, pw, ph);
+  var cross = S('line', { y1: m.t, y2: m.t + ph, 'class': 'hx-cross', visibility: 'hidden' }, svg);
+  var tip = document.createElement('div'); tip.className = 'hx-tip'; box.appendChild(tip);
+  var id = box.id;
+  function at(xv) {
+    xv = Math.max(o.x[0], Math.min(o.x[1], xv)); hover[id] = xv;
+    var px = X(xv), rect = svg.getBoundingClientRect(), sc = rect.width / w, d = o.tip(xv);
+    cross.setAttribute('x1', px); cross.setAttribute('x2', px); cross.setAttribute('visibility', 'visible');
+    tip.innerHTML = '<div class="hd">' + d.hd + '</div>' + d.rows.map(function (rw) {
+      return '<div class="row"><span class="hx-key" style="border-color:' + rw.c + (rw.op ? ';opacity:' + rw.op : '') + '"></span><b>' + rw.v + '</b><i>' + rw.n + '</i></div>';
+    }).join('');
+    tip.style.display = 'block';
+    var left = px * sc + 14;
+    if (left + tip.offsetWidth > rect.width) left = px * sc - tip.offsetWidth - 14;
+    tip.style.left = Math.max(0, left) + 'px'; tip.style.top = (m.t * sc) + 'px';
+  }
+  function off() { hover[id] = null; cross.setAttribute('visibility', 'hidden'); tip.style.display = 'none'; }
+  function toX(ev) { var rect = svg.getBoundingClientRect(); return o.x[0] + ((ev.clientX - rect.left) * w / rect.width - m.l) / pw * (o.x[1] - o.x[0]); }
+  svg.addEventListener('pointermove', function (ev) { at(toX(ev)); });
+  svg.addEventListener('pointerdown', function (ev) { at(toX(ev)); });
+  svg.addEventListener('pointerleave', function (ev) { if (ev.pointerType !== 'touch') off(); });
+  svg.addEventListener('blur', off);
+  svg.addEventListener('focus', function () { at(hover[id] != null ? hover[id] : (o.x[0] + o.x[1]) / 2); });
+  svg.addEventListener('keydown', function (ev) {
+    if (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight') return;
+    ev.preventDefault();
+    var cur = hover[id] != null ? hover[id] : (o.x[0] + o.x[1]) / 2;
+    at(cur + (ev.key === 'ArrowRight' ? 1 : -1) * (o.x[1] - o.x[0]) / 50);
+  });
+  if (hover[id] != null) at(hover[id]);
+}
+function interp(xs, ys, x) {
+  for (var i = 0; i < xs.length - 1; i++) {
+    if (xs[i] <= x && x <= xs[i + 1] && isFinite(ys[i]) && isFinite(ys[i + 1])) {
+      var f = xs[i + 1] > xs[i] ? (x - xs[i]) / (xs[i + 1] - xs[i]) : 0;
+      return ys[i] + f * (ys[i + 1] - ys[i]);
+    }
+  }
+  return NaN;
+}
+function niceStep(a, b, n) {
+  var raw = (b - a) / n, mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+  return [1, 2, 2.5, 5, 10].map(function (k) { return k * mag; }).filter(function (k) { return k >= raw * 0.999; })[0];
+}
+function niceTicks(a, b, n, s) {
+  s = s || niceStep(a, b, n);
+  var t = [], v;
+  for (v = Math.ceil(a / s - 1e-9) * s; v <= b + 1e-9 * s; v += s) t.push(Number(v.toFixed(10)));
+  return t;
+}
+function table(el, head, rows, curRow) {
+  el.innerHTML = '<table class="hx-table"><thead><tr>' + head.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' +
+    rows.map(function (rw, i) { return '<tr' + (i === curRow ? ' style="background:var(--accent-soft)"' : '') + '>' + rw.map(function (c) { return '<td>' + c + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>';
+}
+
+var REF = [0, 0.25, 0.5, 0.75, 1], GREYS = ['#323f4b', '#52606d', '#6f7c89', '#8b97a3', '#a5b0ba'];
+function drawEps(r) {
+  var f = function (x, c) { return effectiveness(x, c, r.type, r.N); };
+  var xmax = r.NTU <= 4.6 ? 5 : Math.min(10, Math.ceil(r.NTU + 0.4)), xs = [], i, series = [];
+  for (i = 0; i <= 150; i++) xs.push(xmax * i / 150);
+  REF.forEach(function (c, k) { series.push({ color: GREYS[k], width: 1.5, x: xs, y: xs.map(function (x) { return f(x, c); }) }); });
+  series.push({ color: ACCENT, width: 2.75, x: xs, y: xs.map(function (x) { return f(x, r.C_r); }) });
+  var mixNote = '';
+  if (r.type === 'Cross Cmax Mixed' || r.type === 'Cross Cmin Mixed') mixNote = ' Relation used: <i>C</i><sub>' + (r.type === 'Cross Cmax Mixed' ? 'max' : 'min') + '</sub> mixed, because the mixed ' + st.mix + ' fluid has the ' + (r.type === 'Cross Cmax Mixed' ? 'larger' : 'smaller') + ' heat capacity rate.';
+  $('eps-note').innerHTML = 'Each gray curve is one capacity ratio for this arrangement. The orange curve and dot are your design.' + mixNote;
+  chart($('chart-eps'), {
+    x: [0, xmax], y: [0, 1], xt: niceTicks(0, xmax, 5), yt: [0, 0.2, 0.4, 0.6, 0.8, 1],
+    xf: function (t) { return String(t); }, yf: function (t) { return t.toFixed(1); },
+    xl: ['NTU = UA / C', ['min']], yl: ['Effectiveness, ε'],
+    aria: 'Effectiveness versus NTU for ' + r.type + '. Current design: NTU ' + fix(r.NTU, 2) + ', effectiveness ' + fix(r.epsilon, 3) + '.',
+    series: series,
+    after: function (svg, X, Y, m, pw, ph) {
+      var lx = 0.74 * xmax, t0 = S('text', { x: X(lx), y: Y(f(lx, 0)) - 7, 'text-anchor': 'middle', 'class': 'hx-clab' }, svg);
+      rich(t0, ['C', ['r'], ' = 0']);
+      var t1 = S('text', { x: X(lx), y: Y(f(lx, 1)) + 16, 'text-anchor': 'middle', 'class': 'hx-clab' }, svg);
+      rich(t1, ['C', ['r'], ' = 1']);
+      var nx = Math.min(r.NTU, xmax), px = X(nx), py = Y(r.epsilon);
+      S('line', { x1: px, x2: px, y1: py, y2: m.t + ph, stroke: ACCENT, 'stroke-opacity': 0.45, 'stroke-width': 1 }, svg);
+      S('line', { x1: m.l, x2: px, y1: py, y2: py, stroke: ACCENT, 'stroke-opacity': 0.45, 'stroke-width': 1 }, svg);
+      var txt = 'NTU ' + fix(r.NTU, 2) + (r.NTU > xmax ? ' →' : '') + ', ε ' + fix(r.epsilon, 3);
+      var g = S('g', {}, svg), tt = S('text', { 'class': 'hx-clab', style: 'font-weight:600;fill:#1f2933;stroke:none' }, g, txt);
+      var tw = tt.getComputedTextLength ? tt.getComputedTextLength() : 110, bw = tw + 14, bh = 22;
+      var bxp = px + 12 + bw <= m.l + pw ? px + 12 : px - 12 - bw, byp = py + 14 + bh <= m.t + ph ? py + 14 : py - 14 - bh;
+      S('rect', { x: bxp, y: byp, width: bw, height: bh, rx: 6, fill: '#fff', stroke: ACCENT, 'stroke-opacity': 0.6 }, g, null);
+      g.appendChild(tt); tt.setAttribute('x', bxp + 7); tt.setAttribute('y', byp + 15);
+      S('circle', { cx: px, cy: py, r: 6, fill: ACCENT, stroke: '#fff', 'stroke-width': 2 }, svg);
+    },
+    tip: function (x) {
+      var rows = [{ c: ACCENT, v: fix(f(x, r.C_r), 3), n: 'your C_r = ' + fix(r.C_r, 3) }];
+      REF.forEach(function (c, k) { rows.push({ c: GREYS[k], v: fix(f(x, c), 3), n: 'C_r = ' + c }); });
+      rows.forEach(function (rw) { rw.n = rw.n.replace('C_r', 'C<sub>r</sub>'); });
+      return { hd: 'NTU = ' + fix(x, 2), rows: rows };
+    }
+  });
+  $('eps-legend').innerHTML = '<span><span class="hx-key" style="border-color:' + ACCENT + ';border-top-width:3px"></span><span>Your design: C<sub>r</sub> = ' + fix(r.C_r, 3) + ', NTU = ' + fix(r.NTU, 2) + ', ε = ' + fix(r.epsilon, 3) + '</span></span>' +
+    '<span><span class="hx-key" style="border-color:' + GREYS[1] + '"></span><span>C<sub>r</sub> = 0, 0.25, 0.5, 0.75, 1 (darker = smaller C<sub>r</sub>)</span></span>';
+  var ntus = [0.25, 0.5, 1, 1.5, 2, 3, 4, 5], rows = ntus.map(function (x) { return [fix(x, 2)].concat(REF.map(function (c) { return fix(f(x, c), 3); }), [fix(f(x, r.C_r), 3)]); });
+  rows.push([fix(r.NTU, 2) + ' (you)'].concat(REF.map(function (c) { return fix(f(r.NTU, c), 3); }), [fix(r.epsilon, 3)]));
+  table($('eps-table'), ['NTU'].concat(REF.map(function (c) { return 'C<sub>r</sub> = ' + c; }), ['C<sub>r</sub> = ' + fix(r.C_r, 3)]), rows, rows.length - 1);
+}
+
+function drawProfile(r) {
+  var series = [], xl, xmax = 1, before = null, after = null, legend = [], tipRows, note, n = 60, all = [], i, k;
+  if (st.type === 'par' || st.type === 'cf') {
+    var p = st.type === 'cf' ? profileCounter(r, n) : profileParallel(r, n);
+    series = [{ color: HOT, x: p.x, y: p.Th, name: 'Hot fluid', short: 'Hot' }, { color: COLD, x: p.x, y: p.Tc, name: 'Cold fluid', short: 'Cold' }];
+    xl = ['Position along the exchanger, x / L'];
+    note = st.type === 'cf' ? 'The hot fluid enters at the left, the cold fluid at the right.' : 'Both fluids enter at the left.';
+    after = function (svg, X, Y) {
+      var mid = Math.round(n / 2);
+      flowMark(svg, X, Y, p.x, p.Th, mid, 1, HOT);
+      flowMark(svg, X, Y, p.x, p.Tc, mid, st.type === 'cf' ? -1 : 1, COLD);
+    };
+  } else if (st.type === 'st') {
+    var sh = profileShell(r, st.shells, 40), sx = [], sy = [], ax = [], ay = [], bx = [], by = [];
+    xmax = st.shells;
+    sh.forEach(function (s, kk) {
+      var idx = s.x.map(function (_, j) { return j; });
+      if (s.dir < 0) idx.reverse();
+      idx.forEach(function (j) {
+        var pos = kk + (s.dir > 0 ? s.x[j] : 1 - s.x[j]);
+        sx.push(pos); sy.push(s.Ts[j]); ax.push(pos); ay.push(s.t1[j]); bx.push(pos); by.push(s.t2[j]);
+      });
+      if (kk < sh.length - 1) { sx.push(kk + 1); sy.push(NaN); ax.push(kk + 1); ay.push(NaN); bx.push(kk + 1); by.push(NaN); }
+    });
+    series = [{ color: HOT, x: sx, y: sy, name: 'Shell side (hot)', short: 'Shell side' }, { color: COLD, x: ax, y: ay, name: 'Tube pass 1 (cold, in)', short: 'Pass 1' }, { color: COLD, op: 0.5, x: bx, y: by, name: 'Tube pass 2 (cold, out)', short: 'Pass 2' }];
+    xl = st.shells === 1 ? ['Position along the shell, x / L (channel head at 0)'] : ['Position along the shell-side flow path (one unit per shell)'];
+    note = st.shells === 1 ? 'Shell-side temperature and the two tube passes inside one shell.' : 'Shells are shown in the order the hot fluid passes through them.';
+    before = function (svg, X, Y, m, pw, ph) {
+      for (k = 1; k < st.shells; k++) S('line', { x1: X(k), x2: X(k), y1: m.t, y2: m.t + ph, stroke: '#d5d9de', 'stroke-width': 1 }, svg);
+      if (st.shells > 1) for (k = 0; k < st.shells; k++) S('text', { x: X(k + 0.5), y: m.t + 12, 'text-anchor': 'middle', 'class': 'hx-clab' }, svg, 'Shell ' + (k + 1));
+    };
+  } else {
+    var F = crossField(r, st.mix, 40), cx = [], co = [], ho = [];
+    for (i = 0; i < 40; i++) { cx.push((i + 0.5) / 40); co.push(F.coldOut[i]); ho.push(F.hotOut[i]); }
+    series = [{ color: HOT, x: cx, y: ho, name: 'Hot fluid leaving the right face (across y)' }, { color: COLD, x: cx, y: co, name: 'Cold fluid leaving the top face (across x)' }];
+    xl = ['Position across the outlet face (0 to 1)'];
+    note = 'An unmixed stream leaves with a spread of temperatures; a mixed stream leaves uniform. The thin lines are the mixed-mean outlet temperatures.';
+    before = function (svg, X, Y, m, pw) {
+      S('line', { x1: m.l, x2: m.l + pw, y1: Y(r.T_hot_out), y2: Y(r.T_hot_out), stroke: HOT, 'stroke-opacity': 0.4, 'stroke-width': 1 }, svg);
+      S('line', { x1: m.l, x2: m.l + pw, y1: Y(r.T_cold_out), y2: Y(r.T_cold_out), stroke: COLD, 'stroke-opacity': 0.4, 'stroke-width': 1 }, svg);
+    };
+  }
+  series.forEach(function (s) { s.y.forEach(function (v) { if (isFinite(v)) all.push(v); }); });
+  all.push(r.T_hot_in, r.T_cold_in);
+  var ymin = Math.min.apply(null, all), ymax = Math.max.apply(null, all), pad = Math.max(1.5, (ymax - ymin) * 0.06);
+  var ys = niceStep(ymin - pad, ymax + pad, 8), y0 = Math.floor((ymin - pad) / ys) * ys, y1 = Math.ceil((ymax + pad) / ys) * ys, yt = niceTicks(y0, y1, 5, ys);
+  $('prof-title').textContent = st.type === 'cx' ? 'Outlet temperature distribution' : 'Temperature along the exchanger';
+  $('prof-note').textContent = note;
+  chart($('chart-prof'), {
+    x: [0, xmax], y: [y0, y1], xt: niceTicks(0, xmax, xmax > 1 ? xmax : 5), yt: yt,
+    xf: function (t) { return String(t); }, yf: function (t) { return String(t); },
+    xl: xl, yl: ['Temperature, °C'], series: series, before: before, after: after,
+    aria: (st.type === 'cx' ? 'Outlet temperature distribution' : 'Temperature profile') + ' for the hot and cold fluids.',
+    tip: function (x) {
+      var rows = series.map(function (s) { return { c: s.color, op: s.op, v: fix(interp(s.x, s.y, x), 1) + ' °C', n: s.name }; }).filter(function (rw) { return rw.v.indexOf('NaN') < 0; });
+      if (series.length === 2 && st.type !== 'cx') rows.push({ c: 'transparent', v: fix(interp(series[0].x, series[0].y, x) - interp(series[1].x, series[1].y, x), 1) + ' K', n: 'ΔT' });
+      return { hd: (st.type === 'st' && st.shells > 1 ? 'Position ' : st.type === 'cx' ? 'Position ' : 'x / L = ') + fix(x, 2), rows: rows };
+    }
+  });
+  $('prof-legend').innerHTML = series.map(function (s) { return '<span><span class="hx-key" style="border-color:' + s.color + (s.op ? ';opacity:' + s.op : '') + '"></span><span>' + s.name + '</span></span>'; }).join('');
+  var rows = [], marks = st.type === 'st' ? [] : [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1];
+  if (st.type === 'st') for (k = 0; k <= 4 * xmax; k++) marks.push(k / 4);
+  marks.forEach(function (x) { rows.push([fix(x, 2)].concat(series.map(function (s) { var v = interp(s.x, s.y, x); if (!isFinite(v)) v = interp(s.x, s.y, x - 1e-9); if (!isFinite(v)) v = interp(s.x, s.y, x + 1e-9); return isFinite(v) ? fix(v, 2) : '–'; }))); });
+  table($('prof-table'), ['Position'].concat(series.map(function (s) { return s.name + ', °C'; })), rows, -1);
+}
+function flowMark(svg, X, Y, xs, ys, i, dir, color) {
+  var j = Math.min(xs.length - 1, i + 1), x1 = X(xs[i]), y1 = Y(ys[i]), x2 = X(xs[j]), y2 = Y(ys[j]);
+  var dx = (x2 - x1) * dir, dy = (y2 - y1) * dir, L = Math.sqrt(dx * dx + dy * dy) || 1, ux = dx / L, uy = dy / L, s = 7;
+  S('path', { d: 'M' + (x1 + ux * s) + ' ' + (y1 + uy * s) + 'L' + (x1 - ux * s - uy * s * 0.8) + ' ' + (y1 - uy * s + ux * s * 0.8) + 'L' + (x1 - ux * s + uy * s * 0.8) + ' ' + (y1 - uy * s - ux * s * 0.8) + 'Z', fill: color, stroke: '#fff', 'stroke-width': 1.5 }, svg);
+}
+
+/* ----- Step-by-step solution (mirrors HeatExchanger.m) ----- */
+var EQ = {
+  'Parallel Flow': '[1 − e<sup>−NTU(1+C<sub>r</sub>)</sup>] / (1 + C<sub>r</sub>)',
+  'Counter Flow': '[1 − e<sup>−NTU(1−C<sub>r</sub>)</sup>] / [1 − C<sub>r</sub>e<sup>−NTU(1−C<sub>r</sub>)</sup>]',
+  cf1: 'NTU / (1 + NTU), the C<sub>r</sub> = 1 limit',
+  'One Shell Pass': '2 {1 + C<sub>r</sub> + √(1+C<sub>r</sub><sup>2</sup>) [1 + e<sup>−NTU√(1+C<sub>r</sub><sup>2</sup>)</sup>] / [1 − e<sup>−NTU√(1+C<sub>r</sub><sup>2</sup>)</sup>]}<sup>−1</sup>',
+  'N Shell Pass': '{[(1 − ε<sub>1</sub>C<sub>r</sub>)/(1 − ε<sub>1</sub>)]<sup>N</sup> − 1} / {[(1 − ε<sub>1</sub>C<sub>r</sub>)/(1 − ε<sub>1</sub>)]<sup>N</sup> − C<sub>r</sub>}',
+  ns1: 'Nε<sub>1</sub> / [1 + (N − 1)ε<sub>1</sub>], the C<sub>r</sub> = 1 limit',
+  'Cross Both Unmixed': '1 − exp[(1/C<sub>r</sub>) NTU<sup>0.22</sup> {exp(−C<sub>r</sub>NTU<sup>0.78</sup>) − 1}]',
+  'Cross Cmax Mixed': '(1/C<sub>r</sub>) {1 − exp[−C<sub>r</sub>(1 − e<sup>−NTU</sup>)]}',
+  'Cross Cmin Mixed': '1 − exp{−(1/C<sub>r</sub>)[1 − e<sup>−C<sub>r</sub>NTU</sup>]}',
+  cr0: '1 − e<sup>−NTU</sup>, the C<sub>r</sub> = 0 relation shared by every arrangement'
+};
+var NAMES = { 'Parallel Flow': 'parallel flow', 'Counter Flow': 'counterflow', 'One Shell Pass': 'one shell pass', 'N Shell Pass': 'N shell passes', 'Cross Both Unmixed': 'crossflow, both unmixed', 'Cross Cmax Mixed': 'crossflow, C<sub>max</sub> mixed', 'Cross Cmin Mixed': 'crossflow, C<sub>min</sub> mixed' };
+function lmtd(a, b) { if (!(a > 0 && b > 0)) return NaN; return same(a, b) ? a : (a - b) / Math.log(a / b); }
+function drawSteps(r) {
+  var q = inputs(st), hInf = !isFinite(r.C_hot), cInf = !isFinite(r.C_cold), one = Math.abs(1 - r.C_r) < 1e-9;
+  var eq = r.C_r === 0 ? EQ.cr0 : one && r.type === 'Counter Flow' ? EQ.cf1 : one && r.type === 'N Shell Pass' ? EQ.ns1 : EQ[r.type];
+  var minName = same(r.C_hot, r.C_cold) ? 'equal rates' : r.C_hot < r.C_cold ? 'hot fluid' : 'cold fluid';
+  var e1 = '';
+  if (r.type === 'N Shell Pass') e1 = '; ε<sub>1</sub> = ' + fix(r.C_r === 0 ? -Math.expm1(-r.NTU / r.N) : shellPassEffectiveness(r.NTU / r.N, r.C_r), 4) + ' at NTU/N = ' + fix(r.NTU / r.N, 3) + ', N = ' + r.N;
+  var li = function (label, eqn, res) { return '<li><span class="lbl">' + label + '</span><span class="eq">' + eqn + '</span>' + (res ? ' = <span class="res">' + res + '</span>' : '') + '</li>'; };
+  $('hx-steps').innerHTML =
+    li('Hot-fluid heat capacity rate', 'C<sub>h</sub> = ṁ<sub>h</sub>c<sub>p,h</sub>' + (hInf ? ' → ∞ (condensing)' : ' = ' + fix(st.mh, 4).replace(/0+$/, '').replace(/[.]$/, '') + ' × ' + fix(q.cph, 0)), hInf ? '' : fW(r.C_hot) + ' W/K') +
+    li('Cold-fluid heat capacity rate', 'C<sub>c</sub> = ṁ<sub>c</sub>c<sub>p,c</sub>' + (cInf ? ' → ∞ (boiling)' : ' = ' + fix(st.mc, 4).replace(/0+$/, '').replace(/[.]$/, '') + ' × ' + fix(q.cpc, 0)), cInf ? '' : fW(r.C_cold) + ' W/K') +
+    li('Minimum and maximum rates', 'C<sub>min</sub> = ' + fW(r.C_min) + ' W/K (' + minName + '), C<sub>max</sub> = ' + fW(r.C_max) + (isFinite(r.C_max) ? ' W/K' : ''), '') +
+    li('Capacity ratio', 'C<sub>r</sub> = C<sub>min</sub> / C<sub>max</sub>' + (isFinite(r.C_max) ? ' = ' + fW(r.C_min) + ' / ' + fW(r.C_max) : ' = C<sub>min</sub> / ∞'), fix(r.C_r, 4)) +
+    li('Number of transfer units', 'NTU = UA / C<sub>min</sub> = ' + fix(r.UA, r.UA < 100 ? 2 : 0) + ' / ' + fW(r.C_min), fix(r.NTU, 4)) +
+    li('Effectiveness, ' + NAMES[r.type] + e1, 'ε = ' + eq, fix(r.epsilon, 4)) +
+    li('Maximum possible heat rate', 'Q̇<sub>max</sub> = C<sub>min</sub>(T<sub>h,in</sub> − T<sub>c,in</sub>) = ' + fW(r.C_min) + ' × (' + num(st.Thi) + ' − ' + num(st.Tci) + ')', fQ(r.Q_max)) +
+    li('Actual heat rate', 'Q̇ = ε Q̇<sub>max</sub> = ' + fix(r.epsilon, 4) + ' × ' + fQ(r.Q_max), fQ(r.Q)) +
+    li('Hot outlet temperature', 'T<sub>h,out</sub> = T<sub>h,in</sub> − Q̇/C<sub>h</sub>' + (hInf ? ' = T<sub>h,in</sub> (C<sub>h</sub> = ∞)' : ' = ' + num(st.Thi) + ' − ' + fix(r.Q, 0) + ' / ' + fW(r.C_hot)), fT(r.T_hot_out)) +
+    li('Cold outlet temperature', 'T<sub>c,out</sub> = T<sub>c,in</sub> + Q̇/C<sub>c</sub>' + (cInf ? ' = T<sub>c,in</sub> (C<sub>c</sub> = ∞)' : ' = ' + num(st.Tci) + ' + ' + fix(r.Q, 0) + ' / ' + fW(r.C_cold)), fT(r.T_cold_out));
+  var par = r.type === 'Parallel Flow', d1 = par ? r.T_hot_in - r.T_cold_in : r.T_hot_in - r.T_cold_out, d2 = par ? r.T_hot_out - r.T_cold_out : r.T_hot_out - r.T_cold_in;
+  var lm = lmtd(d1, d2), F = r.Q / (r.UA * lm), chk;
+  if (!(lm > 1e-6) || !isFinite(F)) chk = '<b>LMTD check:</b> not meaningful here (ε ≈ 1, the end temperature difference vanishes).';
+  else if (par || r.type === 'Counter Flow' || r.C_r === 0) chk = '<b>LMTD check:</b> ΔT<sub>lm</sub> = ' + fix(lm, 2) + ' K' + (par ? ' (parallel-flow ends)' : '') + ', so UA·ΔT<sub>lm</sub> = ' + fQ(r.UA * lm) + ' = Q̇ ✓ (F = ' + fix(F, 3) + ').';
+  else chk = '<b>LMTD check:</b> with counterflow-reference ΔT<sub>lm</sub> = ' + fix(lm, 2) + ' K, the equivalent correction factor is F = Q̇ / (UA ΔT<sub>lm</sub>) = <b>' + fix(F, 3) + '</b>.';
+  $('hx-check').innerHTML = chk;
+  var mm = function (v) { return isFinite(v) ? String(sig(v, 6)) : 'Inf'; }, NL = String.fromCharCode(10);
+  var code = '[T_hot_out, T_cold_out] = HeatExchanger(' + [mm(q.mh), mm(q.cph), mm(st.Thi), mm(q.mc), mm(q.cpc), mm(st.Tci), mm(st.U), mm(st.A)].join(', ') + ", '" + r.type + "')" + NL +
+    'epsilon = effectiveness(' + mm(r.NTU) + ', ' + mm(r.C_r) + ", '" + r.type + "'" + (r.type === 'N Shell Pass' ? ', ' + r.N : '') + ')   % = ' + r.epsilon.toFixed(4);
+  if (r.type === 'N Shell Pass') code += NL + "% HeatExchanger.m takes no N, so call effectiveness with N directly for 'N Shell Pass'";
+  $('hx-matlab').textContent = code;
+}
+
+/* ----- Comparison of all arrangements ----- */
+var CMP = [
+  { n: 'Parallel flow', t: 'Parallel Flow', s: { type: 'par' } },
+  { n: 'Counterflow', t: 'Counter Flow', s: { type: 'cf' } },
+  { n: 'Shell &amp; tube, 1 shell pass', t: 'One Shell Pass', s: { type: 'st', shells: 1 } },
+  { n: 'Shell &amp; tube, N shell passes', t: 'N Shell Pass', multi: 1 },
+  { n: 'Crossflow, both unmixed', t: 'Cross Both Unmixed', s: { type: 'cx', mix: 'none' } },
+  { n: 'Crossflow, C<sub>max</sub> mixed', t: 'Cross Cmax Mixed', cx: 'max' },
+  { n: 'Crossflow, C<sub>min</sub> mixed', t: 'Cross Cmin Mixed', cx: 'min' }
+];
+function drawCompare(r) {
+  var q = inputs(st), hotMax = q.mh * q.cph >= q.mc * q.cpc, Nm = st.type === 'st' && st.shells > 1 ? st.shells : 2, sets = [];
+  var html = '<thead><tr><th scope="col">Arrangement</th><th scope="col">Effectiveness ε</th><th scope="col">Q̇</th><th scope="col">T<sub>h,out</sub></th><th scope="col">T<sub>c,out</sub></th></tr></thead><tbody>';
+  CMP.forEach(function (c, i) {
+    var set = c.s || (c.multi ? { type: 'st', shells: Nm } : { type: 'cx', mix: (c.cx === 'max') === hotMax ? 'hot' : 'cold' });
+    sets.push(set);
+    var x = solve(st, c.t, c.multi ? Nm : 1);
+    var cur = st.type === set.type && (set.type !== 'st' || st.shells === set.shells) && (set.type !== 'cx' || st.mix === set.mix);
+    var name = c.multi ? c.n.replace('N shell', Nm + ' shell') : c.n;
+    html += '<tr data-i="' + i + '" tabindex="0"' + (cur ? ' class="is-cur" aria-current="true"' : '') + '><td>' + name + (c.cx ? '<small>here: the ' + set.mix + ' fluid is mixed</small>' : '') + '</td>' +
+      '<td><span class="hx-bar" style="width:' + Math.round(x.epsilon * 80) + 'px"></span>' + fix(x.epsilon, 3) + '</td><td>' + fQ(x.Q) + '</td><td>' + fT(x.T_hot_out) + '</td><td>' + fT(x.T_cold_out) + '</td></tr>';
+  });
+  var tb = $('hx-cmp');
+  tb.innerHTML = html + '</tbody>';
+  tb.onclick = function (ev) { pick(ev.target); };
+  tb.onkeydown = function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); pick(ev.target); } };
+  function pick(t) {
+    var tr = t.closest ? t.closest('tr[data-i]') : null;
+    if (!tr) return;
+    var s = sets[+tr.getAttribute('data-i')], k;
+    for (k in s) st[k] = s[k];
+    syncInputs(); changed();
+  }
+}
+
+/* ----- Start ----- */
+var lastW = 0, rt = null;
+window.addEventListener('resize', function () {
+  clearTimeout(rt);
+  rt = setTimeout(function () { var w = $('chart-eps').clientWidth; if (w !== lastW) { lastW = w; render(); } }, 120);
+});
+window.addEventListener('hashchange', function () { readHash(); syncInputs(); render(); });
+readHash();
+syncInputs();
+render();
+lastW = $('chart-eps').clientWidth;
+function renderTex() {
+  if (!window.katex) return;
+  Array.prototype.forEach.call(document.querySelectorAll('.tex-d'), function (el) {
+    try { window.katex.render(el.getAttribute('data-tex'), el, { displayMode: true, throwOnError: false }); } catch (e) { /* keep the source text */ }
+  });
+}
+Array.prototype.forEach.call(document.querySelectorAll('.tex-d'), function (el) { if (!el.textContent) el.textContent = el.getAttribute('data-tex'); });
+if (window.katex) renderTex(); else window.addEventListener('load', renderTex);
+})();
+</script>
+{% endraw %}
