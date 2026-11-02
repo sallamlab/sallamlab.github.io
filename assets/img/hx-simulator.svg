@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 384" width="640" height="384" role="img" aria-label="Counterflow heat exchanger colored by temperature, with outlet temperatures and effectiveness">
+<style>text{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}.l{paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}.k{font-size:12.5px;fill:#52606d}.v{font-size:15px;font-weight:600;fill:#1f2933}.cb{font-size:11px;fill:#52606d}.ck{font-size:13px;fill:#52606d}.cv{font-size:19px;font-weight:600;fill:#14293d}.c1,.c2{fill:none;stroke-linecap:round;stroke-linejoin:round}.c1{stroke:rgba(20,41,61,.45);stroke-width:4}.c2{stroke:#fff;stroke-width:1.8}.w2{stroke:#42515e;stroke-width:2}</style>
+<rect width="640" height="384" fill="#fbfaf7"/>
+<g transform="translate(0,4)">
+<defs>
+<linearGradient id="phxg-c" gradientUnits="userSpaceOnUse" x1="150" y1="0" x2="530" y2="0">
+<stop offset="0" stop-color="rgb(251,228,214)"/>
+<stop offset="0.0833" stop-color="rgb(250,232,221)"/>
+<stop offset="0.1667" stop-color="rgb(249,237,229)"/>
+<stop offset="0.2500" stop-color="rgb(248,241,237)"/>
+<stop offset="0.3333" stop-color="rgb(247,246,246)"/>
+<stop offset="0.4167" stop-color="rgb(241,244,246)"/>
+<stop offset="0.5000" stop-color="rgb(233,240,244)"/>
+<stop offset="0.5833" stop-color="rgb(225,237,243)"/>
+<stop offset="0.6667" stop-color="rgb(217,233,241)"/>
+<stop offset="0.7500" stop-color="rgb(206,228,239)"/>
+<stop offset="0.8333" stop-color="rgb(181,213,231)"/>
+<stop offset="0.9167" stop-color="rgb(153,197,223)"/>
+<stop offset="1" stop-color="rgb(124,181,214)"/>
+</linearGradient>
+<linearGradient id="phxg-h" gradientUnits="userSpaceOnUse" x1="104" y1="0" x2="576" y2="0">
+<stop offset="0" stop-color="rgb(242,154,118)"/>
+<stop offset="0.0975" stop-color="rgb(242,154,118)"/>
+<stop offset="0.1645" stop-color="rgb(243,162,127)"/>
+<stop offset="0.2316" stop-color="rgb(244,169,137)"/>
+<stop offset="0.2987" stop-color="rgb(246,178,147)"/>
+<stop offset="0.3658" stop-color="rgb(247,186,158)"/>
+<stop offset="0.4329" stop-color="rgb(249,195,170)"/>
+<stop offset="0.5000" stop-color="rgb(251,205,182)"/>
+<stop offset="0.5671" stop-color="rgb(252,215,194)"/>
+<stop offset="0.6342" stop-color="rgb(252,221,203)"/>
+<stop offset="0.7013" stop-color="rgb(252,225,210)"/>
+<stop offset="0.7684" stop-color="rgb(251,229,217)"/>
+<stop offset="0.8355" stop-color="rgb(250,234,224)"/>
+<stop offset="0.9025" stop-color="rgb(249,238,232)"/>
+<stop offset="1" stop-color="rgb(249,238,232)"/>
+</linearGradient>
+</defs>
+<rect x="483" y="68" width="22" height="42" fill="rgb(124,181,214)" class="w2"/>
+<rect x="175" y="68" width="22" height="42" fill="rgb(251,228,214)" class="w2"/>
+<rect x="150" y="106" width="380" height="88" rx="10" fill="url(#phxg-c)" stroke="#42515e" stroke-width="3"/>
+<rect x="485" y="104" width="18" height="5" fill="rgb(124,181,214)"/>
+<rect x="177" y="104" width="18" height="5" fill="rgb(251,228,214)"/>
+<rect x="104" y="135" width="472" height="30" fill="url(#phxg-h)" class="w2"/>
+<path d="M234 114.5L226.5 120.5L234 126.5" class="c1"/>
+<path d="M234 114.5L226.5 120.5L234 126.5" class="c2"/>
+<path d="M234 173.5L226.5 179.5L234 185.5" class="c1"/>
+<path d="M234 173.5L226.5 179.5L234 185.5" class="c2"/>
+<path d="M280 114.5L272.5 120.5L280 126.5" class="c1"/>
+<path d="M280 114.5L272.5 120.5L280 126.5" class="c2"/>
+<path d="M280 173.5L272.5 179.5L280 185.5" class="c1"/>
+<path d="M280 173.5L272.5 179.5L280 185.5" class="c2"/>
+<path d="M326 114.5L318.5 120.5L326 126.5" class="c1"/>
+<path d="M326 114.5L318.5 120.5L326 126.5" class="c2"/>
+<path d="M326 173.5L318.5 179.5L326 185.5" class="c1"/>
+<path d="M326 173.5L318.5 179.5L326 185.5" class="c2"/>
+<path d="M372 114.5L364.5 120.5L372 126.5" class="c1"/>
+<path d="M372 114.5L364.5 120.5L372 126.5" class="c2"/>
+<path d="M372 173.5L364.5 179.5L372 185.5" class="c1"/>
+<path d="M372 173.5L364.5 179.5L372 185.5" class="c2"/>
+<path d="M418 114.5L410.5 120.5L418 126.5" class="c1"/>
+<path d="M418 114.5L410.5 120.5L418 126.5" class="c2"/>
+<path d="M418 173.5L410.5 179.5L418 185.5" class="c1"/>
+<path d="M418 173.5L410.5 179.5L418 185.5" class="c2"/>
+<path d="M464 114.5L456.5 120.5L464 126.5" class="c1"/>
+<path d="M464 114.5L456.5 120.5L464 126.5" class="c2"/>
+<path d="M464 173.5L456.5 179.5L464 185.5" class="c1"/>
+<path d="M464 173.5L456.5 179.5L464 185.5" class="c2"/>
+<path d="M203 145L209.25 150L203 155" class="c1"/>
+<path d="M203 145L209.25 150L203 155" class="c2"/>
+<path d="M269 145L275.25 150L269 155" class="c1"/>
+<path d="M269 145L275.25 150L269 155" class="c2"/>
+<path d="M335 145L341.25 150L335 155" class="c1"/>
+<path d="M335 145L341.25 150L335 155" class="c2"/>
+<path d="M401 145L407.25 150L401 155" class="c1"/>
+<path d="M401 145L407.25 150L401 155" class="c2"/>
+<path d="M467 145L473.25 150L467 155" class="c1"/>
+<path d="M467 145L473.25 150L467 155" class="c2"/>
+<line x1="64" y1="150" x2="91" y2="150" stroke="#c8372d" stroke-width="3" stroke-linecap="round"/>
+<path d="M101 150L91 156.5L91 143.5Z" fill="#c8372d"/>
+<line x1="579" y1="150" x2="606" y2="150" stroke="#c8372d" stroke-width="3" stroke-linecap="round"/>
+<path d="M616 150L606 156.5L606 143.5Z" fill="#c8372d"/>
+<line x1="494" y1="34" x2="494" y2="55" stroke="#2a78d6" stroke-width="3" stroke-linecap="round"/>
+<path d="M494 65L487.5 55L500.5 55Z" fill="#2a78d6"/>
+<line x1="186" y1="65" x2="186" y2="44" stroke="#2a78d6" stroke-width="3" stroke-linecap="round"/>
+<path d="M186 34L192.5 44L179.5 44Z" fill="#2a78d6"/>
+<text x="84" y="100" text-anchor="middle" class="l">
+<tspan x="84" class="k">Hot in</tspan>
+<tspan x="84" dy="1.25em" class="v">80.0 °C</tspan>
+</text>
+<text x="596" y="100" text-anchor="middle" class="l">
+<tspan x="596" class="k">Hot out</tspan>
+<tspan x="596" dy="1.25em" class="v">55.2 °C</tspan>
+</text>
+<text x="476" y="44" text-anchor="end" class="l">
+<tspan x="476" class="k">Cold in</tspan>
+<tspan x="476" dy="1.25em" class="v">20.0 °C</tspan>
+</text>
+<text x="204" y="44" text-anchor="start" class="l">
+<tspan x="204" class="k">Cold out</tspan>
+<tspan x="204" dy="1.25em" class="v">61.4 °C</tspan>
+</text>
+</g>
+<defs>
+<linearGradient id="pcbar" x1="0" x2="1" y1="0" y2="0">
+<stop offset="0.000" stop-color="rgb(33,102,172)"/>
+<stop offset="0.083" stop-color="rgb(68,136,190)"/>
+<stop offset="0.167" stop-color="rgb(103,169,207)"/>
+<stop offset="0.250" stop-color="rgb(156,199,224)"/>
+<stop offset="0.333" stop-color="rgb(209,229,240)"/>
+<stop offset="0.417" stop-color="rgb(228,238,244)"/>
+<stop offset="0.500" stop-color="rgb(247,247,247)"/>
+<stop offset="0.583" stop-color="rgb(250,233,223)"/>
+<stop offset="0.667" stop-color="rgb(253,219,199)"/>
+<stop offset="0.750" stop-color="rgb(246,179,149)"/>
+<stop offset="0.833" stop-color="rgb(239,138,98)"/>
+<stop offset="0.917" stop-color="rgb(209,81,71)"/>
+<stop offset="1.000" stop-color="rgb(178,24,43)"/>
+</linearGradient>
+</defs>
+<rect x="150" y="262" width="340" height="9" rx="4.5" fill="url(#pcbar)"/>
+<text x="144" y="270" text-anchor="end" class="cb">0 °C</text>
+<text x="496" y="270" class="cb">100 °C</text>
+<g transform="translate(24,300)">
+<rect width="176" height="58" rx="10" fill="#fff" stroke="#e4e7eb"/>
+<text x="14" y="23" class="ck">Effectiveness ε</text>
+<text x="14" y="46" class="cv">0.690</text>
+</g>
+<g transform="translate(232,300)">
+<rect width="176" height="58" rx="10" fill="#fff" stroke="#e4e7eb"/>
+<text x="14" y="23" class="ck">Heat transfer rate</text>
+<text x="14" y="46" class="cv">52.0 kW</text>
+</g>
+<g transform="translate(440,300)">
+<rect width="176" height="58" rx="10" fill="#fff" stroke="#e4e7eb"/>
+<text x="14" y="23" class="ck">NTU</text>
+<text x="14" y="46" class="cv">1.593</text>
+</g>
+</svg>
