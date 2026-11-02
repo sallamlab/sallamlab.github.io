@@ -1591,7 +1591,7 @@ function drawMatlab(all, r) {
     L.push('[' + Tb + ',' + wb + ',phi' + b + ',' + hb + "] = Psychrometricsnew('w'," + wa + " + mw,'h'," + ha + " + mw*hw,'p',P)");
   }
   c('simulator: ' + Tb + ' = ' + fix(s2.T, 2) + ' °C, phi' + b + ' = ' + fix(s2.phi, 2) + ' %' + (r.proc === 'humid' ? '' : ', q = ' + fix(r.q, 3).replace('−', '-') + ' kJ/kg'));
-  c('chart and process line (psychplotting needs label.m from the File Exchange)');
+  c('chart and process line (label.m from the File Exchange is optional)');
   L.push('psychplotting(0,' + CH.Thi + ',0,' + CH.Whi + ',P); hold on');
   L.push('plot([' + plotT + '],[' + plotW + "]*1000,'r-o','LineWidth',1.5)");
   $('ps-matlab').textContent = L.join(NL);
