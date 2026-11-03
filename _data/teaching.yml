@@ -36,10 +36,11 @@ tools:
     button: Open the simulator
     text: >-
       Send the condenser water of a water-cooled chiller through an evaporative cooling tower. Change
-      the outdoor air, the hot water temperature, the water flow and the fan speed to see the cold
-      water returned to the chiller, the air leaving the tower, the evaporation, drift, blowdown and
-      makeup water, and the fan power, on an animated picture of the tower, with a short write-up of
-      the equations behind it.
+      the outdoor air, the hot water temperature or the chiller load, the water flow and the fan speed
+      to see the cold water returned to the chiller, the air leaving the tower, the evaporation, drift,
+      blowdown and makeup water, and the fan power, on an animated picture of the tower. Set the
+      approach yourself or let a rated tower (ε-NTU model) predict it, with the fan holding a cold
+      water setpoint, and read a short write-up of the equations behind it.
 
 asme:
   intro: >-
