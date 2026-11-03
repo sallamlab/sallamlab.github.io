@@ -2,7 +2,7 @@
 layout: default
 title: Cooling Tower Simulator
 permalink: /teaching/cooling-tower/
-description: Interactive cooling tower simulator for HVAC condenser water. Change the outdoor air, the hot water from the chiller, the water flow and the fan speed to see the cold water temperature, the exit air, the evaporation, drift, blowdown and makeup water and the fan power, with a short explanation of the equations. MAE 3524 Thermal Fluids Design, Oklahoma State University.
+description: Interactive cooling tower simulator for HVAC condenser water. Change the outdoor air, the hot water or chiller load, the water flow and the fan speed to see the cold water temperature, the exit air, the evaporation, drift, blowdown and makeup water and the fan power, with a fixed-approach or rated-tower (ε-NTU) model, fan setpoint control and a short explanation of the equations. MAE 3524 Thermal Fluids Design, Oklahoma State University.
 ---
 {% raw %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
@@ -24,6 +24,10 @@ description: Interactive cooling tower simulator for HVAC condenser water. Chang
 .ct-seg label:hover span { border-color: var(--ink-faint); }
 .ct-seg input:checked + span { background: var(--navy); border-color: var(--navy); color: #fff; }
 .ct-seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ct-seg[hidden] { display: none; }
+.ct-seg-sm { margin-bottom: 10px; }
+.ct-seg-sm span { font-size: .84rem; padding: 7px 4px; }
+.ct-derived.ct-model-note { margin: -2px 0 14px; }
 .ct-ctl { margin-bottom: 12px; }
 .ct-ctl[hidden], .ct-field[hidden] { display: none; }
 .ct-ctl > label { display: block; font-size: .9rem; margin-bottom: 1px; }
@@ -181,7 +185,7 @@ description: Interactive cooling tower simulator for HVAC condenser water. Chang
   <div class="container">
     <p class="ct-crumb"><a href="/teaching/">Teaching</a> <span aria-hidden="true">&rsaquo;</span> MAE 3524 Thermal Fluids Design</p>
     <h1>Cooling tower simulator</h1>
-    <p>A water-cooled chiller rejects its heat through an evaporative cooling tower. Change the outdoor air, the condenser water and the fan speed, and see the cold water sent back to the chiller, the air leaving the tower, the water the tower uses and the power its fan needs.</p>
+    <p>A water-cooled chiller rejects its heat through an evaporative cooling tower. Change the outdoor air, the condenser water and the fan speed, and see the cold water sent back to the chiller, the air leaving the tower, the water the tower uses and the power its fan needs. Set the approach yourself, or let a rated tower (&epsilon;-NTU model) predict it.</p>
   </div>
 </section>
 
@@ -225,16 +229,33 @@ description: Interactive cooling tower simulator for HVAC condenser water. Chang
 
         <fieldset class="ct-group">
           <legend>Condenser water from the chiller, state 1</legend>
+          <label class="ct-field">Hot water entered as
+            <select id="ct-wk">
+              <option value="T1">Temperature from the chiller</option>
+              <option value="Q">Heat load of the chiller</option>
+            </select>
+          </label>
           <div id="ctl-w"></div>
+          <div id="ctl-w2"></div>
           <p class="ct-derived" id="ct-w-note"></p>
         </fieldset>
 
         <fieldset class="ct-group">
           <legend>Tower and fan</legend>
+          <div class="ct-seg ct-seg-sm" role="radiogroup" aria-label="Tower model">
+            <label><input type="radio" name="model" value="app"><span>Fixed approach</span></label>
+            <label><input type="radio" name="model" value="ntu"><span>Rated tower (&epsilon;-NTU)</span></label>
+          </div>
+          <p class="ct-derived ct-model-note" id="ct-model-note"></p>
           <label class="ct-field">Tower size (rated at 95/85/78 &deg;F)
             <select id="ct-size"></select>
           </label>
           <div id="ctl-t"></div>
+          <div class="ct-seg ct-seg-sm" id="ct-fcseg" role="radiogroup" aria-label="Fan control">
+            <label><input type="radio" name="fc" value="N"><span>Set the fan speed</span></label>
+            <label><input type="radio" name="fc" value="sp"><span>Hold a cold water setpoint</span></label>
+          </div>
+          <div id="ctl-t2"></div>
           <p class="ct-derived" id="ct-t-note"></p>
         </fieldset>
 
@@ -256,16 +277,25 @@ description: Interactive cooling tower simulator for HVAC condenser water. Chang
           <label class="ct-field">Load an example
             <select id="ct-example">
               <option value="">Choose an example&hellip;</option>
-              <option value="default">Rating point: 95 &deg;F hot water, 78 &deg;F wet bulb (default)</option>
-              <option value="okla">Oklahoma summer afternoon: 98 &deg;F, 40% RH</option>
-              <option value="desert">Hot, dry desert afternoon: 110 &deg;F, 12% RH</option>
-              <option value="humid">Hot, humid Gulf Coast afternoon: 92 &deg;F, 65% RH</option>
-              <option value="spring">Mild spring day, fan slowed to 75%</option>
-              <option value="plume">Cool, humid morning: a visible plume</option>
-              <option value="winter">Winter free cooling at reduced flow</option>
-              <option value="lowfan">Fan slowed too far: not enough air</option>
-              <option value="cycles">Poor water quality: 2 cycles of concentration</option>
-              <option value="denver">The same tower in Denver (5,280 ft)</option>
+              <optgroup label="Fixed approach">
+                <option value="default">Rating point: 95 &deg;F hot water, 78 &deg;F wet bulb (default)</option>
+                <option value="okla">Oklahoma summer afternoon: 98 &deg;F, 40% RH</option>
+                <option value="desert">Hot, dry desert afternoon: 110 &deg;F, 12% RH</option>
+                <option value="humid">Hot, humid Gulf Coast afternoon: 92 &deg;F, 65% RH</option>
+                <option value="spring">Mild spring day, fan slowed to 75%</option>
+                <option value="plume">Cool, humid morning: a visible plume</option>
+                <option value="winter">Winter free cooling at reduced flow</option>
+                <option value="lowfan">Fan slowed too far: not enough air</option>
+                <option value="cycles">Poor water quality: 2 cycles of concentration</option>
+                <option value="denver">The same tower in Denver (5,280 ft)</option>
+              </optgroup>
+              <optgroup label="Rated tower (&epsilon;-NTU)">
+                <option value="ntu-fan">Fan slowed to 60%: the approach grows</option>
+                <option value="ntu-mild">Mild day: the fan holds 85 &deg;F at part speed</option>
+                <option value="ntu-part">Part load: 300 tons on a 500-ton tower</option>
+                <option value="ntu-humid">Humid day: the 85 &deg;F setpoint is missed</option>
+                <option value="ntu-winter">Winter: fan at its minimum speed</option>
+              </optgroup>
             </select>
           </label>
           <div class="ct-buttons">
@@ -335,32 +365,34 @@ description: Interactive cooling tower simulator for HVAC condenser water. Chang
 <section class="section section-alt ct-doc" id="equations">
   <div class="container">
     <div class="section-head"><h2>How the simulator works</h2></div>
-    <p class="measure">Warm condenser water from the chiller (state 1) is sprayed over the fill at the top of the tower and falls against the outdoor air (state 3) that the fan draws in at the bottom. A small part of the water evaporates; that takes heat from the rest, which collects in the basin and goes back to the chiller cooler (state 2). The air leaves at the top warmer and nearly saturated (state 4), and makeup water (state 5) replaces what was lost. The simulator writes the mass and energy balances of the Chapter 12 slides per kilogram of dry air, with the moist-air properties of <code>Psychrometricsnew.m</code>.</p>
+    <p class="measure">Warm condenser water from the chiller (state 1) is sprayed over the fill at the top of the tower and falls against the outdoor air (state 3) that the fan draws in at the bottom. A small part of the water evaporates; that takes heat from the rest, which collects in the basin and goes back to the chiller cooler (state 2). The air leaves at the top warmer and nearly saturated (state 4), and makeup water (state 5) replaces what was lost. The simulator writes the mass and energy balances of the Chapter 12 slides per kilogram of dry air, with the moist-air properties of <code>Psychrometricsnew.m</code>. The cold water temperature comes either from an approach to the wet bulb that you choose, or from an &epsilon;-NTU model of a rated tower.</p>
 
     <h3 style="margin-top:28px">Equations</h3>
     <table class="ct-eqs">
       <tr><th>Outdoor air, state 3<small>From <i>T</i><sub>3</sub> and &phi;<sub>3</sub> (or the wet bulb): humidity ratio, enthalpy per kg of dry air and wet-bulb temperature <i>T</i>*, as in <code>Psychrometricsnew.m</code> (ASHRAE eqs. 6, 22, 32 and 35).</small></th><td><div class="tex-d" data-tex="W=0.621945\,\frac{\phi\,p_{ws}(T)}{p-\phi\,p_{ws}(T)},\qquad h=1.006\,T+W\left(2501+1.86\,T\right)\ \mathrm{kJ/kg}"></div></td></tr>
-      <tr><th>Cold water, state 2<small>The approach is how close the tower brings the water to the outdoor wet bulb, the lowest temperature evaporation can reach. The range is the cooling of the water.</small></th><td><div class="tex-d" data-tex="T_2=T^{*}_3+\mathrm{approach},\qquad \mathrm{range}=T_1-T_2,\qquad \varepsilon=\frac{T_1-T_2}{T_1-T^{*}_3}"></div></td></tr>
-      <tr><th>Heat rejected<small>The chiller&rsquo;s condenser heat, carried by the water. In US units 1 gal/min of water is 500 lb/h; a cooling-tower ton is 15,000 Btu/h (one ton of cooling plus the compressor work).</small></th><td><div class="tex-d" data-tex="\dot Q=\dot m_w\left(h_{f1}-h_{f2}\right)=\dot m_w\,c_p\left(T_1-T_2\right),\qquad \dot Q\,[\mathrm{Btu/h}]\approx500\,\dot V[\mathrm{gal/min}]\,\Delta T[^{\circ}\mathrm{F}]"></div></td></tr>
+      <tr><th>Cold water, state 2: fixed approach<small>The approach is how close the tower brings the water to the outdoor wet bulb, the lowest temperature evaporation can reach. The range is the cooling of the water.</small></th><td><div class="tex-d" data-tex="T_2=T^{*}_3+\mathrm{approach},\qquad \mathrm{range}=T_1-T_2,\qquad \varepsilon=\frac{T_1-T_2}{T_1-T^{*}_3}"></div></td></tr>
+      <tr><th>Cold water, state 2: rated tower (&epsilon;-NTU)<small>Braun, Klein and Mitchell (1989). Between the water temperatures the saturation enthalpy is taken as a straight line of slope <i>c</i><sub>s</sub>, so the tower acts like a counterflow heat exchanger between the air and the water (compare the heat exchanger simulator). The fill&rsquo;s NTU is fitted at the rating point and changes with the water-to-air ratio (<i>n</i> &asymp; 0.6 is typical). <i>T</i><sub>2</sub> then follows from the energy balance below.</small></th><td><div class="tex-d" data-tex="c_s=\frac{h_s(T_1)-h_s(T_2)}{T_1-T_2},\qquad m^{*}=\frac{\dot m_a\,c_s}{\dot m_w\,c_p},\qquad \mathrm{NTU}=c\left(\frac{\dot m_w}{\dot m_a}\right)^{1-n}"></div><div class="tex-d" data-tex="\varepsilon_a=\frac{1-e^{-\mathrm{NTU}\,(1-m^{*})}}{1-m^{*}\,e^{-\mathrm{NTU}\,(1-m^{*})}},\qquad h_4=h_3+\varepsilon_a\left[h_s(T_1)-h_3\right]"></div></td></tr>
+      <tr><th>Heat rejected<small>The chiller&rsquo;s condenser heat, carried by the water. In US units 1 gal/min of water is 500 lb/h; a cooling-tower ton is 15,000 Btu/h (one ton of cooling plus the compressor work). When you enter the heat load instead of <i>T</i><sub>1</sub>, the range follows from it and <i>T</i><sub>1</sub> = <i>T</i><sub>2</sub> + range.</small></th><td><div class="tex-d" data-tex="\dot Q=\dot m_w\left(h_{f1}-h_{f2}\right)=\dot m_w\,c_p\left(T_1-T_2\right),\qquad \dot Q\,[\mathrm{Btu/h}]\approx500\,\dot V[\mathrm{gal/min}]\,\Delta T[^{\circ}\mathrm{F}]"></div></td></tr>
       <tr><th>Mass balances<small>Slides: the dry air passes through; the evaporated water leaves with the air and is replaced by makeup.</small></th><td><div class="tex-d" data-tex="\dot m_{a3}=\dot m_{a4}=\dot m_a,\qquad \dot m_5=\dot m_a\left(\omega_4-\omega_3\right)"></div></td></tr>
       <tr><th>Energy balance and exit air, state 4<small>Steady flow, no heat loss, fan work neglected (Example 12.15). The exit air is assumed saturated (&phi;<sub>4</sub> = 100%, adjustable), which fixes <i>T</i><sub>4</sub> and &omega;<sub>4</sub>.</small></th><td><div class="tex-d" data-tex="0=\dot m_w\left(h_{f1}-h_{f2}\right)+\dot m_a\left(h_3-h_4\right)+\dot m_5\,h_{f5}"></div><div class="tex-d" data-tex="h_4-h_3-\left(\omega_4-\omega_3\right)h_{f5}=\frac{\dot Q}{\dot m_a}"></div></td></tr>
-      <tr><th>Fan<small>The fan moves a volume of air measured at the fan, in the exit air. Fan laws at fan speed <i>N</i>: airflow &prop; <i>N</i>, pressure &prop; <i>N</i><sup>2</sup>, power &prop; <i>N</i><sup>3</sup>.</small></th><td><div class="tex-d" data-tex="\dot m_a=\frac{\dot V}{v_4},\qquad \dot V=N\,\dot V_d,\qquad \dot W_{fan}=\frac{\dot V\,\Delta p}{\eta}=N^3\,\dot W_{fan,d}"></div></td></tr>
+      <tr><th>Fan<small>The fan moves a volume of air measured at the fan, in the exit air. Fan laws at fan speed <i>N</i>: airflow &prop; <i>N</i>, pressure &prop; <i>N</i><sup>2</sup>, power &prop; <i>N</i><sup>3</sup>. To hold a cold water setpoint, the rated tower finds the speed (30 to 100%) at which <i>T</i><sub>2</sub> equals the setpoint.</small></th><td><div class="tex-d" data-tex="\dot m_a=\frac{\dot V}{v_4},\qquad \dot V=N\,\dot V_d,\qquad \dot W_{fan}=\frac{\dot V\,\Delta p}{\eta}=N^3\,\dot W_{fan,d}"></div></td></tr>
       <tr><th>Water use<small>Drift: droplets carried out with the air, a small fraction <i>d</i> of the circulating water. Blowdown keeps the dissolved minerals at <i>C</i> times their level in the makeup water (cycles of concentration).</small></th><td><div class="tex-d" data-tex="E=\dot m_a\left(\omega_4-\omega_3\right),\qquad D=d\,\dot m_w,\qquad B=\frac{E}{C-1}-D,\qquad M=E+D+B"></div></td></tr>
-      <tr><th>Is there enough air?<small>Heat and water move from the water surface (saturated air at the water temperature, <i>h</i><sub>s</sub>) to the air (<i>h</i><sub>a</sub>). The air line must stay below the saturation curve; the Merkel number shows how large a tower that takes.</small></th><td><div class="tex-d" data-tex="h_s(T_w)-h_a>0,\qquad \frac{KaV}{\dot m_w}=\int_{T_2}^{T_1}\frac{c_p\,dT_w}{h_s(T_w)-h_a}"></div></td></tr>
+      <tr><th>Is there enough air?<small>Heat and water move from the water surface (saturated air at the water temperature, <i>h</i><sub>s</sub>) to the air (<i>h</i><sub>a</sub>). The air line must stay below the saturation curve; the Merkel number shows how large a tower that takes. For the rated tower the same integral checks the &epsilon;-NTU answer against the curved saturation line; its own Merkel number is NTU&middot;<i>&#7745;</i><sub>a</sub>/<i>&#7745;</i><sub>w</sub>.</small></th><td><div class="tex-d" data-tex="h_s(T_w)-h_a>0,\qquad \frac{KaV}{\dot m_w}=\int_{T_2}^{T_1}\frac{c_p\,dT_w}{h_s(T_w)-h_a}"></div></td></tr>
     </table>
-    <p class="small muted">Moist-air properties from the ASHRAE <i>Handbook&mdash;Fundamentals</i> (2013, SI), chapter 1, as coded in <code>Psychrometricsnew.m</code>; balances as in Moran &amp; Shapiro, <i>Fundamentals of Engineering Thermodynamics</i>, chapter 12; driving force and tower characteristic after Merkel, as in the ASHRAE <i>Handbook&mdash;HVAC Systems and Equipment</i>, cooling towers chapter.</p>
+    <p class="small muted">Moist-air properties from the ASHRAE <i>Handbook&mdash;Fundamentals</i> (2013, SI), chapter 1, as coded in <code>Psychrometricsnew.m</code>; balances as in Moran &amp; Shapiro, <i>Fundamentals of Engineering Thermodynamics</i>, chapter 12; driving force and tower characteristic after Merkel, as in the ASHRAE <i>Handbook&mdash;HVAC Systems and Equipment</i>, cooling towers chapter; rated tower after J.&nbsp;E. Braun, S.&nbsp;A. Klein and J.&nbsp;W. Mitchell, &ldquo;Effectiveness models for cooling towers and cooling coils,&rdquo; <i>ASHRAE Transactions</i> 95(2), 1989.</p>
 
     <h3 style="margin-top:28px">The tower in this simulator, and good habits</h3>
     <div class="ct-twocol">
       <ul>
-        <li><strong>The approach is an input.</strong> Real towers reach a larger approach when the air is cooler, the water flow higher or the fan slower. Here you set it, and the simulator checks that the air can carry the heat away: if the air line crosses the saturation curve, the approach is impossible at that airflow.</li>
-        <li><strong>Tower size.</strong> Each tower is rated for 3 gal/min of water per ton, cooled from 95 &deg;F to 85 &deg;F with a 78 &deg;F wet bulb (the usual rating point), at the design water-to-air ratio <i>L</i>/<i>G</i>. That fixes its full-speed airflow and fan power.</li>
+        <li><strong>Two tower models.</strong> With a <em>fixed approach</em> you choose how close the cold water comes to the wet bulb, as when sizing a tower, and the simulator checks that the air can carry the heat away: if the air line crosses the saturation curve, the approach is impossible at that airflow. The <em>rated tower</em> (&epsilon;-NTU) is the other problem: the tower is given, and the approach becomes a result that grows when the air is cooler, the water flow higher or the fan slower.</li>
+        <li><strong>Tower size.</strong> Each tower is rated for 3 gal/min of water per ton, cooled from 95 &deg;F to 85 &deg;F with a 78 &deg;F wet bulb (the usual rating point), at the design water-to-air ratio <i>L</i>/<i>G</i>. That fixes its full-speed airflow and fan power, and for the rated tower the NTU of its fill.</li>
+        <li><strong>Fan control.</strong> Most towers have a variable-speed fan that holds the cold water at a setpoint. The fan power falls with the cube of the speed, so running slower on mild days saves most of it; below about 30% speed the fan cycles on and off instead.</li>
         <li><strong>Why evaporation, not heat transfer to the air?</strong> On a hot day the air can be warmer than the water, yet the water still cools: evaporating 1 kg of water takes about 2,400 kJ, so roughly 1% of the flow evaporates for every 10 &deg;F (5.6 &deg;C) of range.</li>
       </ul>
       <ul>
         <li><strong>Plume.</strong> The warm, saturated exit air mixes with the outdoor air along a straight line on the chart (adiabatic mixing, as in the slides). If that line crosses the saturation curve, water condenses into the visible fog seen above towers on cool mornings.</li>
         <li><strong>Water treatment.</strong> Evaporation leaves the minerals behind. More cycles of concentration mean less blowdown and makeup, but more scale and corrosion risk.</li>
-        <li><strong>Assumptions.</strong> Steady flow, no heat loss, liquid water with <i>c</i><sub>p</sub> = 4.186 kJ/kg&middot;K (1 Btu/lb&middot;&deg;F), 8.33 lb per gallon, fan work and drift left out of the energy balance, fan efficiency constant over speed.</li>
+        <li><strong>Assumptions.</strong> Steady flow, no heat loss, liquid water with <i>c</i><sub>p</sub> = 4.186 kJ/kg&middot;K (1 Btu/lb&middot;&deg;F), 8.33 lb per gallon, fan work and drift left out of the energy balance, fan efficiency constant over speed. The &epsilon;-NTU model also treats the saturation curve as straight between the water temperatures, which is good for HVAC ranges of 5 to 15 &deg;F and poorer for much wider ones.</li>
       </ul>
     </div>
   </div>
@@ -378,6 +410,9 @@ description: Interactive cooling tower simulator for HVAC condenser water. Chang
       <li>Lower the approach from 10 &deg;F to 4 &deg;F at the rating point and watch the Merkel number <i>KaV</i>/<i>L</i>. Why do small approaches need very large towers?</li>
       <li>Move the same tower to Denver. Why does the fan move less dry air there, and what happens to the exit air and the water use?</li>
       <li>Run the MATLAB lines under the step-by-step solution and reproduce <i>T</i><sub>4</sub> and the makeup water with <code>Psychrometricsnew.m</code>.</li>
+      <li>Choose <em>Rated tower (&epsilon;-NTU)</em> at the rating point and slow the fan from 100% to 30% in steps of 10%. Record the cold water temperature, the heat rejected and the fan power. Why does the approach grow, and why does the heat rejected fall?</li>
+      <li>Load <em>Part load</em> and switch between holding the 85 &deg;F setpoint and running the fan at full speed. How much colder is the water at full speed, and how much more fan power does it take? A colder condenser water also lowers the chiller&rsquo;s compressor power.</li>
+      <li>For the rated tower, compare its Merkel number NTU&middot;<i>&#7745;</i><sub>a</sub>/<i>&#7745;</i><sub>w</sub> with the exact integral under the curved saturation line (panel <em>Heat, airflow and fan</em>). Then raise the hot water toward 140 &deg;F. Why does the straight-line saturation curve become a poorer approximation?</li>
     </ol>
     <p class="ct-credit">Calculation engine: a JavaScript port of the MATLAB functions <code>Psychrometricsnew.m</code> and <code>psychplotting.m</code> used in MAE 3524. Property equations: ASHRAE <i>Handbook&mdash;Fundamentals</i> (2013), chapter 1. Questions or suggestions: <a href="mailto:sallam@okstate.edu">sallam@okstate.edu</a>.</p>
   </div>
@@ -462,13 +497,17 @@ function exitAir(G, Q, h3, W3, phi4, T5, P) {
 }
 
 /* The tower itself: sized for GPM_TON gal/min per ton at the rating point, with the design L/G.
-   The fan moves the design airflow V (m³/s, measured at the fan, i.e. in the exit air) at full speed. */
+   The fan moves the design airflow V (m³/s, measured at the fan, i.e. in the exit air) at full speed.
+   For the ε-NTU model the same rating point fixes the fill: its effectiveness there gives the design NTU,
+   and NTU = c (mw/ma)^(1 - n) carries it to other water and air flows. */
 function design(o) {
   var P = 101.325, L = GPM_TON * o.tons * KGS_GPM, G = L / o.LG;
   var W3 = WofTwb(RATE.T3, RATE.Twb, P), h3 = hOf(RATE.T3, W3);
   var s4 = exitAir(G, L * CL * (RATE.T1 - RATE.T2), h3, W3, 100, RATE.T5, P);
-  var V = G * s4.v;
-  return { gpm: GPM_TON * o.tons, L: L, G: G, V: V, Pfan: V * o.dp / (o.eta / 100) / 1000, T4: s4.T, v4: s4.v };
+  var V = G * s4.v, n = o.nx === undefined ? 0.6 : o.nx;
+  var cs = csat(RATE.T1, RATE.T2, P), ms = G * cs / (L * CL), ea = (s4.h - h3) / (hsat(RATE.T1, P) - h3), NTU = ntuCF(ea, ms);
+  return { gpm: GPM_TON * o.tons, L: L, G: G, V: V, Pfan: V * o.dp / (o.eta / 100) / 1000, T4: s4.T, v4: s4.v, h3: h3, h4: s4.h,
+    cs: cs, ms: ms, ea: ea, NTU: NTU, n: n, c: NTU / Math.pow(o.LG, 1 - n) };
 }
 
 /* Dry-air flow and exit state for a fan airflow V: G = V / v4, iterated because v4 depends on G */
@@ -504,15 +543,18 @@ function gmin(f, a, b) {
   if (fb < best.f) best = { x: b, f: fb };
   return best;
 }
-/* Merkel number KaV/L = ∫ cp dTw / (hs - ha), adaptive Simpson's rule */
+/* Merkel number KaV/L = ∫ cp dTw / (hs - ha), adaptive Simpson's rule. Near a pinch the integrand grows steeply at one end;
+   the tolerance is not halved below 1e-15 and the work is capped, so rounding noise cannot drive endless refinement. */
 function merkel(T2, T1, h3, h4, P) {
-  var line = opLine(T2, T1, h3, h4), f = function (T) { return CL / (hsat(T, P) - line(T)); };
+  var line = opLine(T2, T1, h3, h4), f = function (T) { return CL / (hsat(T, P) - line(T)); }, cnt = 0;
   var simp = function (a, b, fa, fm, fb) { return (b - a) / 6 * (fa + 4 * fm + fb); };
   var rec = function (a, b, fa, fm, fb, whole, tol, depth) {
     var m = 0.5 * (a + b), lm = 0.5 * (a + m), rm = 0.5 * (m + b), flm = f(lm), frm = f(rm);
     var left = simp(a, m, fa, flm, fm), right = simp(m, b, fm, frm, fb), d = left + right - whole;
-    if (depth <= 0 || Math.abs(d) <= 15 * tol) return left + right + d / 15;
-    return rec(a, m, fa, flm, fm, left, tol / 2, depth - 1) + rec(m, b, fm, frm, fb, right, tol / 2, depth - 1);
+    cnt += 2;
+    if (depth <= 0 || Math.abs(d) <= 15 * tol || cnt > 40000) return left + right + d / 15;
+    tol = Math.max(tol / 2, 1e-15);
+    return rec(a, m, fa, flm, fm, left, tol, depth - 1) + rec(m, b, fm, frm, fb, right, tol, depth - 1);
   };
   var n = 8, d = (T1 - T2) / n, s = 0, i;
   for (i = 0; i < n; i++) {
@@ -522,32 +564,168 @@ function merkel(T2, T1, h3, h4, P) {
   return s;
 }
 
+/* ===== ε-NTU model of a rated tower (Braun, Klein and Mitchell 1989) =====
+   Between the water temperatures the saturation enthalpy hs(Tw) is replaced by a straight line of slope cs. The tower
+   then works like a counterflow heat exchanger between the air (capacity ma) and the water (capacity mw cp/cs, in
+   enthalpy units): the air-side effectiveness ea = (h4 - h3)/(hs(T1) - h3) follows from NTU = hD aV/ma and the capacity
+   ratio m* = ma cs/(mw cp). The fill's NTU is fitted at the rating point (design) and NTU = c (mw/ma)^(1 - n). */
+var TMAX = 60, NMIN = 30;                        // hottest condenser water on the page (°C, 140 °F); lowest fan speed (%)
+function epsCF(N, m) {                           // counterflow effectiveness of the stream whose capacity is m times the other's
+  if (Math.abs(1 - m) < 1e-12) return N / (1 + N);
+  var p = -Math.expm1(-N * Math.abs(1 - m));
+  return m < 1 ? p / (1 - m + m * p) : p / (m - 1 + p);
+}
+function ntuCF(e, m) {                           // the inverse: NTU from the effectiveness
+  if (Math.abs(1 - m) < 1e-12) return e / (1 - e);
+  return Math.log1p(e * (1 - m) / (1 - e)) / (1 - m);
+}
+function csat(T1, T2, P) {                       // slope of the straight line through hs(T2) and hs(T1), kJ/kg·K
+  return T1 - T2 > 1e-6 ? (hsat(T1, P) - hsat(T2, P)) / (T1 - T2) : (hsat(T1 + 1e-4, P) - hsat(T1 - 1e-4, P)) / 2e-4;
+}
+/* Root of an increasing or decreasing f on [a, b] where f changes sign: regula falsi with the Illinois fix, which converges
+   much faster than bisection for these smooth functions. Without a sign change it returns the end where |f| is smaller. */
+function rootIll(f, a, b, tol) {
+  var fa = f(a), fb = f(b), c, fc, side = 0, i;
+  if (fa === 0) return a;
+  if (fb === 0) return b;
+  if ((fa < 0) === (fb < 0)) return Math.abs(fa) <= Math.abs(fb) ? a : b;
+  for (i = 0; i < 200; i++) {
+    c = (fa * b - fb * a) / (fa - fb);
+    if (!(c > Math.min(a, b) && c < Math.max(a, b))) c = 0.5 * (a + b);
+    fc = f(c);
+    if (fc === 0) return c;
+    if ((fc < 0) === (fb < 0)) { b = c; fb = fc; if (side === -1) fa *= 0.5; side = -1; }
+    else { a = c; fa = fc; if (side === 1) fb *= 0.5; side = 1; }
+    if (Math.abs(b - a) <= tol) break;
+  }
+  return Math.abs(fa) <= Math.abs(fb) ? a : b;
+}
+/* Moist air at the exit relative humidity with enthalpy h (state 4 once h4 is known). h rises with T; the search starts
+   from the last answer (cx.T4), widening the bracket until it holds the root. */
+function airAtH(h, cx) {
+  var P = cx.P, f = cx.f, g = function (t) { return hOf(t, wOfPw(f * pws(t), P)) - h; };
+  var t0 = Math.min(Math.max(cx.T4, -59), cx.hiT - 1), a = t0 - 0.25, b = t0 + 0.25, w = 0.25, T;
+  while (g(a) > 0 && a > -60) { w *= 4; a = Math.max(-60, t0 - w); }
+  w = 0.25;
+  while (g(b) < 0 && b < cx.hiT) { w *= 4; b = Math.min(cx.hiT, t0 + w); }
+  T = rootIll(g, a, b, 1e-13);
+  cx.T4 = T;
+  var W = wOfPw(f * pws(T), P);
+  return { T: T, W: W, h: hOf(T, W), v: vOf(T, W, P) };
+}
+/* Air side for water in at T1 and out at T2 and a fan airflow V: dry air ma = V/v4 (iterated, v4 depends on ma), the fill's
+   NTU, m*, the effectiveness and the exit air. Q is the heat the air takes from the water, from the slides' energy balance. */
+function ntuAir(V, T1, T2, cx) {
+  var P = cx.P, s3 = cx.s3, d = cx.d, mw = cx.mw, hs1 = hsat(T1, P), cs = csat(T1, T2, P);
+  var at = function (G) {
+    var NTU = d.c * Math.pow(mw / G, 1 - d.n), ms = G * cs / (mw * CL), ea = epsCF(NTU, ms), h4 = s3.h + ea * (hs1 - s3.h), s4 = airAtH(h4, cx);
+    return { G: G, NTU: NTU, ms: ms, ea: ea, cs: cs, hs1: hs1, s4: s4, Q: G * (h4 - s3.h - (s4.W - s3.W) * cx.hf5) };
+  };
+  var G = V / cx.v4, o = at(G), k, G2;            // start from the last exit-air volume
+  for (k = 0; k < 60; k++) {
+    G2 = V / o.s4.v;
+    if (Math.abs(G2 - G) <= 1e-14 * G) break;
+    G = G2; o = at(G);
+  }
+  cx.v4 = o.s4.v;
+  return o;
+}
+/* Cold water for a fan airflow V. With the hot water given, Q(T2) = mw cp (T1 - T2); with the heat load given,
+   T1 = T2 + range and Q(T2) = load. Either way the residual rises with T2, so it has one root. */
+function ntuT2(V, cx) {
+  var lo = Thsat(cx.s3.h, cx.P) - 5, hi, res, R = cx.R, T1 = cx.T1;
+  if (cx.load) {
+    hi = TMAX - R;
+    res = function (T2) { return ntuAir(V, T2 + R, T2, cx).Q - cx.mw * CL * R; };
+    if (!(hi > lo) || res(hi) < 0) return NaN;       // even 140 °F water cannot reject this load
+  } else {
+    hi = T1;
+    res = function (T2) { return ntuAir(V, T1, T2, cx).Q - cx.mw * CL * (T1 - T2); };
+  }
+  return rootIll(res, lo, hi, 1e-12);
+}
+/* Fan speed (VFD) that holds the cold water at the setpoint: the heat the air takes rises with the airflow */
+function ntuSpeed(cx, T2sp) {
+  var T1 = cx.load ? T2sp + cx.R : cx.T1, Qt = cx.mw * CL * (T1 - T2sp), Vd = cx.d.V;
+  var res = function (N) { return ntuAir(N / 100 * Vd, T1, T2sp, cx).Q - Qt; };
+  if (!(T1 - T2sp > 0.05)) return { status: 'min', N: NMIN, Nreq: 0 };        // the water is already at or below the setpoint
+  if (cx.load && T1 > TMAX) return { status: 'hot', N: NMIN };
+  var r100 = res(100), r30;
+  if (r100 < 0) return r100 > -2e-3 * Qt ? { status: 'held', N: 100, edge: true } : { status: 'max', N: 100 };   // within 0.2% of the heat counts as held
+  r30 = res(NMIN);
+  if (r30 > 0) return r30 < 2e-3 * Qt ? { status: 'held', N: NMIN, edge: true } : { status: 'min', N: NMIN, Nreq: res(1) > 0 ? 0 : rootIll(res, 1, NMIN, 1e-11) };
+  return { status: 'held', N: rootIll(res, NMIN, 100, 1e-11) };
+}
+/* The rated tower: cold water (and hot water, if the load is given) and fan speed, in r */
+function ntuTower(inp, r) {
+  var P = inp.P, f = inp.phi4 / 100;
+  var cx = { P: P, s3: r.s3, d: r.d, mw: r.mw, f: f, hf5: CL * inp.T5, hiT: Tsat(Math.min(0.95 * P / f, pws(150))),
+    load: inp.wk === 'Q', R: r.R0, T1: inp.T1, T4: r.s3.Twb + 5, v4: r.s3.v };
+  if (!cx.load && !(hsat(inp.T1, P) > r.s3.h + 1e-9)) { r.T1 = inp.T1; r.T2 = inp.T1; return 'nocool'; }
+  r.sp = null;
+  if (inp.fc === 'sp') {
+    r.sp = ntuSpeed(cx, inp.T2sp);
+    r.sp.T = inp.T2sp;
+    r.N = r.sp.N;
+  }
+  var V = r.N / 100 * r.d.V, T2;
+  if (r.sp && r.sp.status === 'held' && !r.sp.edge) T2 = inp.T2sp;
+  else T2 = ntuT2(V, cx);
+  if (!isFinite(T2)) { r.T2 = NaN; r.T1 = NaN; return 'hot'; }
+  if (r.sp && r.sp.status === 'hot') { r.sp.status = 'min'; r.sp.Nreq = NaN; }   // at the lowest speed the water is already colder
+  r.T2 = T2; r.T1 = cx.load ? T2 + cx.R : inp.T1;
+  if (cx.load && r.T1 > TMAX + 1e-9) return 'hot';
+  var a = ntuAir(V, r.T1, T2, cx);
+  r.nt = { NTU: a.NTU, ms: a.ms, ea: a.ea, cs: a.cs, hs1: a.hs1, G: a.G, s4: a.s4, Me: a.NTU * a.G / r.mw };
+  return '';
+}
+
 /* Full solution for one set of inputs (SI): P kPa, T3 °C, hk 'phi' or 'twb' with hv (% or °C), T1 °C, gpm,
-   app K, N %, tons, coc (cycles), drift (% of circulating flow), phi4 %, T5 °C, LG, dp Pa, eta % */
+   app K, N %, tons, coc (cycles), drift (% of circulating flow), phi4 %, T5 °C, LG, dp Pa, eta %.
+   Tower model: model 'app' (fixed approach, the default) or 'ntu' (rated tower, ε-NTU) with exponent nx.
+   Hot water: wk 'T1' (temperature T1) or 'Q' (heat load Qt, kW). Fan (ε-NTU only): fc 'N' (speed N) or 'sp' (setpoint T2sp). */
 function solveTower(inp) {
-  var P = inp.P, r = { inp: inp, P: P, ok: true, err: '' };
+  var P = inp.P, r = { inp: inp, P: P, ok: true, err: '', model: inp.model === 'ntu' ? 'ntu' : 'app', load: inp.wk === 'Q' };
   var W3 = inp.hk === 'twb' ? WofTwb(inp.T3, inp.hv, P) : Wphi(inp.T3, inp.hv, P);
   var s3 = props(inp.T3, W3, P);
-  r.s3 = s3; r.T1 = inp.T1; r.T5 = inp.T5;
-  r.T2 = s3.Twb + inp.app;
-  r.range = inp.T1 - r.T2;
+  r.s3 = s3; r.T5 = inp.T5;
   r.d = design(inp);
   r.mw = inp.gpm * KGS_GPM;
-  var n = inp.N / 100;
+  r.R0 = r.load ? inp.Qt / (r.mw * CL) : NaN;                                 // range the heat load sets
+  r.N = inp.N;
+  var fail = function (e) {
+    var n = r.N / 100;
+    r.V = n * r.d.V; r.dp = n * n * inp.dp; r.Pfan = n * n * n * r.d.Pfan;
+    r.ok = false; r.err = e; r.range = r.T1 - r.T2; r.Q = r.load ? inp.Qt : NaN;
+    return r;
+  };
+  if (r.model === 'ntu') {
+    var e = ntuTower(inp, r);
+    if (e) return fail(e);
+  } else {
+    r.T2 = s3.Twb + inp.app;
+    r.T1 = r.load ? r.T2 + r.R0 : inp.T1;
+  }
+  r.range = r.T1 - r.T2;
+  var n = r.N / 100;
   r.V = n * r.d.V; r.dp = n * n * inp.dp; r.Pfan = n * n * n * r.d.Pfan;     // fan laws
-  if (r.T2 < 1) { r.ok = false; r.err = 'freeze'; return r; }
-  if (!(r.range > 0.05)) { r.ok = false; r.err = 'nocool'; return r; }
+  if (r.load && r.T1 > TMAX + 1e-9) return fail('hot');
+  if (r.T2 < 1) return fail('freeze');
+  if (!(r.range > 0.05)) return fail('nocool');
   r.Q = r.mw * CL * r.range;                                                 // kW, = mw (hf1 - hf2)
-  r.eff = r.range / (inp.T1 - s3.Twb);
-  var a = airSide(r.V, r.Q, s3, inp.phi4, inp.T5, P);
-  if (!a) { r.ok = false; r.err = 'air'; r.Nmin = minSpeed(inp, s3, r); return r; }
-  r.G = a.G; r.s4 = props(a.s4.T, a.s4.W, P);
+  r.eff = r.range / (r.T1 - s3.Twb);
+  if (r.model === 'ntu') { r.G = r.nt.G; r.s4 = props(r.nt.s4.T, r.nt.s4.W, P); }
+  else {
+    var a = airSide(r.V, r.Q, s3, inp.phi4, inp.T5, P);
+    if (!a) { r.ok = false; r.err = 'air'; r.Nmin = minSpeed(inp, s3, r); return r; }
+    r.G = a.G; r.s4 = props(a.s4.T, a.s4.W, P);
+  }
   r.LG = r.mw / r.G;
-  var mg = minGap(r.T2, inp.T1, s3.h, r.s4.h, P);
+  var mg = minGap(r.T2, r.T1, s3.h, r.s4.h, P);
   r.gmin = mg.g; r.Tpinch = mg.T;
   r.feasible = mg.g > 0;
-  r.Me = r.feasible ? merkel(r.T2, inp.T1, s3.h, r.s4.h, P) : Infinity;
-  r.Nmin = minSpeed(inp, s3, r);
+  r.Me = r.feasible ? merkel(r.T2, r.T1, s3.h, r.s4.h, P) : Infinity;
+  r.Nmin = r.model === 'app' ? minSpeed(inp, s3, r) : NaN;
   // water: evaporation (the slides' makeup m5 = ma (W4 - W3)), drift, blowdown, total makeup
   r.E = r.G * (r.s4.W - s3.W);
   r.D = inp.drift / 100 * r.mw;
@@ -562,7 +740,7 @@ function solveTower(inp) {
    stays below the saturation curve has slope s* = min (hs(T) - h3)/(T - T2); it fixes the largest exit
    enthalpy h4 and so the smallest dry-air flow, from the energy balance. */
 function minSpeed(inp, s3, r) {
-  var P = inp.P, T2 = r.T2, T1 = inp.T1, h3 = s3.h, f = inp.phi4 / 100, hf5 = CL * inp.T5;
+  var P = inp.P, T2 = r.T2, T1 = r.T1, h3 = s3.h, f = inp.phi4 / 100, hf5 = CL * inp.T5;
   if (!(r.Q > 0)) return 0;
   var sl = gmin(function (T) { return (hsat(T, P) - h3) / (T - T2); }, T2 + 1e-6 * (T1 - T2), T1);
   var h4 = h3 + sl.f * (T1 - T2);
@@ -688,7 +866,8 @@ function tcol(T) {
   return 'rgb(' + Math.round(a[0] + f * (b[0] - a[0])) + ',' + Math.round(a[1] + f * (b[1] - a[1])) + ',' + Math.round(a[2] + f * (b[2] - a[2])) + ')';
 }
 function setScale(r) {
-  var a = [r.T1, r.s3.T];
+  var a = [r.s3.T];
+  if (isFinite(r.T1)) a.push(r.T1);
   if (r.T2 >= 0) a.push(r.T2);
   if (r.ok) a.push(r.s4.T);
   var lo = Math.min.apply(null, a), hi = Math.max.apply(null, a), step = ip() ? 5 : 2.5;
@@ -700,20 +879,26 @@ function setScale(r) {
 var PK = { sea: 101.325, tulsa: 98.8, still: 98.1, denver: 83.4 };
 var SIZES = [100, 150, 200, 300, 400, 500, 750, 1000, 1500, 2000];
 var DEF = { u: 'ip', pk: 'sea', P: 101.325, T3: 35, hk: 'phi', hv: 47.3, T1: 35, gpm: 1500, app: 7 / 1.8, N: 100, tons: 500,
-  coc: 4, drift: 0.005, phi4: 100, T5: 20, LG: 1.2, dp: 0.7 * PA_INWG, eta: 60 };
+  coc: 4, drift: 0.005, phi4: 100, T5: 20, LG: 1.2, dp: 0.7 * PA_INWG, eta: 60,
+  model: 'app', wk: 'T1', Qt: 500 * KW_CTTON, fc: 'N', T2sp: 85 / 1.8 - 32 / 1.8, nx: 0.6 };
 var st = copy(DEF), anim = true;
 function pressure() { return st.pk === 'custom' ? st.P : PK[st.pk]; }
 function wbMin(T, P) { return wetBulb(T, Wphi(T, 5, P), P); }
+function ntu() { return st.model === 'ntu'; }
+function spMode() { return st.model === 'ntu' && st.fc === 'sp'; }
 function normalize() {
   var P = pressure();
   st.T3 = clamp(st.T3, 0, 50);
   if (st.hk === 'twb') st.hv = clamp(st.hv, wbMin(st.T3, P), st.T3); else st.hv = clamp(st.hv, 5, 100);
   if (SIZES.indexOf(st.tons) < 0) st.tons = 500;
   st.gpm = clamp(st.gpm, 0.25 * GPM_TON * st.tons, 1.5 * GPM_TON * st.tons);
+  st.Qt = clamp(st.Qt, 0.25 * st.tons * KW_CTTON, 1.5 * st.tons * KW_CTTON);
+  st.T2sp = clamp(st.T2sp, 10, 35); st.nx = clamp(st.nx, 0.3, 1);
 }
 function inputs() {
   return { P: pressure(), T3: st.T3, hk: st.hk, hv: st.hv, T1: st.T1, gpm: st.gpm, app: st.app, N: st.N, tons: st.tons,
-    coc: st.coc, drift: st.drift, phi4: st.phi4, T5: st.T5, LG: st.LG, dp: st.dp, eta: st.eta };
+    coc: st.coc, drift: st.drift, phi4: st.phi4, T5: st.T5, LG: st.LG, dp: st.dp, eta: st.eta,
+    model: st.model, wk: st.wk, Qt: st.Qt, fc: st.fc, T2sp: st.T2sp, nx: st.nx };
 }
 
 /* ----- Slider + number controls (values shown in the units on screen) ----- */
@@ -753,9 +938,11 @@ var cT3 = Ctl($('ctl-air'), 'T3', function (v) { st.T3 = tI(v); changed(); });
 var cHv = Ctl($('ctl-air2'), 'hv', function (v) { st.hv = st.hk === 'twb' ? tI(v) : v; changed(); });
 var cP = Ctl($('ctl-p'), 'P', function (v) { st.P = ip() ? v / PSI_KPA : v; changed(); });
 var cT1 = Ctl($('ctl-w'), 'T1', function (v) { st.T1 = tI(v); changed(); });
-var cG = Ctl($('ctl-w'), 'gpm', function (v) { st.gpm = v; changed(); });
+var cQ = Ctl($('ctl-w'), 'Qt', function (v) { st.Qt = ip() ? v * KW_CTTON : v; changed(); });
+var cG = Ctl($('ctl-w2'), 'gpm', function (v) { st.gpm = v; changed(); });
 var cApp = Ctl($('ctl-t'), 'app', function (v) { st.app = dI(v); changed(); });
-var cN = Ctl($('ctl-t'), 'N', function (v) { st.N = v; changed(); });
+var cN = Ctl($('ctl-t2'), 'N', function (v) { st.N = v; changed(); });
+var cSp = Ctl($('ctl-t2'), 'T2sp', function (v) { st.T2sp = tI(v); changed(); });
 var cC = Ctl($('ctl-wt'), 'coc', function (v) { st.coc = v; changed(); });
 var cD = Ctl($('ctl-wt'), 'drift', function (v) { st.drift = v; changed(); });
 var cPhi4 = Ctl($('ctl-more'), 'phi4', function (v) { st.phi4 = v; changed(); });
@@ -763,6 +950,7 @@ var cT5 = Ctl($('ctl-more'), 'T5', function (v) { st.T5 = tI(v); changed(); });
 var cLG = Ctl($('ctl-more'), 'LG', function (v) { st.LG = v; changed(); });
 var cDp = Ctl($('ctl-more'), 'dp', function (v) { st.dp = ip() ? v * PA_INWG : v; changed(); });
 var cEta = Ctl($('ctl-more'), 'eta', function (v) { st.eta = v; changed(); });
+var cNx = Ctl($('ctl-more'), 'nx', function (v) { st.nx = v; changed(); });
 
 function setRadio(name, v) { var el = document.querySelector('input[name="' + name + '"][value="' + v + '"]'); if (el) el.checked = true; }
 Array.prototype.forEach.call(document.querySelectorAll('input[name="u"]'), function (el) {
@@ -774,7 +962,31 @@ $('ct-hk').addEventListener('change', function () {
   changed();
 });
 $('ct-pk').addEventListener('change', function () { if (this.value === 'custom') st.P = pressure(); st.pk = this.value; changed(); });
-$('ct-size').addEventListener('change', function () { st.tons = +this.value; st.gpm = GPM_TON * st.tons; changed(); });
+$('ct-size').addEventListener('change', function () { st.tons = +this.value; st.gpm = GPM_TON * st.tons; st.Qt = st.tons * KW_CTTON; changed(); });
+/* Switching what is given keeps the state on screen: the value that was a result becomes the input */
+$('ct-wk').addEventListener('change', function () {
+  var r = last;
+  if (this.value === 'Q' && r && r.Q > 0) st.Qt = r.Q;
+  if (this.value === 'T1' && r && isFinite(r.T1)) st.T1 = clamp(r.T1, 10, 60);
+  st.wk = this.value; changed();
+});
+Array.prototype.forEach.call(document.querySelectorAll('input[name="model"]'), function (el) {
+  el.addEventListener('change', function () {
+    if (!el.checked) return;
+    var r = last;
+    if (el.value === 'app' && r && r.model === 'ntu' && r.ok) { st.app = clamp(r.T2 - r.s3.Twb, 5 / 9, 20); st.N = clamp(rnd(r.N, 1), 30, 100); }
+    st.model = el.value; changed();
+  });
+});
+Array.prototype.forEach.call(document.querySelectorAll('input[name="fc"]'), function (el) {
+  el.addEventListener('change', function () {
+    if (!el.checked) return;
+    var r = last;
+    if (el.value === 'sp' && r && r.ok) st.T2sp = clamp(r.T2, 10, 35);
+    if (el.value === 'N' && r) st.N = clamp(rnd(r.N, 1), 30, 100);
+    st.fc = el.value; changed();
+  });
+});
 $('tg-anim').addEventListener('change', function () { anim = this.checked; $('ct-svg').classList.toggle('ct-still', !anim); });
 var sizeKey = '';
 function buildSizes() {
@@ -787,6 +999,7 @@ function buildSizes() {
   }).join('');
 }
 function gstep(g) { return g <= 450 ? 1 : g <= 1500 ? 5 : 10; }
+function qstep(q) { return ip() ? (q <= 150 ? 1 : q <= 500 ? 5 : 10) : (q <= 660 ? 5 : q <= 2200 ? 10 : 50); }
 function syncControls(r) {
   setRadio('u', st.u); buildSizes();
   var P = r.P, dg = GPM_TON * st.tons, sfx = ip() ? 0.5 : 0.1;
@@ -803,14 +1016,23 @@ function syncControls(r) {
   cP.el.hidden = st.pk !== 'custom';
   cP.config('Pressure <span class="ct-sym">p</span>', ip() ? 'psia' : 'kPa', pD(60), pD(110), ip() ? 0.01 : 0.1, ip() ? 2 : 1, 'Atmospheric pressure');
   cP.show(pD(pressure()));
+  $('ct-wk').value = st.wk; setRadio('model', st.model); setRadio('fc', st.fc);
   cT1.config('Hot water temperature <span class="ct-sym">T<sub>1</sub></span>', TU(), tD(10), tD(60), sfx, 1, 'Hot water temperature from the chiller');
-  cT1.show(tD(st.T1));
+  cT1.show(tD(st.T1)); cT1.el.hidden = st.wk === 'Q';
+  var dq = st.tons * (ip() ? 1 : KW_CTTON);
+  cQ.config('Heat load from the chiller <span class="ct-sym">Q̇</span>', ip() ? 'tons' : 'kW', 0.25 * dq, 1.5 * dq, qstep(dq), 0, 'Heat the chiller rejects to the condenser water');
+  cQ.show(ip() ? st.Qt / KW_CTTON : st.Qt); cQ.el.hidden = st.wk !== 'Q';
   cG.config('Water flow', 'gal/min', 0.25 * dg, 1.5 * dg, gstep(dg), 0, 'Condenser water flow, gallons per minute');
   cG.show(st.gpm);
   cApp.config('Approach to the wet bulb <span class="ct-sym">T<sub>2</sub> − T*<sub>3</sub></span>', TU(), dD(5 / 9), dD(20), 0.1, 1, 'Approach to the wet-bulb temperature');
-  cApp.show(dD(st.app));
+  cApp.show(dD(st.app)); cApp.el.hidden = ntu();
+  $('ct-fcseg').hidden = !ntu();
   cN.config('Fan speed <span class="ct-sym">N</span>', '%', 30, 100, 1, 0, 'Fan speed in percent of full speed');
-  cN.show(st.N);
+  cN.show(st.N); cN.el.hidden = spMode();
+  cSp.config('Cold water setpoint <span class="ct-sym">T<sub>2,set</sub></span>', TU(), tD(10), tD(35), sfx, 1, 'Cold water setpoint');
+  cSp.show(tD(st.T2sp)); cSp.el.hidden = !spMode();
+  cNx.config('Fill exponent <span class="ct-sym"><i>n</i> in <i>KaV</i>/<i>L</i> ∝ (<i>L</i>/<i>G</i>)<sup>−<i>n</i></sup></span>', '', 0.3, 1, 0.05, 2, 'Fill exponent n of the rated tower');
+  cNx.show(st.nx); cNx.el.hidden = !ntu();
   cC.config('Cycles of concentration <span class="ct-sym">C</span>', 'cycles', 1.5, 10, 0.1, 1, 'Cycles of concentration');
   cC.show(st.coc);
   cD.config('Drift loss <span class="ct-sym">d</span>', '% of flow', 0, 0.2, 0.001, 3, 'Drift loss in percent of the circulating water');
@@ -850,11 +1072,23 @@ function drawNotesIn(r) {
   var s3 = r.s3, d = r.d;
   $('ct-air-note').innerHTML = (st.hk === 'twb' ? 'φ<sub>3</sub> = ' + fPhi(s3.phi) : 'Wet bulb <i>T</i>*<sub>3</sub> = ' + fT(s3.Twb)) +
     ' · dew point ' + fT(s3.Tdp) + '<br>ω<sub>3</sub> = ' + fW(s3.W) + ' · <i>h</i><sub>3</sub> = ' + fH(s3.h) + ' · <i>p</i> = ' + fPk(r.P);
-  $('ct-w-note').innerHTML = 'Water mass flow ' + fMass(r.mw) + '. The cold water returns at the wet bulb plus the approach: <i>T</i><sub>2</sub> = ' + fT(r.T2) + '.';
-  $('ct-t-note').innerHTML = 'At full speed the fan moves ' + fAir(d.V) + ' and uses ' + fPow(d.Pfan) + ' (' + fPow2(d.Pfan) + '). Design flow ' + fix(d.gpm, 0) + ' gal/min.';
+  var T1s = isFinite(r.T1) ? fT(r.T1) : '–', T2s = isFinite(r.T2) ? fT(r.T2) : '–', w = 'Water mass flow ' + fMass(r.mw) + '. ';
+  if (r.load) w += 'The load sets the range, <i>Q̇</i>/(<i>ṁ</i><sub>w</sub><i>c</i><sub>p</sub>) = ' + fdT(r.R0) + ', so the hot water arrives at <i>T</i><sub>1</sub> = ' + T1s + '.';
+  else w += r.model === 'ntu' ? 'The tower returns the cold water at <i>T</i><sub>2</sub> = ' + T2s + '.' : 'The cold water returns at the wet bulb plus the approach: <i>T</i><sub>2</sub> = ' + T2s + '.';
+  $('ct-w-note').innerHTML = w;
+  $('ct-model-note').innerHTML = r.model === 'ntu' ? 'The tower is given by its rating and the approach is a result. Its fill has NTU = ' + fix(d.NTU, 2) + ' at the rating point.'
+    : 'You choose the approach; the simulator checks that the air can carry the heat away.';
+  $('ct-t-note').innerHTML = 'At full speed the fan moves ' + fAir(d.V) + ' and uses ' + fPow(d.Pfan) + ' (' + fPow2(d.Pfan) + '). Design flow ' + fix(d.gpm, 0) + ' gal/min.' + (r.sp ? ' ' + spText(r) : '');
   $('ct-wt-note').innerHTML = 'Blowdown keeps the dissolved minerals at ' + fix(st.coc, 1) + ' times their level in the makeup water.';
   $('ct-more-note').innerHTML = 'Design point: ' + fix(d.gpm, 0) + ' gal/min cooled from 95 to 85 °F at a 78 °F wet bulb' + (ip() ? '' : ' (35 to 29.4 °C, 25.6 °C wet bulb)') + ', sea level, with <i>L</i>/<i>G</i> = ' + fix(st.LG, 2) +
-    '; the exit air there is ' + fT(d.T4) + '. Fan power at full speed <i>V̇</i>Δ<i>p</i>/η = ' + fPow(d.Pfan) + '.';
+    '; the exit air there is ' + fT(d.T4) + '. Fan power at full speed <i>V̇</i>Δ<i>p</i>/η = ' + fPow(d.Pfan) + '.' +
+    (r.model === 'ntu' ? ' Rated tower: there ε<sub>a</sub> = ' + fix(d.ea, 3) + ' and <i>m</i>* = ' + fix(d.ms, 3) + ', so the fill has NTU = ' + fix(d.NTU, 3) + '; elsewhere NTU = ' + fix(d.c, 3) + '(<i>ṁ</i><sub>w</sub>/<i>ṁ</i><sub>a</sub>)<sup>' + fix(1 - d.n, 2) + '</sup>.' : '');
+}
+function spText(r) {
+  var s = r.sp;
+  if (s.status === 'held') return r.N >= 99.95 ? 'Holding ' + fT(s.T) + ' takes full speed.' : 'The fan runs at ' + fix(r.N, 0) + '% to hold ' + fT(s.T) + '.';
+  if (s.status === 'max') return 'Even at full speed the water stays above the ' + fT(s.T) + ' setpoint.';
+  return 'The fan is at its 30% minimum, and the water is already colder than the ' + fT(s.T) + ' setpoint.';
 }
 
 /* ----- The tower picture: built once, then recolored and relabeled ----- */
@@ -984,8 +1218,8 @@ function profAt(prof, z, key) {
   return a[key] + clamp(f, 0, 1) * (b[key] - a[key]);
 }
 function updateTower(r) {
-  var svg = $('ct-svg'), ok = r.ok, gray = '#9aa5b1', i;
-  var c1 = tcol(r.T1), c2 = r.T2 >= 0 ? tcol(r.T2) : gray, c3 = tcol(r.s3.T), c4 = ok ? tcol(r.s4.T) : gray, c5 = tcol(r.T5);
+  var svg = $('ct-svg'), ok = r.ok, gray = '#9aa5b1', i, hasT1 = isFinite(r.T1);
+  var c1 = hasT1 ? tcol(r.T1) : gray, c2 = r.T2 >= 0 ? tcol(r.T2) : gray, c3 = tcol(r.s3.T), c4 = ok ? tcol(r.s4.T) : gray, c5 = tcol(r.T5);
   TV.hot.setAttribute('stroke', c1); TV.hdr.setAttribute('fill', c1);
   TV.spray.forEach(function (e) { e.setAttribute('fill', c1); });
   TV.cold.setAttribute('stroke', c2); TV.basin.setAttribute('fill', c2); TV.bd.setAttribute('stroke', c2);
@@ -995,38 +1229,41 @@ function updateTower(r) {
   TV.airOut.forEach(function (a) { a[0].setAttribute('stroke', c4); a[1].setAttribute('fill', c4); });
   for (i = 0; i <= 8; i++) {
     var o = i / 8;
-    TV.gw[i].setAttribute('stop-color', ok ? tcol(profAt(r.prof, 1 - o, 'Tw')) : (r.T2 >= 0 ? tcol(r.T1 + o * (r.T2 - r.T1)) : c1));
+    TV.gw[i].setAttribute('stop-color', ok ? tcol(profAt(r.prof, 1 - o, 'Tw')) : (r.T2 >= 0 && hasT1 ? tcol(r.T1 + o * (r.T2 - r.T1)) : c1));
     TV.ga[i].setAttribute('stop-color', ok ? tcol(profAt(r.prof, o, 'Ta')) : c3);
   }
   TV.chev.forEach(function (e) { e.setAttribute('stroke', ok ? tcol(profAt(r.prof, 0.93, 'Ta')) : c3); });
   // flow speeds: water with the flow rate, air and fan blades with the fan speed
   var flowing = ok || r.err === 'air';
   svg.style.setProperty('--wd', (0.9 * clamp(GPM_TON * st.tons / st.gpm, 0.4, 3)).toFixed(2) + 's');
-  svg.style.setProperty('--ad', (1.1 * 100 / st.N).toFixed(2) + 's');
-  svg.style.setProperty('--fd', (0.42 * 100 / st.N).toFixed(2) + 's');
+  svg.style.setProperty('--ad', (1.1 * 100 / r.N).toFixed(2) + 's');
+  svg.style.setProperty('--fd', (0.42 * 100 / r.N).toFixed(2) + 's');
   svg.classList.toggle('ct-still', !anim || !flowing);
   TV.plume.setAttribute('visibility', ok && r.plume.visible ? 'visible' : 'hidden');
   TV.plume.setAttribute('opacity', ok ? clamp(0.45 + 400 * r.plume.exmax, 0.45, 1).toFixed(2) : 0);
   TV.drops.forEach(function (e) { e.setAttribute('visibility', ok && st.drift > 0 ? 'visible' : 'hidden'); });
-  var bad = !ok || !r.feasible;
+  var bad = !ok || !r.feasible, nm = r.model === 'ntu';
   TV.warn.setAttribute('visibility', bad ? 'visible' : 'hidden');
   if (bad) {
-    TV.warnT.textContent = r.err === 'nocool' ? 'No cooling possible' : r.err === 'freeze' ? 'The water would freeze' : 'Not enough air';
-    TV.warnT2.textContent = r.err === 'nocool' ? 'hot water below wet bulb + approach' : r.err === 'freeze' ? 'raise the approach' : 'the air cannot carry this heat';
+    TV.warnT.textContent = r.err === 'nocool' ? 'No cooling possible' : r.err === 'freeze' ? 'The water would freeze' : r.err === 'hot' ? 'Load too large' : nm ? 'Outside the ε-NTU model' : 'Not enough air';
+    TV.warnT2.textContent = r.err === 'nocool' ? (nm ? 'hot water not above the wet bulb' : 'hot water below wet bulb + approach') : r.err === 'freeze' ? (nm ? 'slow the fan or hold a setpoint' : 'raise the approach') :
+      r.err === 'hot' ? 'the hot water would pass ' + fT(TMAX, 0) : nm ? 'the air line crosses the saturation curve' : 'the air cannot carry this heat';
   }
   // labels
-  TV.l1.textContent = 'Hot water ' + fT(r.T1); TV.l1b.textContent = fix(st.gpm, 0) + ' gal/min' + (ip() ? '' : ' (' + fix(r.mw, 1) + ' kg/s)');
+  TV.l1.textContent = hasT1 ? 'Hot water ' + fT(r.T1) : 'Hot water'; TV.l1b.textContent = fix(st.gpm, 0) + ' gal/min' + (ip() ? '' : ' (' + fix(r.mw, 1) + ' kg/s)');
   TV.l3b.textContent = fT(r.s3.T) + ', ' + fix(r.s3.phi, 0) + '% RH'; TV.l3c.textContent = 'wet bulb ' + fT(r.s3.Twb);
   TV.l2.textContent = r.T2 >= 0 ? 'Cold water ' + fT(r.T2) + ', back to the chiller' : 'Cold water';
   TV.l4.textContent = ok ? 'Exit air ' + fT(r.s4.T) + ', ' + fix(r.s4.phi, 0) + '% RH' : 'Exit air';
   TV.l4b.textContent = ok ? fFlow(r.E) + ' of water evaporated' : '';
   TV.l5.textContent = ok ? 'Makeup ' + fFlow(r.M) : 'Makeup';
   TV.lB.textContent = ok ? 'Blowdown ' + fFlow(r.B) + ' · drift ' + fFlow(r.D) : 'Blowdown';
-  TV.lF.textContent = 'Fan ' + fix(st.N, 0) + '%'; TV.lF2.textContent = fPow(r.Pfan);
+  TV.lF.textContent = 'Fan ' + fix(r.N, 0) + '%' + (r.sp ? ' (VFD)' : '');
+  TV.lF2.textContent = fPow(r.Pfan) + (r.sp && r.sp.status === 'held' ? ' · holds ' + fT(r.sp.T) : '');
   TV.chQ.textContent = r.Q > 0 ? (ip() ? fTons(r.Q) : fix(r.Q, 0) + ' kW') : '–';
   TV.chQ2.textContent = r.Q > 0 ? (ip() ? fQ(r.Q) : fTons(r.Q) + ' (15,000 Btu/h each)') : 'no heat rejected';
   // ladder
-  var lv = [r.T1, r.s3.T, r.s3.Twb];
+  var lv = [r.s3.T, r.s3.Twb];
+  if (hasT1) lv.push(r.T1);
   if (r.T2 >= 0) lv.push(r.T2);
   if (ok) lv.push(r.s4.T);
   var Llo = Math.min.apply(null, lv), Lhi = Math.max.apply(null, lv), lpad = 0.06 * Math.max(Lhi - Llo, 4);
@@ -1055,8 +1292,8 @@ function updateTower(r) {
     else { txt.setAttribute('x', 698); txt.setAttribute('y', (ym + 4).toFixed(1)); txt.removeAttribute('transform'); txt.setAttribute('text-anchor', 'end'); }
   };
   bracket(TV.brR, TV.brRt, r.T1, r.T2 >= 0 ? r.T2 : NaN, 'range ' + fdT(r.range));
-  bracket(TV.brA, TV.brAt, r.T2 >= 0 ? r.T2 : NaN, r.s3.Twb, 'approach ' + fdT(st.app));
-  $('ct-svg-desc').textContent = 'Cooling tower: hot water ' + fT(r.T1) + ' enters at the top; outdoor air ' + fT(r.s3.T) + ' enters at the bottom' +
+  bracket(TV.brA, TV.brAt, r.T2 >= 0 ? r.T2 : NaN, r.s3.Twb, 'approach ' + fdT(r.T2 - r.s3.Twb));
+  $('ct-svg-desc').textContent = 'Cooling tower: hot water ' + (hasT1 ? fT(r.T1) + ' ' : '') + 'enters at the top; outdoor air ' + fT(r.s3.T) + ' enters at the bottom' +
     (ok ? '; cold water leaves at ' + fT(r.T2) + ' and the exit air at ' + fT(r.s4.T) + '.' : '. ' + noteFor(r));
 }
 function drawCbar() {
@@ -1075,30 +1312,47 @@ function tile(k, v, s, sw, off) {
     '<span>' + k + '</span></div><div class="v">' + v + '</div><div class="s">' + s + '</div></div>';
 }
 function noteFor(r) {
-  if (r.err === 'nocool') return 'The hot water must be warmer than the coldest water the tower can make, the wet bulb plus the approach (' + fT(r.T2) + '). Raise the hot water temperature or lower the approach.';
-  if (r.err === 'freeze') return 'The wet bulb plus the approach is below freezing. In cold weather the controls slow or stop the fan; raise the approach.';
+  var nm = r.model === 'ntu';
+  if (r.err === 'hot') return 'The tower cannot reject this load with hot water below ' + fT(TMAX, 0) + ': the load needs a range of ' + fdT(r.R0) + ' at this water flow. Raise the water flow or lower the load' + (nm ? ', speed up the fan or choose a bigger tower.' : ' or the approach.');
+  if (r.err === 'nocool') return nm ? 'The hot water (' + fT(r.T1) + ') is not warmer than the outdoor wet bulb (' + fT(r.s3.Twb) + '), so evaporation cannot cool it. Raise the hot water temperature.'
+    : 'The hot water must be warmer than the coldest water the tower can make, the wet bulb plus the approach (' + fT(r.T2) + '). Raise the hot water temperature or lower the approach.';
+  if (r.err === 'freeze') return nm ? 'The cold water would fall below freezing. In cold weather the controls slow or stop the fan, or bypass the tower: slow the fan or hold a setpoint.'
+    : 'The wet bulb plus the approach is below freezing. In cold weather the controls slow or stop the fan; raise the approach.';
   return 'The fan moves too little air to carry this much heat. Raise the fan speed or the approach.';
 }
 function drawTiles(r) {
-  var h = [], ok = r.ok;
-  h.push(tile('Cold water back to the chiller, <i>T</i><sub>2</sub>', r.T2 >= 0 ? fT(r.T2) : '–', 'wet bulb ' + fT(r.s3.Twb) + ' + approach ' + fdT(st.app), r.T2 >= 0 ? tcol(r.T2) : null, !ok));
-  h.push(tile('Range, <i>T</i><sub>1</sub> − <i>T</i><sub>2</sub>', r.range > 0 ? fdT(r.range) : '–', r.range > 0 ? 'effectiveness ' + pct(r.eff) + ' of the most possible' : 'no cooling', null, !ok));
-  h.push(tile('Heat rejected', r.Q > 0 ? (ip() ? fTons(r.Q) : fix(r.Q, 0) + ' kW') : '–', r.Q > 0 ? (ip() ? fQ(r.Q) + ' · ' + fix(r.Q, 0) + ' kW' : fTons(r.Q) + ' · ' + fix(r.Q * BTUH_KW / 1e6, 2) + ' million Btu/h') : '', null, !ok));
+  var h = [], ok = r.ok, app = r.T2 - r.s3.Twb, sub1;
+  if (r.model === 'ntu') {
+    sub1 = r.T2 >= 0 ? 'approach ' + fdT(app) + ' to the ' + fT(r.s3.Twb) + ' wet bulb' : 'wet bulb ' + fT(r.s3.Twb);
+    if (r.sp) sub1 += ' · setpoint ' + fT(r.sp.T) + (r.sp.status === 'held' ? ', held' : r.sp.status === 'max' ? ', missed' : ', fan at its minimum');
+  } else sub1 = 'wet bulb ' + fT(r.s3.Twb) + ' + approach ' + fdT(st.app);
+  h.push(tile('Cold water back to the chiller, <i>T</i><sub>2</sub>', r.T2 >= 0 ? fT(r.T2) : '–', sub1, r.T2 >= 0 ? tcol(r.T2) : null, !ok));
+  if (r.load) h.push(tile('Hot water from the chiller, <i>T</i><sub>1</sub>', ok ? fT(r.T1) : '–', ok ? 'range ' + fdT(r.range) + ' · effectiveness ' + pct(r.eff) : 'range ' + fdT(r.R0), ok ? tcol(r.T1) : null, !ok));
+  else h.push(tile('Range, <i>T</i><sub>1</sub> − <i>T</i><sub>2</sub>', r.range > 0 ? fdT(r.range) : '–', r.range > 0 ? 'effectiveness ' + pct(r.eff) + ' of the most possible' : 'no cooling', null, !ok));
+  h.push(tile('Heat rejected', r.Q > 0 ? (ip() ? fTons(r.Q) : fix(r.Q, 0) + ' kW') : '–', r.Q > 0 ? (r.load ? 'the chiller load you set · ' : '') + (ip() ? fQ(r.Q) + (r.load ? '' : ' · ' + fix(r.Q, 0) + ' kW') : fTons(r.Q) + (r.load ? '' : ' · ' + fix(r.Q * BTUH_KW / 1e6, 2) + ' million Btu/h')) : '', null, !ok && !r.load));
   h.push(tile('Exit air, state 4', ok ? fT(r.s4.T) : '–', ok ? 'φ<sub>4</sub> = ' + fPhi(r.s4.phi) + ' · ω<sub>4</sub> = ' + fW(r.s4.W) : '', ok ? tcol(r.s4.T) : null, !ok));
   h.push(tile('Makeup water', ok ? fFlow(r.M) : '–', ok ? 'evaporation ' + fFlow(r.E) + ' + blowdown ' + fFlow(r.B) + ' + drift' : '', null, !ok));
-  h.push(tile('Fan power', fPow(r.Pfan), fPow2(r.Pfan) + ' · ' + fAir(r.V) + ' at ' + fix(st.N, 0) + '%', null, false));
+  h.push(tile('Fan power', fPow(r.Pfan), fPow2(r.Pfan) + ' · ' + fAir(r.V) + ' at ' + fix(r.N, 0) + '%' + (r.sp ? ' (VFD)' : ''), null, false));
   $('ct-tiles').innerHTML = h.join('');
 }
 function drawNotes(r) {
-  var n = [];
-  if (!r.ok) n.push('<li class="warn"><b>' + (r.err === 'nocool' ? 'No cooling.' : r.err === 'freeze' ? 'Freezing.' : 'Not enough air.') + '</b> ' + noteFor(r) + (r.err === 'air' && isFinite(r.Nmin) ? ' The fan needs at least ' + fix(r.Nmin, 0) + '% speed.' : '') + '</li>');
+  var n = [], nm = r.model === 'ntu';
+  if (!r.ok) n.push('<li class="warn"><b>' + (r.err === 'nocool' ? 'No cooling.' : r.err === 'freeze' ? 'Freezing.' : r.err === 'hot' ? 'Load too large.' : 'Not enough air.') + '</b> ' + noteFor(r) + (r.err === 'air' && isFinite(r.Nmin) ? ' The fan needs at least ' + fix(r.Nmin, 0) + '% speed.' : '') + '</li>');
   else {
-    if (!r.feasible) n.push('<li class="warn"><b>Not enough air for this approach.</b> The air leaving at ' + fH(r.s4.h) + ' would hold more energy than saturated air at the water temperature, so the air line crosses the saturation curve (see the enthalpy diagram). ' +
+    if (r.sp) {
+      var s = r.sp;
+      if (s.status === 'held') n.push('<li><b>Fan control.</b> To hold the cold water at ' + fT(s.T) + (r.N >= 99.95 ? ' the fan must run at full speed.' : ' the fan runs at ' + fix(r.N, 0) + '% speed, which takes ' + pct(Math.pow(r.N / 100, 3), 1) + ' of its full-speed power.') + '</li>');
+      else if (s.status === 'max') n.push('<li class="warn"><b>Setpoint missed.</b> Even at full speed the cold water leaves at ' + fT(r.T2) + ', ' + fdT(r.T2 - s.T) + ' above the ' + fT(s.T) + ' setpoint' +
+        (s.T < r.s3.Twb + 0.5 ? ', which is close to or below the ' + fT(r.s3.Twb) + ' wet bulb' : '') + '. Raise the setpoint, lower the water flow or the load, or choose a bigger tower.</li>');
+      else n.push('<li><b>Fan at its 30% minimum.</b> The water already leaves at ' + fT(r.T2) + ', below the ' + fT(s.T) + ' setpoint' + (s.Nreq > 1 ? ' (holding it would take only ' + fix(s.Nreq, 0) + '% speed)' : '') + '. The controls would cycle the fan on and off.</li>');
+    }
+    if (!r.feasible) n.push(nm ? '<li class="warn"><b>Outside the ε-NTU model.</b> The model treats the saturation curve as a straight line between the water temperatures. Over this ' + fdT(r.range) + ' range the curve bends too much: the air line crosses it near ' + fT(r.Tpinch) + ' (see the enthalpy diagram), so the model overstates the cooling.</li>'
+      : '<li class="warn"><b>Not enough air for this approach.</b> The air leaving at ' + fH(r.s4.h) + ' would hold more energy than saturated air at the water temperature, so the air line crosses the saturation curve (see the enthalpy diagram). ' +
       (r.Nmin <= 100 ? 'Run the fan at more than ' + fix(Math.ceil(r.Nmin), 0) + '% or raise the approach.' : 'Even full speed is not enough: raise the approach or lower the water flow.') + '</li>');
     if (r.T2 < 4.44) n.push('<li class="warn"><b>Freezing risk.</b> The basin water is below about 40 °F (4.4 °C). In winter the controls slow or stop the fan, or bypass the tower.</li>');
     if (r.plume.visible) n.push('<li><b>Visible plume.</b> Mixing the saturated exit air with the outdoor air crosses the saturation curve (dashed line on the chart), so up to ' + fW(r.plume.exmax) + ' condenses as fog.</li>');
-    if (r.feasible) n.push('<li><b>Evaporation</b> is ' + pct(r.E / r.mw, 2) + ' of the circulating water, ' + fix(100 * r.E / r.mw / (1.8 * r.range / 10), 2) + '% per 10 °F' + (ip() ? '' : ' (5.6 °C)') + ' of range (a common rule of thumb is about 1%).</li>');
-    if (st.N < 100) n.push('<li><b>Fan laws:</b> at ' + fix(st.N, 0) + '% speed the fan moves ' + fix(st.N, 0) + '% of its full airflow with ' + pct(Math.pow(st.N / 100, 3), 1) + ' of its full-speed power.</li>');
+    if (r.feasible || nm) n.push('<li><b>Evaporation</b> is ' + pct(r.E / r.mw, 2) + ' of the circulating water, ' + fix(100 * r.E / r.mw / (1.8 * r.range / 10), 2) + '% per 10 °F' + (ip() ? '' : ' (5.6 °C)') + ' of range (a common rule of thumb is about 1%).</li>');
+    if (r.N < 100 && !(r.sp && r.sp.status === 'held')) n.push('<li><b>Fan laws:</b> at ' + fix(r.N, 0) + '% speed the fan moves ' + fix(r.N, 0) + '% of its full airflow with ' + pct(Math.pow(r.N / 100, 3), 1) + ' of its full-speed power.</li>');
   }
   $('ct-notes').innerHTML = n.join('');
 }
@@ -1107,7 +1361,8 @@ function drawNotes(r) {
 var CH = null;
 function drawChart(r) {
   var box = $('ct-chart'), P = r.P, s3 = r.s3, ok = r.ok, k, x, pts;
-  var Ts = [s3.T, r.T1], Ws = [s3.W];
+  var Ts = [s3.T], Ws = [s3.W];
+  if (isFinite(r.T1)) Ts.push(r.T1);
   if (ok) { Ts.push(r.s4.T); Ws.push(r.s4.W, Wsat(r.T1, P)); }
   var tmax = Math.max.apply(null, Ts), wmax = wD(Math.max.apply(null, Ws)) * 1.06;
   var xlo = ip() ? 30 : 0, xhi = ip() ? Math.max(110, ceilTo(tD(tmax) + 4, 10)) : Math.max(45, ceilTo(tmax + 2, 5));
@@ -1302,6 +1557,12 @@ function drawHT(r) {
   var d2 = '';
   for (k = 0; k <= 80; k++) { var Tk = Ta + (Tb - Ta) * k / 80; d2 += (k ? 'L' : 'M') + X(Tk).toFixed(1) + ' ' + Y(hsat(Tk, P)).toFixed(1); }
   S('path', { d: d2, 'class': 'ct-sat' }, g);
+  // ε-NTU: the straight line that stands in for the saturation curve between the water temperatures
+  var nm = r.model === 'ntu', CHORD = '#7d5fb2';
+  if (nm) {
+    var hs2 = hsat(T2, P), hs1 = hsat(T1, P);
+    S('path', { d: 'M' + X(T2) + ' ' + Y(hs2) + 'L' + X(T1) + ' ' + Y(hs1), stroke: CHORD, 'stroke-width': 1.8, 'stroke-dasharray': '7 4', fill: 'none' }, svg);
+  }
   // air operating line 3 → 4
   S('path', { d: 'M' + X(T2) + ' ' + Y(h3) + 'L' + X(T1) + ' ' + Y(h4), stroke: r.feasible ? ACCENT : '#c0392b', 'stroke-width': 3, fill: 'none', 'stroke-linecap': 'round' }, svg);
   // wet bulb and approach
@@ -1334,12 +1595,17 @@ function drawHT(r) {
     S('text', { x: 0.5 * (x1 + x2), y: yb + 13, 'text-anchor': 'middle', 'class': 'ct-lab', style: 'fill:' + col }, svg, lab);
   };
   br(s3.Twb, T2, 'approach', '#13865d'); br(T2, T1, 'range', NAVY);
-  // Merkel number
-  S('text', { x: m.l + 10, y: m.t + 18, 'class': r.feasible ? 'ct-lab dark' : 'ct-lab red', style: 'font-size:12.5px' }, svg, r.feasible ? 'Merkel number KaV/L = ' + fix(r.Me, 2) : 'Not enough air: the line crosses the curve');
+  // Merkel number, and for the rated tower its NTU, effectiveness and capacity ratio
+  var t1 = r.feasible ? 'Merkel number KaV/L = ' + fix(r.Me, 2) + (nm ? ' (exact integral)' : '') : nm ? 'The air line crosses the curve: outside the model' : 'Not enough air: the line crosses the curve';
+  S('text', { x: m.l + 10, y: m.t + 18, 'class': r.feasible ? 'ct-lab dark' : 'ct-lab red', style: 'font-size:12.5px' }, svg, t1);
+  var csu = nm ? fix(ip() ? r.nt.cs / 4.1868 : r.nt.cs, ip() ? 3 : 2) + (ip() ? ' Btu/lb·°F' : ' kJ/kg·K') : '';
   $('ct-ht-legend').innerHTML = '<span><i class="ct-key" style="border-color:#1f2933"></i><span>Saturated air at the water temperature, <i>h</i><sub>s</sub>(<i>T</i><sub>w</sub>)</span></span>' +
+    (nm ? '<span><i class="ct-key dash" style="border-color:' + CHORD + '"></i><span>Straight line of the ε-NTU model, slope <i>c</i><sub>s</sub> = ' + csu + '</span></span>' : '') +
     '<span><i class="ct-key" style="border-color:' + ACCENT + ';border-top-width:3px"></i><span>Air, <i>h</i><sub>a</sub></span></span>' +
     '<span><i class="ct-dotkey" style="background:rgba(42,120,214,.3);border-radius:2px"></i><span>Driving force <i>h</i><sub>s</sub> − <i>h</i><sub>a</sub></span></span>';
-  $('ct-ht-note').innerHTML = 'Each kilogram of air picks up heat and vapor in proportion to the gap between the saturation curve and its own enthalpy. The air line rises with slope <i>ṁ</i><sub>w</sub><i>c</i><sub>p</sub>/<i>ṁ</i><sub>a</sub>: less air makes it steeper, until it touches the curve.';
+  $('ct-ht-note').innerHTML = nm ? 'The ε-NTU model replaces the saturation curve between the water temperatures by the dashed straight line, which turns the tower into a counterflow heat exchanger. The fill&rsquo;s NTU then fixes how far the air line rises toward that line: here NTU = ' + fix(r.nt.NTU, 2) +
+      ', <i>m</i>* = ' + fix(r.nt.ms, 2) + ' and ε<sub>a</sub> = ' + fix(r.nt.ea, 3) + '. The exact integral under the curve checks the answer.'
+    : 'Each kilogram of air picks up heat and vapor in proportion to the gap between the saturation curve and its own enthalpy. The air line rises with slope <i>ṁ</i><sub>w</sub><i>c</i><sub>p</sub>/<i>ṁ</i><sub>a</sub>: less air makes it steeper, until it touches the curve.';
 }
 
 /* ----- Water use ----- */
@@ -1363,17 +1629,24 @@ function drawWater(r) {
 /* ----- Heat, airflow and fan ----- */
 function dd(k, v, s) { return '<div><dt>' + k + '</dt><dd>' + v + (s ? '<small>' + s + '</small>' : '') + '</dd></div>'; }
 function drawRates(r) {
-  var h = [], ok = r.ok, n = st.N / 100, gph = r.Pfan > 0 ? st.gpm / (r.Pfan / HP_KW) : Infinity;
+  var h = [], ok = r.ok, n = r.N / 100, gph = r.Pfan > 0 ? st.gpm / (r.Pfan / HP_KW) : Infinity;
   h.push(dd('Heat rejected', r.Q > 0 ? fQ(r.Q) : '–', r.Q > 0 ? (ip() ? fix(r.Q, 0) + ' kW · ' : fix(r.Q * BTUH_KW, 0) + ' Btu/h · ') + fTons(r.Q) + ' at 15,000 Btu/h per tower ton' : ''));
   h.push(dd('Chiller served', r.Q > 0 ? fix(r.Q / KW_CTTON, 0) + ' tons of cooling' : '–', 'a tower ton carries one ton of cooling plus about 3,000 Btu/h of compressor work'));
   h.push(dd('Water flow', fix(st.gpm, 0) + ' gal/min', fMass(r.mw) + ', ' + pct(st.gpm / (GPM_TON * st.tons), 0) + ' of the design flow'));
   h.push(dd('Dry air through the tower', ok ? fMass(r.G) : '–', ok ? '<i>L</i>/<i>G</i> = ' + fix(r.LG, 2) + ' (design ' + fix(st.LG, 2) + ')' : ''));
-  h.push(dd('Airflow at the fan', fAir(r.V), fix(st.N, 0) + '% of ' + fAir(r.d.V)));
+  h.push(dd('Airflow at the fan', fAir(r.V), fix(r.N, 0) + '% of ' + fAir(r.d.V) + (r.sp ? ', speed set by the VFD' : '')));
   h.push(dd('Fan pressure', fDp(r.dp), '∝ N²: ' + fix(n * n, 3) + ' × ' + fDp(st.dp)));
   h.push(dd('Fan power', fPow(r.Pfan), '∝ N³: ' + fix(n * n * n, 3) + ' × ' + fPow(r.d.Pfan) + ' (' + fPow2(r.Pfan) + ')'));
   h.push(dd('Water flow per fan horsepower', isFinite(gph) ? fix(gph, 1) + ' gal/min per hp' : '–', 'ASHRAE 90.1-2013 asks at least 40.2 for propeller-fan towers (rated at 95/85/75 °F)'));
-  h.push(dd('Lowest fan speed for this approach', isFinite(r.Nmin) ? (r.Nmin > 100 ? 'above 100%' : fix(Math.ceil(r.Nmin), 0) + '%') : '–', 'below it the air line crosses the saturation curve'));
-  h.push(dd('Merkel number needed', ok && r.feasible ? fix(r.Me, 2) : '–', 'tower characteristic <i>KaV</i>/<i>L</i>; typical towers run about 0.5 to 2.5'));
+  if (r.model === 'ntu') {
+    var nt = r.nt, csu = ok ? fix(ip() ? nt.cs / 4.1868 : nt.cs, ip() ? 3 : 2) + (ip() ? ' Btu/lb·°F' : ' kJ/kg·K') : '';
+    h.push(dd('Fill NTU and effectiveness', ok ? 'NTU = ' + fix(nt.NTU, 2) + ', ε<sub>a</sub> = ' + fix(nt.ea, 3) : '–',
+      ok ? '<i>m</i>* = <i>ṁ</i><sub>a</sub><i>c</i><sub>s</sub>/(<i>ṁ</i><sub>w</sub><i>c</i><sub>p</sub>) = ' + fix(nt.ms, 3) + ' with <i>c</i><sub>s</sub> = ' + csu + '; NTU = ' + fix(r.d.NTU, 2) + ' at the rating point' : ''));
+    h.push(dd('Merkel number of the tower', ok ? fix(nt.Me, 2) : '–', ok ? 'NTU·<i>ṁ</i><sub>a</sub>/<i>ṁ</i><sub>w</sub>; the exact integral along this air line gives ' + (r.feasible ? fix(r.Me, 2) : 'none (the line crosses the curve)') : ''));
+  } else {
+    h.push(dd('Lowest fan speed for this approach', isFinite(r.Nmin) ? (r.Nmin > 100 ? 'above 100%' : fix(Math.ceil(r.Nmin), 0) + '%') : '–', 'below it the air line crosses the saturation curve'));
+    h.push(dd('Merkel number needed', ok && r.feasible ? fix(r.Me, 2) : '–', 'tower characteristic <i>KaV</i>/<i>L</i>; typical towers run about 0.5 to 2.5'));
+  }
   $('ct-rates').innerHTML = h.join('');
 }
 
@@ -1400,55 +1673,117 @@ function drawStates(r) {
 function li(lbl, eq, res) { return '<li><span class="lbl">' + lbl + '</span><span class="eq">' + eq + '</span>' + (res ? ' <span class="res">= ' + res + '</span>' : '') + '</li>'; }
 function sb(s, i) { return s + '<sub>' + i + '</sub>'; }
 function drawSteps(r) {
-  var h = [], s3 = r.s3, ok = r.ok, dT = function (T) { return fix(tD(T), 1); };
+  var h = [], s3 = r.s3, ok = r.ok, nm = r.model === 'ntu', d = r.d, dT = function (T) { return fix(tD(T), 1); };
+  var done = function () { $('ct-steps').innerHTML = h.join(''); };
+  var stop = function () { h.push(li('Stop', noteFor(r))); done(); };
+  var mcp = ip() ? fix(sig(r.mw * LBH_KGS, 4), 0) + ' × 1' : fix(r.mw, 2) + ' × 4.186';
+  var qStep = function () {
+    if (ip()) h.push(li('Heat rejected, <i>c</i><sub>p</sub> = 1 Btu/lb·°F', '<i>Q̇</i> = ' + fix(sig(r.mw * LBH_KGS, 4), 0) + ' × (' + dT(r.T1) + ' − ' + dT(r.T2) + ')', fQ(r.Q) + ' = ' + fTons(r.Q)));
+    else h.push(li('Heat rejected', '<i>Q̇</i> = ' + fix(r.mw, 2) + ' × 4.186 × (' + dT(r.T1) + ' − ' + dT(r.T2) + ')', fQ(r.Q)));
+  };
+  var t1Step = function () { h.push(li('Hot water, state 1', sb('<i>T</i>', 1) + ' = ' + sb('<i>T</i>', 2) + ' + range = ' + dT(r.T2) + ' + ' + fix(dD(r.R0), 1), fT(r.T1))); };
+  var fanStep = function () {
+    h.push(li('Fan laws at ' + fix(r.N, 0) + '% speed', '<i>V̇</i> = ' + fix(r.N / 100, 2) + ' × ' + fAir(d.V) + ', <i>Ẇ</i><sub>fan</sub> = ' + fix(r.N / 100, 2) + '³ × ' + fPow(d.Pfan), fAir(r.V) + ', ' + fPow(r.Pfan)));
+  };
+  var dryAir = function () {
+    h.push(li('Dry air: the fan&rsquo;s volume flow divided by the exit air&rsquo;s specific volume (iterated)', sb('<i>ṁ</i>', 'a') + ' = <i>V̇</i>/' + sb('<i>v</i>', 4) + ' = ' + fAir(r.V) + ' / ' + fv(r.s4.v), fMass(r.G)));
+  };
   h.push(li('Outdoor air, state 3, from ' + (st.hk === 'twb' ? 'the dry and wet bulbs' : sb('T', 3) + ' and φ<sub>3</sub>') + ' at ' + fPk(r.P) + ' (Psychrometricsnew.m)',
     sb('ω', 3) + ' = ' + fW(s3.W) + ', ' + sb('<i>h</i>', 3) + ' = ' + fH(s3.h) + ', ' + sb('<i>T</i>*', 3), fT(s3.Twb)));
-  h.push(li('Cold water, state 2: wet bulb plus approach', sb('<i>T</i>', 2) + ' = ' + dT(s3.Twb) + ' + ' + fix(dD(st.app), 1), r.T2 >= 0 ? fT(r.T2) : '–'));
-  if (r.err === 'nocool' || r.err === 'freeze') { h.push(li('Stop', noteFor(r))); $('ct-steps').innerHTML = h.join(''); return; }
-  if (ip()) {
-    h.push(li('Water mass flow (8.33 lb/gal × 60 min/h)', sb('<i>ṁ</i>', 'w') + ' = ' + fix(st.gpm, 0) + ' × 499.8', fMass(r.mw)));
-    h.push(li('Heat rejected, <i>c</i><sub>p</sub> = 1 Btu/lb·°F', '<i>Q̇</i> = ' + fix(sig(r.mw * LBH_KGS, 4), 0) + ' × (' + dT(r.T1) + ' − ' + dT(r.T2) + ')', fQ(r.Q) + ' = ' + fTons(r.Q)));
+  if (ip()) h.push(li('Water mass flow (8.33 lb/gal × 60 min/h)', sb('<i>ṁ</i>', 'w') + ' = ' + fix(st.gpm, 0) + ' × 499.8', fMass(r.mw)));
+  else h.push(li('Water mass flow (1 gal/min = ' + fix(KGS_GPM, 5) + ' kg/s)', sb('<i>ṁ</i>', 'w') + ' = ' + fix(st.gpm, 0) + ' × ' + fix(KGS_GPM, 5), fMass(r.mw)));
+  if (r.load) h.push(li('Range from the heat load', '<i>T</i><sub>1</sub> − <i>T</i><sub>2</sub> = <i>Q̇</i>/(<i>ṁ</i><sub>w</sub><i>c</i><sub>p</sub>) = ' + (ip() ? fQ(st.Qt) : fix(st.Qt, 0) + ' kW') + ' / (' + mcp + ')', fdT(r.R0)));
+  if (!nm) {
+    h.push(li('Cold water, state 2: wet bulb plus approach', sb('<i>T</i>', 2) + ' = ' + dT(s3.Twb) + ' + ' + fix(dD(st.app), 1), r.T2 >= 0 ? fT(r.T2) : '–'));
+    if (r.load && isFinite(r.T1)) t1Step();
+    if (r.err === 'nocool' || r.err === 'freeze' || r.err === 'hot') return stop();
+    if (!r.load) qStep();
+    fanStep();
+    if (!ok) return stop();
+    dryAir();
+    h.push(li('Energy balance per kg of dry air, exit air at φ<sub>4</sub> = ' + fPhi(st.phi4), sb('<i>h</i>', 4) + ' − ' + sb('<i>h</i>', 3) + ' − (ω<sub>4</sub> − ω<sub>3</sub>)' + sb('<i>h</i>', 'f5') + ' = <i>Q̇</i>/' + sb('<i>ṁ</i>', 'a'), fdH(r.Q / r.G)));
+    h.push(li('Exit air, state 4', sb('<i>T</i>', 4) + ' = ' + fT(r.s4.T) + ', ω<sub>4</sub> = ' + fW(r.s4.W), sb('<i>h</i>', 4) + ' = ' + fH(r.s4.h)));
   } else {
-    h.push(li('Water mass flow (1 gal/min = ' + fix(KGS_GPM, 5) + ' kg/s)', sb('<i>ṁ</i>', 'w') + ' = ' + fix(st.gpm, 0) + ' × ' + fix(KGS_GPM, 5), fMass(r.mw)));
-    h.push(li('Heat rejected', '<i>Q̇</i> = ' + fix(r.mw, 2) + ' × 4.186 × (' + dT(r.T1) + ' − ' + dT(r.T2) + ')', fQ(r.Q)));
+    h.push(li('The fill, fitted at the rating point (95/85/78 °F, sea level, <i>L</i>/<i>G</i> = ' + fix(st.LG, 2) + ')', 'ε<sub>a</sub> = ' + fix(d.ea, 4) + ' and <i>m</i>* = ' + fix(d.ms, 4) + ' give NTU = ' + fix(d.NTU, 4) +
+      '; <i>c</i> = NTU/(<i>L</i>/<i>G</i>)<sup>1 − <i>n</i></sup>', fix(d.c, 4)));
+    if (r.sp) h.push(li('Fan speed for the ' + fT(r.sp.T) + ' setpoint (found by iteration)', r.sp.status === 'held' ? 'the speed at which ' + sb('<i>T</i>', 2) + ' reaches the setpoint' : r.sp.status === 'max' ? 'out of reach even at full speed' : 'below the 30% minimum, so the fan stays at', fix(r.N, 1) + '%'));
+    if (r.err) return stop();
+    var nt = r.nt, s4 = r.s4, held = r.sp && r.sp.status === 'held';
+    fanStep();
+    dryAir();
+    h.push(li('NTU of the fill at this water-to-air ratio', 'NTU = ' + fix(d.c, 4) + ' × (' + sb('<i>ṁ</i>', 'w') + '/' + sb('<i>ṁ</i>', 'a') + ')<sup>' + fix(1 - d.n, 2) + '</sup> = ' + fix(d.c, 4) + ' × ' + fix(r.LG, 3) + '<sup>' + fix(1 - d.n, 2) + '</sup>', fix(nt.NTU, 4)));
+    h.push(li('Straight saturation line between the water temperatures', sb('<i>c</i>', 's') + ' = [' + sb('<i>h</i>', 's') + '(' + dT(r.T1) + ') − ' + sb('<i>h</i>', 's') + '(' + dT(r.T2) + ')]/(' + dT(r.T1) + ' − ' + dT(r.T2) + ')',
+      fix(ip() ? nt.cs / 4.1868 : nt.cs, ip() ? 3 : 2) + (ip() ? ' Btu/lb·°F' : ' kJ/kg·K')));
+    h.push(li('Capacity ratio', '<i>m</i>* = ' + sb('<i>ṁ</i>', 'a') + sb('<i>c</i>', 's') + '/(' + sb('<i>ṁ</i>', 'w') + sb('<i>c</i>', 'p') + ')', fix(nt.ms, 4)));
+    h.push(li('Air-side effectiveness (counterflow)', 'ε<sub>a</sub> = [1 − e<sup>−NTU(1 − <i>m</i>*)</sup>]/[1 − <i>m</i>* e<sup>−NTU(1 − <i>m</i>*)</sup>]', fix(nt.ea, 4)));
+    h.push(li('Exit air enthalpy', sb('<i>h</i>', 4) + ' = ' + sb('<i>h</i>', 3) + ' + ε<sub>a</sub>[' + sb('<i>h</i>', 's') + '(' + sb('<i>T</i>', 1) + ') − ' + sb('<i>h</i>', 3) + '] = ' + fix(hD(s3.h), 2) + ' + ' + fix(nt.ea, 4) + ' × (' + fix(hD(nt.hs1), 2) + ' − ' + fix(hD(s3.h), 2) + ')', fH(s4.h)));
+    h.push(li('Exit air, state 4, at φ<sub>4</sub> = ' + fPhi(st.phi4), sb('<i>T</i>', 4) + ', ω<sub>4</sub> and ' + sb('<i>v</i>', 4) + ' from ' + sb('<i>h</i>', 4) + ' and φ<sub>4</sub>', fT(s4.T) + ', ' + fW(s4.W) + ', ' + fv(s4.v)));
+    var bal = sb('<i>ṁ</i>', 'a') + '(' + sb('<i>h</i>', 4) + ' − ' + sb('<i>h</i>', 3) + ') − ' + sb('<i>ṁ</i>', 5) + sb('<i>h</i>', 'f5');
+    if (held) h.push(li('Energy balance at that speed (makeup at ' + fT(r.T5) + ')', bal + ' = ' + sb('<i>ṁ</i>', 'w') + sb('<i>c</i>', 'p') + '(' + sb('<i>T</i>', 1) + ' − ' + sb('<i>T</i>', 2) + ')', fQ(r.Q)));
+    else if (r.load) h.push(li('Cold water: where the air takes the whole load (iterated, since ' + sb('<i>c</i>', 's') + ' and ' + sb('<i>ṁ</i>', 'a') + ' depend on it)', bal + ' = <i>Q̇</i>', fT(r.T2)));
+    else h.push(li('Cold water from the energy balance (iterated, since ' + sb('<i>c</i>', 's') + ' and ' + sb('<i>ṁ</i>', 'a') + ' depend on it)', sb('<i>T</i>', 2) + ' = ' + sb('<i>T</i>', 1) + ' − [' + bal + ']/(' + sb('<i>ṁ</i>', 'w') + sb('<i>c</i>', 'p') + ')', fT(r.T2)));
+    if (r.load) t1Step(); else if (!held) qStep();
   }
-  h.push(li('Fan laws at ' + fix(st.N, 0) + '% speed', '<i>V̇</i> = ' + fix(st.N / 100, 2) + ' × ' + fAir(r.d.V) + ', <i>Ẇ</i><sub>fan</sub> = ' + fix(st.N / 100, 2) + '³ × ' + fPow(r.d.Pfan), fAir(r.V) + ', ' + fPow(r.Pfan)));
-  if (!ok) { h.push(li('Stop', noteFor(r))); $('ct-steps').innerHTML = h.join(''); return; }
-  var s4 = r.s4;
-  h.push(li('Dry air: the fan&rsquo;s volume flow divided by the exit air&rsquo;s specific volume (iterated)', sb('<i>ṁ</i>', 'a') + ' = <i>V̇</i>/' + sb('<i>v</i>', 4) + ' = ' + fAir(r.V) + ' / ' + fv(s4.v), fMass(r.G)));
-  h.push(li('Energy balance per kg of dry air, exit air at φ<sub>4</sub> = ' + fPhi(st.phi4), sb('<i>h</i>', 4) + ' − ' + sb('<i>h</i>', 3) + ' − (ω<sub>4</sub> − ω<sub>3</sub>)' + sb('<i>h</i>', 'f5') + ' = <i>Q̇</i>/' + sb('<i>ṁ</i>', 'a'), fdH(r.Q / r.G)));
-  h.push(li('Exit air, state 4', sb('<i>T</i>', 4) + ' = ' + fT(s4.T) + ', ω<sub>4</sub> = ' + fW(s4.W), sb('<i>h</i>', 4) + ' = ' + fH(s4.h)));
-  h.push(li('Evaporation (makeup in the slides)', sb('<i>ṁ</i>', 5) + ' = ' + sb('<i>ṁ</i>', 'a') + '(ω<sub>4</sub> − ω<sub>3</sub>) = ' + fMass(r.G) + ' × (' + fix(s4.W, 5) + ' − ' + fix(s3.W, 5) + ')', fMass(r.E) + ' = ' + fFlow(r.E)));
+  var s4b = r.s4;
+  h.push(li('Evaporation (makeup in the slides)', sb('<i>ṁ</i>', 5) + ' = ' + sb('<i>ṁ</i>', 'a') + '(ω<sub>4</sub> − ω<sub>3</sub>) = ' + fMass(r.G) + ' × (' + fix(s4b.W, 5) + ' − ' + fix(s3.W, 5) + ')', fMass(r.E) + ' = ' + fFlow(r.E)));
   h.push(li('Drift and blowdown', '<i>D</i> = ' + fix(st.drift, 3) + '% × ' + sb('<i>ṁ</i>', 'w') + ', <i>B</i> = <i>E</i>/(' + fix(st.coc, 1) + ' − 1) − <i>D</i>', fFlow(r.D) + ', ' + fFlow(r.B)));
   h.push(li('Total makeup water', '<i>M</i> = <i>E</i> + <i>D</i> + <i>B</i>', fFlow(r.M) + ' = ' + fDay(r.M)));
-  h.push(li('Is there enough air? Smallest driving force on the air line', 'min(' + sb('<i>h</i>', 's') + ' − ' + sb('<i>h</i>', 'a') + ') at ' + fT(r.Tpinch), fdH(r.gmin) + (r.feasible ? ' > 0 ✓' : ' < 0 ✗')));
-  if (r.feasible) h.push(li('Tower size needed (Merkel)', '<i>KaV</i>/<i>L</i> = ∫ <i>c</i><sub>p</sub> d<i>T</i><sub>w</sub>/(' + sb('<i>h</i>', 's') + ' − ' + sb('<i>h</i>', 'a') + ')', fix(r.Me, 2)));
+  h.push(li(nm ? 'Check against the curved saturation line: smallest driving force' : 'Is there enough air? Smallest driving force on the air line', 'min(' + sb('<i>h</i>', 's') + ' − ' + sb('<i>h</i>', 'a') + ') at ' + fT(r.Tpinch), fdH(r.gmin) + (r.feasible ? ' > 0 ✓' : ' < 0 ✗')));
+  if (r.feasible) h.push(li(nm ? 'Merkel number of this air line (exact integral; the ε-NTU value is ' + fix(r.nt.Me, 2) + ')' : 'Tower size needed (Merkel)', '<i>KaV</i>/<i>L</i> = ∫ <i>c</i><sub>p</sub> d<i>T</i><sub>w</sub>/(' + sb('<i>h</i>', 's') + ' − ' + sb('<i>h</i>', 'a') + ')', fix(r.Me, 2)));
   h.push(li('Plume: mixing the exit air with outdoor air', r.plume.visible ? 'the mixing line crosses the saturation curve' : 'the mixing line stays below the saturation curve', r.plume.visible ? 'visible fog' : 'no visible plume'));
-  $('ct-steps').innerHTML = h.join('');
+  done();
 }
 
 /* ----- MATLAB check with Psychrometricsnew.m and psychplotting.m ----- */
 function m4(x) { return String(rnd(x, 4)); }
+function m6(x) { return String(rnd(x, 6)); }
 function drawMatlab(r) {
-  var L = [], NL = String.fromCharCode(10), c = function (t) { L.push('% ' + t); }, s3 = r.s3;
+  var L = [], NL = String.fromCharCode(10), c = function (t) { L.push('% ' + t); }, s3 = r.s3, nm = r.model === 'ntu';
   var uF = function (T) { return ip() ? ' (' + fix(1.8 * T + 32, 1) + ' F)' : ''; };
+  var mwL = fix(st.gpm, 0).replace(/,/g, '') + '*' + fix(KGS_GPM, 6);
+  var out = function () { $('ct-matlab').textContent = L.join(NL); };
   c('outdoor air, state 3' + uF(st.T3) + '; pressure in kPa, enthalpy in J/kg dry air');
   L.push('P = ' + sig(r.P, 6) + ';');
   L.push('[T3,w3,phi3,h3,Tdp3,v3,Twb3] = Psychrometricsnew(\'tdb\',' + m4(st.T3) + ',' + (st.hk === 'twb' ? '\'twb\',' + m4(st.hv) : '\'phi\',' + m4(st.hv)) + ',\'p\',P);');
-  c('cold water, state 2: wet bulb + approach (' + fix(st.app, 4) + ' K' + (ip() ? ' = ' + fix(1.8 * st.app, 1) + ' F' : '') + ')');
-  L.push('T2 = Twb3 + ' + m4(st.app));
-  c('hot water, state 1' + uF(st.T1) + ', and the heat rejected in kW (' + fix(st.gpm, 0) + ' gal/min)');
-  L.push('T1 = ' + m4(st.T1) + ';  mw = ' + fix(st.gpm, 0).replace(/,/g, '') + '*' + fix(KGS_GPM, 6) + ';');
-  L.push('Q = mw*4.186*(T1 - T2)');
-  if (!r.ok || !(r.Q > 0)) { c('simulator: ' + noteFor(r)); $('ct-matlab').textContent = L.join(NL); return; }
-  c('exit air, state 4, at phi4 from the energy balance; dry air from the fan, makeup at T5');
-  L.push('ma = ' + m4(r.G) + ';  phi4 = ' + m4(st.phi4) + ';  hf5 = 4186*' + m4(st.T5) + ';');
-  L.push('h4 = h3 + Q*1000/ma;');
-  L.push('for k = 1:4');
-  L.push('    [T4, w4] = Psychrometricsnew(\'phi\',phi4,\'h\',h4,\'p\',P);');
-  L.push('    h4 = h3 + Q*1000/ma + (w4 - w3)*hf5;');
-  L.push('end');
-  L.push('[T4,w4,phi4,h4] = Psychrometricsnew(\'phi\',phi4,\'h\',h4,\'p\',P)');
+  if (nm) {
+    if (!r.ok) { c('simulator: ' + noteFor(r)); return out(); }
+    c('rated tower (e-NTU): the fill, fitted at 95/85/78 F with L/G = ' + String(rnd(st.LG, 2)) + ', has NTU = c*(mw/ma)^(1-n)');
+    L.push('c = ' + m6(r.d.c) + ';  n = ' + String(rnd(st.nx, 2)) + ';');
+    c('the simulator\'s water temperatures in C and flows in kg/s' + (r.sp ? ' (fan at ' + fix(r.N, 1) + '%, set by the VFD)' : ''));
+    L.push('T1 = ' + m6(r.T1) + ';  T2 = ' + m6(r.T2) + ';  mw = ' + mwL + ';  ma = ' + m6(r.G) + ';');
+    L.push('NTU = c*(mw/ma)^(1-n)');
+    L.push('[~,~,~,hs1] = Psychrometricsnew(\'tdb\',T1,\'phi\',100,\'p\',P);');
+    L.push('[~,~,~,hs2] = Psychrometricsnew(\'tdb\',T2,\'phi\',100,\'p\',P);');
+    L.push('cs = (hs1 - hs2)/1000/(T1 - T2)          % kJ/(kg K): straight saturation line');
+    L.push('m = ma*cs/(mw*4.186)                     % capacity ratio m*');
+    L.push('ea = (1 - exp(-NTU*(1 - m)))/(1 - m*exp(-NTU*(1 - m)))');
+    L.push('h4 = h3 + ea*(hs1 - h3);                 % J/kg dry air');
+    L.push('[T4,w4,phi4,h4] = Psychrometricsnew(\'phi\',' + m4(st.phi4) + ',\'h\',h4,\'p\',P)');
+    c('energy balance with the makeup at ' + fix(st.T5, 1) + ' C: the air takes the heat the water gives, kW');
+    L.push('Qair = ma*((h4 - h3)/1000 - (w4 - w3)*4.186*' + m4(st.T5) + ')');
+    L.push('Qwater = mw*4.186*(T1 - T2)');
+  } else {
+    c('cold water, state 2: wet bulb + approach (' + fix(st.app, 4) + ' K' + (ip() ? ' = ' + fix(1.8 * st.app, 1) + ' F' : '') + ')');
+    L.push('T2 = Twb3 + ' + m4(st.app));
+    if (r.load) {
+      c('heat load in kW and hot water, state 1 (' + fix(st.gpm, 0) + ' gal/min)');
+      L.push('Q = ' + m4(st.Qt) + ';  mw = ' + mwL + ';');
+      L.push('T1 = T2 + Q/(mw*4.186)');
+    } else {
+      c('hot water, state 1' + uF(st.T1) + ', and the heat rejected in kW (' + fix(st.gpm, 0) + ' gal/min)');
+      L.push('T1 = ' + m4(st.T1) + ';  mw = ' + mwL + ';');
+      L.push('Q = mw*4.186*(T1 - T2)');
+    }
+    if (!r.ok || !(r.Q > 0)) { c('simulator: ' + noteFor(r)); return out(); }
+    c('exit air, state 4, at phi4 from the energy balance; dry air from the fan, makeup at T5');
+    L.push('ma = ' + m4(r.G) + ';  phi4 = ' + m4(st.phi4) + ';  hf5 = 4186*' + m4(st.T5) + ';');
+    L.push('h4 = h3 + Q*1000/ma;');
+    L.push('for k = 1:4');
+    L.push('    [T4, w4] = Psychrometricsnew(\'phi\',phi4,\'h\',h4,\'p\',P);');
+    L.push('    h4 = h3 + Q*1000/ma + (w4 - w3)*hf5;');
+    L.push('end');
+    L.push('[T4,w4,phi4,h4] = Psychrometricsnew(\'phi\',phi4,\'h\',h4,\'p\',P)');
+  }
   c('water in kg/s: evaporation, drift, blowdown, makeup (1 gal/min = ' + fix(KGS_GPM, 6) + ' kg/s)');
   L.push('E = ma*(w4 - w3)');
   L.push('D = ' + String(rnd(st.drift, 4)) + '/100*mw;  C = ' + String(rnd(st.coc, 2)) + ';');
@@ -1456,17 +1791,17 @@ function drawMatlab(r) {
   L.push('M_gpm = M/' + fix(KGS_GPM, 6));
   c('simulator: T2 = ' + fix(r.T2, 3) + ' C, Q = ' + fix(r.Q, 1).replace(/,/g, '') + ' kW, T4 = ' + fix(r.s4.T, 3) + ' C, E = ' + fix(r.E, 4) + ' kg/s, M = ' + fix(r.M, 4) + ' kg/s');
   c('the air on the psychrometric chart (psychplotting.m)');
-  var Tm = Math.max(45, ceilTo(Math.max(st.T3, r.s4.T, st.T1) + 2, 5)), Wm = Math.max(25, ceilTo(1000 * Math.max(r.s4.W, s3.W) * 1.08, 5));
+  var Tm = Math.max(45, ceilTo(Math.max(st.T3, r.s4.T, r.T1) + 2, 5)), Wm = Math.max(25, ceilTo(1000 * Math.max(r.s4.W, s3.W) * 1.08, 5));
   L.push('psychplotting(0,' + Tm + ',0,' + Wm + ',P); hold on');
   L.push('plot([T3 T4],[w3 w4]*1000,\'r-o\',\'LineWidth\',1.5)');
-  $('ct-matlab').textContent = L.join(NL);
+  out();
 }
 
 /* ----- Shareable links: the setup is kept in the address after the # ----- */
-var KEYS = ['u', 'pk', 'P', 'T3', 'hk', 'hv', 'T1', 'gpm', 'app', 'N', 'tons', 'coc', 'drift', 'phi4', 'T5', 'LG', 'dp', 'eta'];
-var CHOICE = { u: ['ip', 'si'], pk: ['sea', 'tulsa', 'still', 'denver', 'custom'], hk: ['phi', 'twb'] };
+var KEYS = ['u', 'pk', 'P', 'T3', 'hk', 'hv', 'T1', 'gpm', 'app', 'N', 'tons', 'coc', 'drift', 'phi4', 'T5', 'LG', 'dp', 'eta', 'model', 'wk', 'Qt', 'fc', 'T2sp', 'nx'];
+var CHOICE = { u: ['ip', 'si'], pk: ['sea', 'tulsa', 'still', 'denver', 'custom'], hk: ['phi', 'twb'], model: ['app', 'ntu'], wk: ['T1', 'Q'], fc: ['N', 'sp'] };
 var LIM = { P: [60, 110], T3: [0, 50], hv: [-40, 100], T1: [10, 60], gpm: [1, 1e5], app: [5 / 9, 20], N: [30, 100], tons: [100, 2000],
-  coc: [1.5, 10], drift: [0, 0.2], phi4: [80, 100], T5: [1, 40], LG: [0.6, 2], dp: [75, 375], eta: [30, 85] };
+  coc: [1.5, 10], drift: [0, 0.2], phi4: [80, 100], T5: [1, 40], LG: [0.6, 2], dp: [75, 375], eta: [30, 85], Qt: [1, 2e4], T2sp: [10, 35], nx: [0.3, 1] };
 function writeHash() {
   var parts = KEYS.map(function (k) { return k + '=' + (typeof st[k] === 'number' ? sig(st[k], 6) : st[k]); });
   try { history.replaceState(null, '', '#' + parts.join('&')); } catch (e) { /* ignore */ }
@@ -1498,7 +1833,12 @@ var EX = {
   winter: { T3: F(40), hv: 60, T1: F(63), app: 18 / 1.8, gpm: 1000, N: 60 },
   lowfan: { N: 50 },
   cycles: { coc: 2 },
-  denver: { pk: 'denver' }
+  denver: { pk: 'denver' },
+  'ntu-fan': { model: 'ntu', N: 60 },
+  'ntu-mild': { model: 'ntu', fc: 'sp', T3: F(80), hv: 50 },
+  'ntu-part': { model: 'ntu', wk: 'Q', Qt: 300 * KW_CTTON, fc: 'sp' },
+  'ntu-humid': { model: 'ntu', wk: 'Q', fc: 'sp', T3: F(92), hv: 65 },
+  'ntu-winter': { model: 'ntu', wk: 'Q', Qt: 200 * KW_CTTON, fc: 'sp', T2sp: F(65), T3: F(40), hv: 60, gpm: 1000 }
 };
 function apply(o) {
   var k, u = st.u;
