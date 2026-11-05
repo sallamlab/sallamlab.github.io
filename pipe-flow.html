@@ -1,0 +1,1646 @@
+---
+layout: default
+title: Pipe Flow Simulator
+permalink: /teaching/pipe-flow/
+description: Interactive pipe flow simulator built around the Moody chart. Change the pipe material, diameter, length and flow rate and watch the Reynolds number and friction factor move on the chart; solve Type I (pressure drop), Type II (flow rate) and Type III (pipe diameter) problems step by step with the Darcy-Weisbach and Colebrook equations. ENSC 3233 Fluid Mechanics and MAE 3524 Thermal Fluids Design, Oklahoma State University.
+---
+{% raw %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<style>
+/* Pipe flow simulator: page styles. Site tokens (colors, fonts) come from /assets/css/site.css. */
+.pf { --chord: #7d5fb2; }
+.pf-hero .pf-crumb { margin: 0 0 10px; font-size: .92rem; color: #c3cfdb; }
+.pf-hero .pf-crumb a { color: #ffb48f; }
+.pf-app { display: grid; gap: 24px; grid-template-columns: minmax(290px, 350px) minmax(0, 1fr); align-items: start; }
+.pf-panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px; min-width: 0; }
+.pf-controls { padding: 18px 18px 6px; }
+.pf-intro { font-size: .9rem; color: var(--ink-soft); margin: 0 0 12px; }
+.pf-group { border: 0; padding: 0; margin: 0 0 18px; min-width: 0; }
+.pf-group[hidden] { display: none; }
+.pf-group legend { font-family: var(--serif); font-weight: 600; color: var(--navy); font-size: 1.05rem; padding: 0; margin: 0 0 8px; }
+.pf-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0 0 16px; }
+.pf-seg.three { grid-template-columns: 1fr 1fr 1fr; }
+.pf-seg label { position: relative; display: block; cursor: pointer; min-width: 0; }
+.pf-seg input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.pf-seg span { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; box-sizing: border-box; text-align: center; padding: 8px 4px; border: 1px solid var(--line); border-radius: 8px; font-size: .86rem; font-weight: 500; line-height: 1.25; background: #fff; color: var(--ink); transition: background .15s, border-color .15s; }
+.pf-seg span small { display: block; font-size: .74rem; font-weight: 400; color: var(--ink-soft); margin-top: 2px; }
+.pf-seg label:hover span { border-color: var(--ink-faint); }
+.pf-seg input:checked + span { background: var(--navy); border-color: var(--navy); color: #fff; }
+.pf-seg input:checked + span small { color: #c3cfdb; }
+.pf-seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pf-ctl { margin-bottom: 12px; }
+.pf-ctl[hidden], .pf-field[hidden], .pf-derived[hidden] { display: none; }
+.pf-ctl > label { display: block; font-size: .9rem; margin-bottom: 1px; }
+.pf-sym { color: var(--ink-soft); margin-left: 3px; }
+.pf-inrow { display: flex; align-items: center; gap: 10px; }
+.pf-inrow input[type=range] { flex: 1; min-width: 0; margin: 0; height: 26px; accent-color: var(--accent); cursor: pointer; }
+.pf-num { display: inline-flex; align-items: center; gap: 5px; flex: none; }
+.pf-num input { width: 84px; font: inherit; font-size: .92rem; text-align: right; padding: 4px 6px; border: 1px solid #cbd2d9; border-radius: 6px; background: #fff; color: var(--ink); font-variant-numeric: tabular-nums; }
+.pf-num input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.pf-num input[aria-invalid=true] { border-color: #d03b3b; background: #fdecec; }
+.pf-unit { font-size: .8rem; color: var(--ink-soft); width: 72px; }
+.pf-unit select { font: inherit; font-size: .78rem; padding: 2px 1px; border: 1px solid #cbd2d9; border-radius: 5px; background: #fff; color: var(--ink); width: 100%; }
+.pf-derived { font-size: .85rem; color: var(--ink-soft); margin: -2px 0 0; line-height: 1.45; }
+.pf-field { display: block; font-size: .9rem; margin-bottom: 12px; }
+.pf-field select { display: block; width: 100%; margin-top: 4px; font: inherit; font-size: .9rem; padding: 7px 8px; border: 1px solid #cbd2d9; border-radius: 8px; background: #fff; color: var(--ink); }
+.pf-given { margin: -4px 0 14px; font-size: .84rem; color: var(--ink-soft); background: #f3f1ec; border-radius: 8px; padding: 7px 10px; line-height: 1.4; }
+.pf-given b { color: var(--navy); }
+.pf-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.pf-btn { font: inherit; font-size: .86rem; font-weight: 600; padding: 6px 14px; border-radius: 999px; border: 2px solid var(--navy); background: #fff; color: var(--navy); cursor: pointer; }
+.pf-btn:hover { background: var(--navy); color: #fff; }
+.pf-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pf-out { display: grid; gap: 18px; min-width: 0; }
+.pf-card-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin-bottom: 8px; }
+.pf-card-head h2, .pf-card-head h3 { margin: 0; font-size: 1.22rem; }
+.pf-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: .84rem; color: var(--ink-soft); cursor: pointer; }
+.pf-toggle input { margin: 0; accent-color: var(--navy); width: 15px; height: 15px; }
+.pf-scroll { overflow-x: auto; }
+.pf-chart { position: relative; touch-action: pan-y; }
+.pf-chart svg { display: block; width: 100%; height: auto; overflow: visible; -webkit-user-select: none; user-select: none; }
+.pf-chart text, .pf-svg text { font-family: var(--sans); }
+.pf-gmin { stroke: #e3e6ea; stroke-width: 1; }
+.pf-gmaj { stroke: #c4cad1; stroke-width: 1; }
+.pf-curve { stroke: #3d4f61; stroke-width: 1.05; fill: none; }
+.pf-curve.sm { stroke: #14293d; stroke-width: 1.6; }
+.pf-lam { stroke: #14293d; stroke-width: 1.6; fill: none; }
+.pf-rough { stroke: #8c96a0; stroke-width: 1.3; stroke-dasharray: 7 5; fill: none; }
+.pf-axis { stroke: #9aa5b1; stroke-width: 1; }
+.pf-tick { font-size: 11px; fill: #6b7682; font-variant-numeric: tabular-nums; }
+.pf-axlab { font-size: 12.5px; fill: var(--ink-soft); }
+.pf-lab { font-size: 11px; fill: var(--ink-soft); paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; font-variant-numeric: tabular-nums; }
+.pf-lab.dark { fill: var(--ink); font-weight: 600; }
+.pf-lab.acc { fill: #a3361a; font-weight: 700; }
+.pf-lab.pur { fill: var(--chord); font-weight: 600; }
+.pf-rlab { font-size: 10.5px; fill: #4b5a68; font-variant-numeric: tabular-nums; }
+.pf-pill { font-size: 12px; font-weight: 700; fill: #fff; font-variant-numeric: tabular-nums; }
+.pf-cross { stroke: var(--navy); stroke-width: 1; opacity: .4; pointer-events: none; }
+.pf-tip { position: absolute; z-index: 5; pointer-events: none; background: #fff; border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: 8px 10px; font-size: .8rem; line-height: 1.45; min-width: 170px; display: none; }
+.pf-tip .hd { color: var(--ink); font-weight: 600; margin-bottom: 3px; font-variant-numeric: tabular-nums; }
+.pf-tip .row { display: flex; justify-content: space-between; gap: 12px; }
+.pf-tip .row b { font-variant-numeric: tabular-nums; font-weight: 600; }
+.pf-tip .row i { font-style: normal; color: var(--ink-soft); }
+.pf-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: .82rem; color: var(--ink-soft); margin-top: 6px; }
+.pf-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.pf-key { display: inline-block; width: 18px; height: 0; border-top: 2px solid; vertical-align: middle; flex: none; }
+.pf-key.dash { border-top-style: dashed; }
+.pf-dotkey { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.pf-hint { font-size: .82rem; color: var(--ink-soft); margin: 6px 0 0; }
+.pf-notes { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.pf-notes li { font-size: .9rem; background: #f3f1ec; border-radius: 8px; padding: 8px 12px; }
+.pf-notes li b { color: var(--navy); }
+.pf-notes li.warn { background: #fdecec; }
+.pf-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.pf-tile { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 11px 14px 12px; min-width: 0; }
+.pf-tile.ans { border: 2px solid var(--accent); background: #fff8f4; }
+.pf-tile .k { font-size: .82rem; color: var(--ink-soft); }
+.pf-tile .v { font-size: 1.45rem; font-weight: 600; color: var(--navy); line-height: 1.25; margin-top: 2px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pf-tile.ans .v { color: #a3361a; }
+.pf-tile .s { font-size: .78rem; color: var(--ink-soft); line-height: 1.35; }
+.pf-tile.off .v { color: #9aa5b1; }
+.pf-svg { display: block; width: 100%; height: auto; }
+.pf-svg .lb { font-size: 13.5px; fill: #1f2933; paint-order: stroke; stroke: #fff; stroke-width: 4px; stroke-linejoin: round; }
+.pf-svg .lb.b { font-weight: 700; }
+.pf-svg .lb.s { font-size: 12.5px; fill: var(--ink-soft); }
+.pf-svg .lb.acc { fill: #a3361a; font-weight: 700; }
+.pf-flow { stroke-dasharray: 2 16; animation: pf-flow var(--fd, 1s) linear infinite; }
+@keyframes pf-flow { to { stroke-dashoffset: -36; } }
+.pf-still .pf-flow { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .pf-flow { animation: none; } }
+.pf-row2 { display: grid; gap: 18px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 18px; align-items: start; }
+.pf-sub-note { font-size: .82rem; color: var(--ink-soft); margin: 2px 0 6px; }
+.pf-table { width: 100%; border-collapse: collapse; font-size: .86rem; font-variant-numeric: tabular-nums; }
+.pf-table th, .pf-table td { padding: 6px 7px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.pf-table th:first-child, .pf-table td:first-child { text-align: center; }
+.pf-table thead th { font-weight: 600; color: var(--ink-soft); font-size: .78rem; }
+.pf-table tr.fin td { font-weight: 700; color: #a3361a; }
+.pf-rates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; margin: 4px 0 0; font-size: .9rem; }
+.pf-rates div { min-width: 0; }
+.pf-rates dt { color: var(--ink-soft); font-size: .8rem; }
+.pf-rates dd { margin: 0; font-weight: 600; color: var(--navy); font-variant-numeric: tabular-nums; }
+.pf-rates dd small { display: block; font-weight: 400; color: var(--ink-soft); }
+.pf-steps { list-style: none; counter-reset: st; margin: 0; padding: 0; font-size: .9rem; }
+.pf-steps li { counter-increment: st; position: relative; padding: 7px 0 7px 30px; border-bottom: 1px dashed var(--line); }
+.pf-steps li::before { content: counter(st); position: absolute; left: 0; top: 8px; width: 21px; height: 21px; border-radius: 50%; background: var(--navy); color: #fff; font-size: .72rem; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+.pf-steps .lbl { display: block; font-size: .78rem; color: var(--ink-soft); }
+.pf-steps .eq { overflow-wrap: anywhere; }
+.pf-steps .res { font-weight: 600; color: var(--navy); white-space: nowrap; }
+.pf-matlab { margin: 12px 0 0; font-size: .82rem; }
+.pf-matlab pre { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: break-word; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: #14293d; color: #e6edf3; padding: 10px 12px; border-radius: 8px; font-size: .78rem; line-height: 1.5; }
+.pf-sticky { display: none; }
+.pf-doc .tex-d { overflow-x: auto; overflow-y: hidden; padding: 2px 0; }
+.pf-doc .tex-d .katex-display { margin: .4em 0; }
+.pf-eqs { width: 100%; border-collapse: collapse; margin: 8px 0 4px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
+.pf-eqs th, .pf-eqs td { text-align: left; vertical-align: middle; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.pf-eqs tr:last-child th, .pf-eqs tr:last-child td { border-bottom: 0; }
+.pf-eqs th { font-weight: 600; font-size: .92rem; color: var(--navy); width: 30%; }
+.pf-eqs th small { display: block; font-weight: 400; color: var(--ink-soft); }
+.pf-eqs td { min-width: 0; max-width: 0; width: 70%; }
+.pf-mat { border-collapse: collapse; font-size: .9rem; margin: 8px 0 0; background: var(--card); border: 1px solid var(--line); }
+.pf-mat th, .pf-mat td { padding: 6px 14px; border-bottom: 1px solid var(--line); text-align: left; }
+.pf-mat td + td { text-align: right; font-variant-numeric: tabular-nums; }
+.pf-twocol { display: grid; gap: 8px 40px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); }
+.pf-twocol ul { margin: 0; }
+.pf-twocol li { margin-bottom: 10px; }
+.pf-try { counter-reset: tr; list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+.pf-try li { counter-increment: tr; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px 14px 52px; position: relative; font-size: .97rem; }
+.pf-try li::before { content: counter(tr); position: absolute; left: 14px; top: 13px; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: #9a3a0f; font-weight: 700; font-size: .85rem; display: flex; align-items: center; justify-content: center; }
+.pf-credit { font-size: .88rem; color: var(--ink-soft); margin-top: 28px; }
+.pf-ctl.out input[type=range] { opacity: .55; cursor: default; }
+.pf-ctl.out .pf-num input { border-color: var(--accent); background: #fff8f4; color: #a3361a; font-weight: 600; }
+.pf-unk { display: inline-block; font-size: .66rem; font-weight: 700; color: #a3361a; background: #fde6da; border-radius: 4px; padding: 0 5px; margin-left: 6px; text-transform: uppercase; letter-spacing: .04em; vertical-align: 1px; }
+.pf-toggle[hidden] { display: none; }
+.pf-guide { stroke: #d9541e; stroke-width: 1.3; stroke-dasharray: 5 4; fill: none; }
+.pf-zone { font-size: 11.5px; fill: #6b7682; font-style: italic; paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; }
+.pf-table tr.gap td { text-align: center; color: var(--ink-soft); padding: 1px; }
+@media (max-width: 1080px) { .pf-row2 { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 920px) {
+  .pf-app { grid-template-columns: minmax(0, 1fr); }
+  .pf-sticky { display: flex; position: sticky; top: 71px; z-index: 40; justify-content: space-between; gap: 10px; background: rgba(255,255,255,.97); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); padding: 7px 12px; font-size: .8rem; color: var(--ink-soft); }
+  .pf-sticky b { display: block; color: var(--navy); font-size: .95rem; font-variant-numeric: tabular-nums; }
+}
+@media (max-width: 560px) {
+  .pf-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pf-panel { padding: 14px; }
+  .pf-tile .v { font-size: 1.25rem; }
+  .pf-rates { grid-template-columns: minmax(0, 1fr); }
+  .pf-seg span small { display: none; }
+  .pf-svg { min-width: 600px; }
+  .pf-eqs, .pf-eqs tbody, .pf-eqs tr, .pf-eqs th, .pf-eqs td { display: block; width: 100%; max-width: none; }
+  .pf-eqs th { padding-bottom: 0; border-bottom: 0; }
+}
+</style>
+
+<section class="page-hero pf-hero">
+  <div class="container">
+    <p class="pf-crumb"><a href="/teaching/">Teaching</a> <span aria-hidden="true">&rsaquo;</span> ENSC 3233 Fluid Mechanics &middot; MAE 3524 Thermal Fluids Design</p>
+    <h1>Pipe flow simulator: the Moody chart</h1>
+    <p>Change the pipe, the material and the flow, and watch the Reynolds number and the friction factor move on the Moody chart. Solve the three classic pipe flow problems: find the pressure drop (Type I), the flow rate (Type II) or the pipe diameter (Type III).</p>
+  </div>
+</section>
+
+<section class="section pf" id="simulator" aria-label="Pipe flow simulator">
+  <div class="container">
+    <noscript><p class="callout">The simulator needs JavaScript. The equations it uses are explained <a href="#equations">below</a>.</p></noscript>
+    <div class="pf-app">
+      <div class="pf-sticky" id="pf-sticky" aria-hidden="true">
+        <span>Re<b id="sk-re">&ndash;</b></span><span>f<b id="sk-f">&ndash;</b></span><span id="sk-al">Head loss<b id="sk-a">&ndash;</b></span>
+      </div>
+
+      <form class="pf-panel pf-controls" id="pf-form" autocomplete="off" onsubmit="return false">
+        <p class="pf-intro">Drag a slider or type a value; the Moody chart and everything below it update as you go.</p>
+        <div class="pf-seg" role="radiogroup" aria-label="Units">
+          <label><input type="radio" name="u" value="us"><span>ft, in, gal/min, psi</span></label>
+          <label><input type="radio" name="u" value="si"><span>m, mm, L/s, kPa</span></label>
+        </div>
+
+        <fieldset class="pf-group">
+          <legend>Problem type</legend>
+          <div class="pf-seg three" role="radiogroup" aria-label="Problem type">
+            <label><input type="radio" name="type" value="I"><span>Type I<small>find the loss</small></span></label>
+            <label><input type="radio" name="type" value="II"><span>Type II<small>find the flow</small></span></label>
+            <label><input type="radio" name="type" value="III"><span>Type III<small>find the diameter</small></span></label>
+          </div>
+          <p class="pf-given" id="pf-given"></p>
+        </fieldset>
+
+        <fieldset class="pf-group">
+          <legend>Fluid</legend>
+          <label class="pf-field">Fluid
+            <select id="pf-fluid">
+              <option value="water">Water</option>
+              <option value="air">Air at 1 atm</option>
+              <option value="gasoline">Gasoline at 68 &deg;F (20 &deg;C)</option>
+              <option value="oil">SAE 30 motor oil at 68 &deg;F (20 &deg;C)</option>
+              <option value="glycerin">Glycerin at 68 &deg;F (20 &deg;C)</option>
+              <option value="custom">Other fluid (enter &rho; and &mu;)</option>
+            </select>
+          </label>
+          <div id="ctl-fl"></div>
+          <p class="pf-derived" id="pf-fl-note"></p>
+        </fieldset>
+
+        <fieldset class="pf-group">
+          <legend>Pipe</legend>
+          <label class="pf-field">Material (Table 8.1, new pipes)
+            <select id="pf-mat"></select>
+          </label>
+          <div id="ctl-pipe"></div>
+          <p class="pf-derived" id="pf-pipe-note"></p>
+        </fieldset>
+
+        <fieldset class="pf-group" id="pf-g-flow">
+          <legend>Flow</legend>
+          <div id="ctl-flow"></div>
+        </fieldset>
+
+        <fieldset class="pf-group" id="pf-g-loss">
+          <legend>Allowed loss</legend>
+          <label class="pf-field">Given as
+            <select id="pf-lk">
+              <option value="dp">Pressure drop &Delta;p</option>
+              <option value="hL">Head loss h<sub>L</sub></option>
+            </select>
+          </label>
+          <div id="ctl-loss"></div>
+          <p class="pf-derived" id="pf-loss-note"></p>
+        </fieldset>
+
+        <fieldset class="pf-group">
+          <legend>Options</legend>
+          <label class="pf-field">Load an example
+            <select id="pf-example">
+              <option value="">Choose an example&hellip;</option>
+              <optgroup label="Type I: find the loss">
+                <option value="copper">Lecture: water in a 0.75-in copper tube, 12 gal/min (default)</option>
+                <option value="quiz">Lecture quiz: glass tube at Re = 1,000,000</option>
+                <option value="oil">Laminar flow: SAE 30 oil in a 1-in pipe</option>
+                <option value="concrete">Fully rough: 48-in concrete pipe</option>
+                <option value="duct">HVAC duct: air in a 12-in galvanized duct, 1000 cfm</option>
+              </optgroup>
+              <optgroup label="Type II: find the flow">
+                <option value="copper2">The copper tube with 10 psi available</option>
+                <option value="steel2">Water main: 6-in commercial steel, 20 ft of head</option>
+                <option value="drip">Laminar: water through a 1/8-in tube, 2 ft of head</option>
+              </optgroup>
+              <optgroup label="Type III: find the diameter">
+                <option value="air3">Lecture: air, galvanized iron, 2 ft&sup3;/s, 0.5 psi per 100 ft</option>
+                <option value="water3">Cast-iron water line: 500 gal/min, 5 ft of head per 1000 ft</option>
+              </optgroup>
+            </select>
+          </label>
+          <div class="pf-buttons">
+            <button type="button" class="pf-btn" id="pf-reset">Reset</button>
+            <button type="button" class="pf-btn" id="pf-link">Copy link to this setup</button>
+          </div>
+        </fieldset>
+      </form>
+
+      <div class="pf-out" id="pf-out">
+        <div class="pf-panel">
+          <div class="pf-card-head"><h2>The Moody chart</h2><label class="pf-toggle"><input type="checkbox" id="tg-iter" checked> Show the trial-and-error path</label></div>
+          <div class="pf-chart" id="pf-chart"></div>
+          <div class="pf-legend" id="pf-legend"></div>
+          <ul class="pf-notes" id="pf-notes" aria-live="polite"></ul>
+        </div>
+        <div class="pf-tiles" id="pf-tiles" aria-live="polite"></div>
+        <div class="pf-panel">
+          <div class="pf-card-head"><h3>Inside the pipe</h3><label class="pf-toggle"><input type="checkbox" id="tg-anim" checked> Animate the flow</label></div>
+          <div class="pf-scroll" id="pf-svgbox"><svg class="pf-svg" id="pf-svg" viewBox="0 0 860 330" role="img" aria-labelledby="pf-svg-desc"><desc id="pf-svg-desc">Pipe schematic</desc></svg></div>
+          <p class="pf-hint" id="pf-svg-note"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="pf-row2">
+      <div class="pf-panel">
+        <div class="pf-card-head"><h3 id="pf-iter-h">Trial and error</h3></div>
+        <div id="pf-iter"></div>
+      </div>
+      <div class="pf-panel">
+        <div class="pf-card-head"><h3>More results</h3></div>
+        <dl class="pf-rates" id="pf-rates"></dl>
+      </div>
+    </div>
+
+    <div class="pf-row2">
+      <div class="pf-panel">
+        <div class="pf-card-head"><h3>Step-by-step solution</h3></div>
+        <ol class="pf-steps" id="pf-steps"></ol>
+      </div>
+      <div class="pf-panel">
+        <div class="pf-card-head"><h3>Check it in MATLAB</h3></div>
+        <div class="pf-matlab">With the course function <code>Colebrook.m</code> (SI units):<pre id="pf-matlab"></pre></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt pf-doc" id="equations">
+  <div class="container">
+    <div class="section-head"><h2>How the simulator works</h2></div>
+    <p class="measure">In a straight pipe the wall shear stress costs the flow pressure. A force balance on a length &ell; of pipe gives &Delta;p = 4&ell;&tau;<sub>w</sub>/D, and writing the wall shear in terms of the friction factor <i>f</i> turns it into the Darcy&ndash;Weisbach equation. The friction factor depends on two numbers only, the Reynolds number and the relative roughness &epsilon;/D; the Moody chart plots that relation, and the Colebrook equation is the formula behind its turbulent curves.</p>
+
+    <h3 style="margin-top:28px">Equations</h3>
+    <table class="pf-eqs">
+      <tr><th>Velocity and Reynolds number<small>Average velocity from the flow rate; &nu; = &mu;/&rho; is the kinematic viscosity.</small></th><td><div class="tex-d" data-tex="V=\frac{Q}{A}=\frac{4Q}{\pi D^{2}},\qquad \mathrm{Re}=\frac{\rho V D}{\mu}=\frac{V D}{\nu}"></div></td></tr>
+      <tr><th>Major (pipe) loss<small>Darcy&ndash;Weisbach. The friction factor is f = 4&tau;<sub>w</sub>/(&frac12;&rho;V<sup>2</sup>); h<sub>L</sub> is the head loss and &Delta;p the pressure drop in a horizontal pipe.</small></th><td><div class="tex-d" data-tex="h_L=f\,\frac{\ell}{D}\,\frac{V^{2}}{2g},\qquad \Delta p=\rho g h_L=f\,\frac{\ell}{D}\,\frac{\rho V^{2}}{2}"></div></td></tr>
+      <tr><th>Laminar flow, Re &lt; 2100<small>From the parabolic (Poiseuille) velocity profile; independent of roughness.</small></th><td><div class="tex-d" data-tex="f=\frac{64}{\mathrm{Re}}\qquad\Longleftrightarrow\qquad Q=\frac{\pi D^{4}\,\Delta p}{128\,\mu\,\ell}"></div></td></tr>
+      <tr><th>Turbulent flow, Re &gt; 4000<small>The Colebrook equation, solved by iteration (as in <code>Colebrook.m</code>). Smooth pipes: &epsilon;/D = 0. For a smooth pipe at Re below about 10<sup>5</sup>, Blasius gives f &asymp; 0.316/Re<sup>1/4</sup>; Haaland&rsquo;s explicit formula is within about 2% of Colebrook.</small></th><td><div class="tex-d" data-tex="\frac{1}{\sqrt f}=-2.0\,\log\!\left(\frac{\varepsilon/D}{3.7}+\frac{2.51}{\mathrm{Re}\sqrt f}\right)"></div><div class="tex-d" data-tex="\frac{1}{\sqrt f}\approx-1.8\,\log\!\left[\left(\frac{\varepsilon/D}{3.7}\right)^{1.11}+\frac{6.9}{\mathrm{Re}}\right]\quad\text{(Haaland)}"></div></td></tr>
+      <tr><th>Transition, 2100 &lt; Re &lt; 4000<small>The flow can switch between laminar and turbulent, and the chart has no curve. The simulator joins the laminar value at Re = 2100 to the Colebrook value at Re = 4000 with a straight line on the log-log chart, and flags the result as uncertain.</small></th><td><div class="tex-d" data-tex="\ln f=\ln\frac{64}{2100}+\frac{\ln(\mathrm{Re}/2100)}{\ln(4000/2100)}\left[\ln f_{\mathrm{Colebrook}}(4000)-\ln\frac{64}{2100}\right]"></div></td></tr>
+      <tr><th>Wholly turbulent (fully rough) flow<small>At high Re the friction factor stops changing with Re. The dashed line on the chart is Moody&rsquo;s boundary of that zone.</small></th><td><div class="tex-d" data-tex="\frac{1}{\sqrt f}=-2.0\,\log\frac{\varepsilon/D}{3.7},\qquad \mathrm{Re}\,\frac{\varepsilon}{D}\sqrt f=200"></div></td></tr>
+      <tr><th>Type II: unknown flow rate<small>f depends on V through Re, so assume f, find V, compute Re, read a new f, and repeat. Re&radic;f is known from the data, so Colebrook can also give f directly.</small></th><td><div class="tex-d" data-tex="V=\sqrt{\frac{2 g h_L D}{f\,\ell}},\qquad \mathrm{Re}\sqrt f=\frac{D}{\nu}\sqrt{\frac{2 g h_L D}{\ell}}"></div></td></tr>
+      <tr><th>Type III: unknown diameter<small>Both Re and &epsilon;/D depend on D. Assume f, find D, compute Re and &epsilon;/D, read a new f, and repeat; D changes only with f<sup>1/5</sup>, so it settles quickly.</small></th><td><div class="tex-d" data-tex="D=\left(\frac{8 f\,\ell\,Q^{2}}{\pi^{2} g\,h_L}\right)^{1/5},\qquad \mathrm{Re}=\frac{4Q}{\pi\nu D}"></div></td></tr>
+    </table>
+    <p class="small muted">Equations and Tables 8.1 and 8.4 as in Munson, Young and Okiishi, <i>Fundamentals of Fluid Mechanics</i>, chapter 8, and White, <i>Fluid Mechanics</i>, chapter 6. Water properties: density from Kell (1975), viscosity fitted to IAPWS data (within 0.2% from 32 to 212 &deg;F). Air: ideal gas at 1 atm with Sutherland&rsquo;s law. Gasoline, SAE 30 oil and glycerin at 20 &deg;C from White, Table 1.4.</p>
+
+    <h3 style="margin-top:28px">Equivalent roughness for new pipes</h3>
+    <div class="pf-scroll"><table class="pf-mat">
+      <thead><tr><th>Pipe</th><th>&epsilon;, ft</th><th>&epsilon;, mm</th></tr></thead>
+      <tbody>
+        <tr><td>Riveted steel</td><td>0.003&ndash;0.03</td><td>0.9&ndash;9.0</td></tr>
+        <tr><td>Concrete</td><td>0.001&ndash;0.01</td><td>0.3&ndash;3.0</td></tr>
+        <tr><td>Wood stave</td><td>0.0006&ndash;0.003</td><td>0.18&ndash;0.9</td></tr>
+        <tr><td>Cast iron</td><td>0.00085</td><td>0.26</td></tr>
+        <tr><td>Galvanized iron</td><td>0.0005</td><td>0.15</td></tr>
+        <tr><td>Commercial steel or wrought iron</td><td>0.00015</td><td>0.045</td></tr>
+        <tr><td>Drawn tubing</td><td>0.000005</td><td>0.0015</td></tr>
+        <tr><td>Plastic, glass</td><td>0.0 (smooth)</td><td>0.0 (smooth)</td></tr>
+      </tbody>
+    </table></div>
+    <p class="small muted">From Moody and Colebrook, as in Munson&rsquo;s Table 8.1. For the materials with a range, the simulator starts in the middle; type your own &epsilon; to explore the range. Old pipes are rougher than new ones.</p>
+
+    <h3 style="margin-top:28px">Good habits</h3>
+    <div class="pf-twocol">
+      <ul>
+        <li><strong>Absolute and relative roughness.</strong> &epsilon; has units of length; the chart needs &epsilon;/D, which has none. The same material is relatively rougher in a small pipe.</li>
+        <li><strong>Reading the chart.</strong> Find Re on the bottom axis, go up to the curve of your &epsilon;/D (interpolate between curves), then across to f on the left. Below Re = 2100 use the laminar line, whatever the roughness.</li>
+        <li><strong>Pressure drop or head loss?</strong> h<sub>L</sub> is a height of the flowing fluid: 10 psi is 23 ft of water but about 19,000 ft of air. Pumps are rated in head, so h<sub>L</sub> is what a pump curve needs.</li>
+      </ul>
+      <ul>
+        <li><strong>Trial and error.</strong> In Types II and III the unknown sets Re, which sets f. Start with a guess (f = 0.02 is typical, or the fully rough value) and repeat until f stops changing; it usually takes two to four rounds.</li>
+        <li><strong>Assumptions.</strong> Steady, incompressible, fully developed flow in a straight, round, horizontal pipe of constant diameter, without fittings (minor losses) or elevation change. For air, keep &Delta;p well below 10% of the absolute pressure.</li>
+        <li><strong>Design margin.</strong> A Type III answer is a minimum: pick the next larger standard pipe, and allow for roughness growing as the pipe ages.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="section pf-doc" id="activities">
+  <div class="container">
+    <div class="section-head"><h2>Try it yourself</h2></div>
+    <ol class="pf-try">
+      <li>Load the lecture copper-tube example. Read Re and f off the chart yourself, then check them against the tiles. How many feet of head does the 60-ft tube cost?</li>
+      <li>Double the flow rate in the copper tube. By what factor does the head loss grow? Now try the same with the SAE 30 oil example, which is laminar. Why are the two factors different?</li>
+      <li>Keep the flow and the length and change the material from drawn tubing to commercial steel, galvanized iron and cast iron. Which curve does the point move to each time, and how much does the head loss change?</li>
+      <li>Load the 48-in concrete pipe. Halve and double the flow rate. Why does f hardly change? Find the dashed line on the chart and explain what &ldquo;wholly turbulent&rdquo; means.</li>
+      <li>Switch the copper-tube example to Type II and then to Type III. Why do you get back the same flow rate and diameter? Follow the trial-and-error path on the chart for each.</li>
+      <li>Load the lecture air duct example (Type III). Start the iteration by hand with f = 0.02 and reproduce the table. Then choose a standard pipe size and solve it as a Type I problem to check the pressure drop.</li>
+      <li>Find the flow rate at which water in a 1-in smooth tube stops being laminar. What happens on the chart between Re = 2100 and 4000, and why does the simulator call the result uncertain there?</li>
+      <li>Run the MATLAB lines under the step-by-step solution with <code>Colebrook.m</code> and reproduce f and the answer.</li>
+    </ol>
+    <p class="pf-credit">Calculation engine: the Colebrook equation solved as in the course function <code>Colebrook.m</code> (checked against it to 10<sup>&minus;13</sup>). Questions or suggestions: <a href="mailto:sallam@okstate.edu">sallam@okstate.edu</a>.</p>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous" defer></script>
+<script>
+(function () {
+'use strict';
+/* ===== Pipe flow model: Darcy-Weisbach head loss and the Moody chart =====
+   SI units inside: m, s, kg, Pa, °C. The friction factor f is the Darcy factor of the lecture:
+   hL = f (L/D) V²/(2g), Δp = ρ g hL, f = 64/Re (laminar), Colebrook (turbulent). */
+var G = 9.80665;                       // m/s²
+var RE_LAM = 2100, RE_TURB = 4000;     // laminar below 2100, turbulent above 4000, transition in between (Munson)
+
+/* ----- Fluid properties ----- */
+/* Water at 1 atm, 0-100 °C: density from Kell (1975); viscosity fitted to IAPWS data (within 0.12%) */
+function waterRho(T) {
+  return (999.83952 + T * (16.945176 + T * (-7.9870401e-3 + T * (-46.170461e-6 + T * (105.56302e-9 - 280.54253e-12 * T))))) / (1 + 16.879850e-3 * T);
+}
+function waterMu(T) { return 1e-3 * Math.exp(-2.451347137 + 294.4392102 / (T + 97.05) - 0.003113439745 * T); }
+/* Air at 1 atm: ideal gas and Sutherland's law */
+function airRho(T) { return 101325 / (287.05 * (T + 273.15)); }
+function airMu(T) { var K = T + 273.15; return 1.716e-5 * Math.pow(K / 273.15, 1.5) * (273.15 + 110.4) / (K + 110.4); }
+/* Fluids: water and air depend on temperature; the others are at 20 °C (White, Fluid Mechanics, Table 1.4) */
+var FLUIDS = {
+  water: { name: 'Water', tmin: 0, tmax: 100, rho: waterRho, mu: waterMu },
+  air: { name: 'Air at 1 atm', tmin: -40, tmax: 100, rho: airRho, mu: airMu, gas: true },
+  gasoline: { name: 'Gasoline at 20 °C', rho: function () { return 680; }, mu: function () { return 2.92e-4; } },
+  oil: { name: 'SAE 30 oil at 20 °C', rho: function () { return 891; }, mu: function () { return 0.29; } },
+  glycerin: { name: 'Glycerin at 20 °C', rho: function () { return 1264; }, mu: function () { return 1.49; } },
+  custom: { name: 'Other fluid' }
+};
+function fluidProps(inp) {
+  var F = FLUIDS[inp.fluid] || FLUIDS.water;
+  if (inp.fluid === 'custom') return { rho: inp.rho, mu: inp.mu, gas: false };
+  return { rho: F.rho(inp.T), mu: F.mu(inp.T), gas: !!F.gas };
+}
+
+/* ----- Friction factor ----- */
+/* Colebrook: 1/√f = −2.0 log10(ε/D/3.7 + 2.51/(Re √f)). Newton's method on x = 1/√f from Haaland's estimate;
+   g(x) = x + 2 log10(r/3.7 + 2.51 x/Re) rises with x, so the root is unique. Valid for ε/D below 3.7. */
+function colebrook(Re, r) {
+  var a = r / 3.7, b = 2.51 / Re, x = 1 / Math.sqrt(haaland(Re, r)), i, g, d, dx;
+  if (!(x > 0) || !isFinite(x)) x = 8;
+  for (i = 0; i < 60; i++) {
+    d = a + b * x;
+    g = x + 2 * Math.log(d) / Math.LN10;
+    dx = g / (1 + 2 * b / (d * Math.LN10));
+    x -= dx;
+    if (x <= 0) x = 1e-3;
+    if (Math.abs(dx) <= 1e-15 * x) break;
+  }
+  return 1 / (x * x);
+}
+/* Haaland (1983): explicit, within about 2% of Colebrook */
+function haaland(Re, r) { var t = -1.8 * Math.log(Math.pow(r / 3.7, 1.11) + 6.9 / Re) / Math.LN10; return 1 / (t * t); }
+/* Fully rough (wholly turbulent) limit and Moody's boundary of that zone, Re (ε/D) √f = 200 */
+function fRough(r) { var t = -2 * Math.log(r / 3.7) / Math.LN10; return 1 / (t * t); }
+function reRough(r) { return r > 0 ? 200 / (r * Math.sqrt(fRough(r))) : Infinity; }
+/* The Moody chart: laminar f = 64/Re below Re = 2100, Colebrook above 4000. In the transition range the flow can switch
+   between the two; the chart has no curve there, so a straight line on the log-log chart bridges them (flagged as uncertain). */
+function fFric(Re, r) {
+  if (!(Re > 0)) return NaN;
+  if (Re < RE_LAM) return 64 / Re;
+  if (Re >= RE_TURB) return colebrook(Re, r);
+  var a = Math.log(64 / RE_LAM), b = Math.log(colebrook(RE_TURB, r)), t = Math.log(Re / RE_LAM) / Math.log(RE_TURB / RE_LAM);
+  return Math.exp(a + t * (b - a));
+}
+/* Relative roughness of the Colebrook curve through the point (Re, f); negative below the smooth-pipe curve */
+function rThrough(Re, f) { var s = Math.sqrt(f); return 3.7 * (Math.pow(10, -1 / (2 * s)) - 2.51 / (Re * s)); }
+function regimeOf(Re, r) {
+  if (Re < RE_LAM) return 'laminar';
+  if (Re < RE_TURB) return 'transition';
+  return r > 0 && Re >= reRough(r) ? 'rough' : 'turbulent';
+}
+
+/* ----- Root finding: regula falsi with the Illinois fix (bracketed) ----- */
+function rootIll(f, a, b, tol) {
+  var fa = f(a), fb = f(b), c, fc, side = 0, i;
+  if (fa === 0) return a;
+  if (fb === 0) return b;
+  if ((fa < 0) === (fb < 0)) return Math.abs(fa) <= Math.abs(fb) ? a : b;
+  for (i = 0; i < 300; i++) {
+    c = (fa * b - fb * a) / (fa - fb);
+    if (!(c > Math.min(a, b) && c < Math.max(a, b))) c = 0.5 * (a + b);
+    fc = f(c);
+    if (fc === 0) return c;
+    if ((fc < 0) === (fb < 0)) { b = c; fb = fc; if (side === -1) fa *= 0.5; side = -1; }
+    else { a = c; fa = fc; if (side === 1) fb *= 0.5; side = 1; }
+    if (Math.abs(b - a) <= tol) break;
+  }
+  return Math.abs(fa) <= Math.abs(fb) ? a : b;
+}
+
+/* ----- The three types of pipe flow problems (Table 8.4) ----- */
+function areaOf(D) { return Math.PI * D * D / 4; }
+/* Head loss for a velocity V in a pipe of diameter D */
+function hOfV(V, D, L, nu, eps) { var Re = V * D / nu; return fFric(Re, eps / D) * L / D * V * V / (2 * G); }
+
+/* Type II: the velocity that gives head loss hL. Laminar flow has the closed form V = g D² hL/(32 ν L)
+   (Hagen-Poiseuille); otherwise hL rises with V, so a bracketed search on ln V finds the one root. */
+function velocityFor(hL, D, L, nu, eps) {
+  var Vl = G * D * D * hL / (32 * nu * L);
+  if (Vl * D / nu < RE_LAM) return Vl;
+  var lo = Math.log(RE_LAM * nu / D), hi = Math.log(1e12 * nu / D), lh = Math.log(hL);
+  if (Math.log(hOfV(Math.exp(hi), D, L, nu, eps)) < lh) return NaN;
+  return Math.exp(rootIll(function (x) { return Math.log(hOfV(Math.exp(x), D, L, nu, eps)) - lh; }, lo, hi, 1e-14));
+}
+/* Type III: the diameter that gives head loss hL for flow rate Q. Laminar: D⁴ = 128 ν L Q/(π g hL);
+   otherwise hL falls as D grows, so a bracketed search on ln D finds the one root. */
+function diameterFor(hL, Q, L, nu, eps) {
+  var Dl = Math.pow(128 * nu * L * Q / (Math.PI * G * hL), 0.25), Dcr = 4 * Q / (Math.PI * nu * RE_LAM);
+  if (Dl > Dcr) return Dl;                                            // Re = 4Q/(π ν D) < 2100: laminar
+  var h = function (D) { return hOfV(Q / areaOf(D), D, L, nu, eps); };
+  var lo = Math.log(Math.max(4 * Q / (Math.PI * nu * 1e12), eps, 1e-9)), hi = Math.log(Dcr), lh = Math.log(hL);
+  if (Math.log(h(Math.exp(lo))) < lh) return NaN;                       // even the thinnest pipe loses less: no solution
+  return Math.exp(rootIll(function (y) { return Math.log(h(Math.exp(y))) - lh; }, lo, hi, 1e-14));
+}
+/* The textbook trial-and-error solution (start with f = 0.02), for the table and the path on the chart */
+function iterII(hL, D, L, nu, eps) {
+  var f = 0.02, rows = [], k, V, Re, fn;
+  for (k = 1; k <= 40; k++) {
+    V = Math.sqrt(2 * G * hL * D / (f * L)); Re = V * D / nu; fn = fFric(Re, eps / D);
+    rows.push({ f: f, V: V, D: D, Re: Re, r: eps / D, fn: fn });
+    if (Math.abs(fn - f) <= 1e-6 * f) break;
+    f = fn;
+  }
+  return rows;
+}
+function iterIII(hL, Q, L, nu, eps) {
+  var f = 0.02, rows = [], k, D, Re, fn;
+  for (k = 1; k <= 40; k++) {
+    D = Math.pow(8 * f * L * Q * Q / (Math.PI * Math.PI * G * hL), 0.2); Re = 4 * Q / (Math.PI * nu * D); fn = fFric(Re, eps / D);
+    rows.push({ f: f, V: Q / areaOf(D), D: D, Re: Re, r: eps / D, fn: fn });
+    if (Math.abs(fn - f) <= 1e-6 * f) break;
+    f = fn;
+  }
+  return rows;
+}
+
+/* Full solution. inp (SI): type 'I' | 'II' | 'III'; fluid, T (°C), rho, mu (custom fluid); D (m), L (m), eps (m),
+   Q (m³/s) for types I and III, hL (m) for types II and III. */
+function solvePipe(inp) {
+  var p = fluidProps(inp), r = { inp: inp, type: inp.type, rho: p.rho, mu: p.mu, gas: p.gas, ok: true, err: '' };
+  var nu = p.mu / p.rho, L = inp.L, eps = inp.eps;
+  r.nu = nu; r.L = L; r.eps = eps;
+  if (!(nu > 0) || !(L > 0) || !(eps >= 0)) { r.ok = false; r.err = 'input'; return r; }
+  if (inp.type === 'II') {
+    r.D = inp.D; r.hL = inp.hL;
+    r.V = velocityFor(r.hL, r.D, L, nu, eps);
+    if (!isFinite(r.V)) { r.ok = false; r.err = 'range'; return r; }
+    r.Q = r.V * areaOf(r.D);
+    r.iter = iterII(r.hL, r.D, L, nu, eps);
+  } else if (inp.type === 'III') {
+    r.Q = inp.Q; r.hL = inp.hL;
+    r.D = diameterFor(r.hL, r.Q, L, nu, eps);
+    if (!isFinite(r.D)) { r.ok = false; r.err = 'range'; return r; }
+    r.V = r.Q / areaOf(r.D);
+    r.iter = iterIII(r.hL, r.Q, L, nu, eps);
+  } else {
+    r.D = inp.D; r.Q = inp.Q; r.V = r.Q / areaOf(r.D);
+  }
+  r.A = areaOf(r.D);
+  r.Re = r.V * r.D / nu;
+  r.rel = eps / r.D;
+  r.f = fFric(r.Re, r.rel);
+  if (r.type === 'I') r.hL = r.f * L / r.D * r.V * r.V / (2 * G);
+  r.dp = p.rho * G * r.hL;
+  r.regime = regimeOf(r.Re, r.rel);
+  r.tauW = r.f * p.rho * r.V * r.V / 8;                                 // wall shear stress, f = 8 τw/(ρV²)
+  r.power = r.Q * r.dp;                                                  // power the flow loses to friction, W
+  r.Le = r.D * (r.Re < RE_LAM ? 0.06 * r.Re : 4.4 * Math.pow(r.Re, 1 / 6));   // entrance length (Munson)
+  r.fCole = colebrook(r.Re, r.rel);
+  r.fHaa = haaland(r.Re, r.rel);
+  r.fBla = 0.316 / Math.pow(r.Re, 0.25);
+  r.fRough = r.rel > 0 ? fRough(r.rel) : NaN;
+  r.reRough = reRough(r.rel);
+  r.reSqrtF = r.Re * Math.sqrt(r.f);
+  if (r.rel > 0.05) r.warn = 'rough';
+  return r;
+}
+/* ===== User interface ===== */
+var $ = function (id) { return document.getElementById(id); };
+var SVGNS = 'http://www.w3.org/2000/svg';
+var ACC = '#d9541e', ACCD = '#a3361a', NAVY = '#14293d', PUR = '#7d5fb2';
+var lg = Math.log10 || function (x) { return Math.log(x) / Math.LN10; };
+
+function S(tag, attrs, parent, text) {
+  var e = document.createElementNS(SVGNS, tag), k;
+  for (k in attrs) if (attrs[k] !== undefined && attrs[k] !== null) e.setAttribute(k, attrs[k]);
+  if (text !== undefined && text !== null) e.textContent = text;
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+function clamp(v, a, b) { return Math.min(b, Math.max(a, v)); }
+function copy(o) { var r = {}, k; for (k in o) r[k] = o[k]; return r; }
+
+/* ----- Numbers ----- */
+var SUPS = { '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹', '-': '⁻' };
+function supU(n) { return String(n).replace(/[0-9-]/g, function (c) { return SUPS[c]; }); }
+function trimZ(s) { return s.indexOf('.') < 0 ? s : s.replace(/0+$/, '').replace(/\.$/, ''); }
+/* n significant figures as plain decimals (thousands separators from 10,000); trim drops trailing zeros */
+function pl(v, n, trim) {
+  if (!isFinite(v)) return '–';
+  if (v === 0) return '0';
+  var t = Number(v.toPrecision(n)), e = Math.floor(lg(Math.abs(t)) + 1e-12), d = clamp(n - 1 - e, 0, 20);
+  var s = Math.abs(t).toLocaleString('en-US', { minimumFractionDigits: trim ? 0 : d, maximumFractionDigits: d, useGrouping: Math.abs(t) >= 10000 });
+  return (t < 0 ? '−' : '') + s;
+}
+/* Powers of ten: 4.51 × 10<sup>4</sup> in HTML, 4.51×10⁴ in SVG text */
+function sci(v, n, html, trim) {
+  if (!isFinite(v)) return '–';
+  if (v === 0) return '0';
+  var e = Math.floor(lg(Math.abs(v)) + 1e-12), m = Number((v / Math.pow(10, e)).toPrecision(n));
+  if (Math.abs(m) >= 10) { m /= 10; e += 1; }
+  var ms = m.toFixed(n - 1);
+  if (trim) ms = trimZ(ms);
+  ms = ms.replace('-', '−');
+  return html ? ms + ' × 10<sup>' + (e < 0 ? '−' : '') + Math.abs(e) + '</sup>' : ms + '×10' + supU(e);
+}
+/* Plain decimals between 1e-4 and 1e7, powers of ten outside (HTML) */
+function sf(v, n) { var a = Math.abs(v); return isFinite(v) && v !== 0 && (a >= 1e7 || a < 1e-4) ? sci(v, n, true, true) : pl(v, n); }
+function sfT(v, n) { var a = Math.abs(v); return isFinite(v) && v !== 0 && (a >= 1e7 || a < 1e-4) ? sci(v, n, false, true) : pl(v, n); }
+/* Reynolds number: whole numbers up to 100,000, powers of ten above */
+function fRe(Re, html) {
+  if (!isFinite(Re)) return '–';
+  if (Re < 100) return pl(Re, 3);
+  if (Re < 1e5) return Math.round(Re).toLocaleString('en-US', { useGrouping: Re >= 1e4 });
+  return sci(Re, 3, html !== false);
+}
+function fF(f) { return pl(f, 4); }
+function fRel(r) { return r === 0 ? '0' : r >= 1e-6 ? pl(r, 3, true) : sci(r, 3, true, true); }
+function fRelT(r) { return r === 0 ? '0' : r >= 1e-6 ? pl(r, 3, true) : sci(r, 3, false, true); }
+
+/* ----- Units: the model works in SI; the page shows US or SI units ----- */
+var FT = 0.3048, IN = 0.0254, GAL = 3.785411784e-3, GPM = GAL / 60, CFS = FT * FT * FT, CFM = CFS / 60, PSI = 6894.757293168,
+  PSF = 47.88025898, INWG = 249.0889, SLUG3 = 515.3788184, LBS2 = 47.88025898, HPW = 745.69987158, LBM3 = 16.01846337;
+var LEN = { ft: FT, m: 1, 'in': IN, mm: 1e-3 };
+function us() { return st.u === 'us'; }
+function gD() { return us() ? G / FT : G; }
+function Lk() { return us() ? 'ft' : 'm'; }      // lengths and heads
+function Dk() { return us() ? 'in' : 'mm'; }     // diameters
+function Ek() { return us() ? 'ft' : 'mm'; }     // roughness
+function fL(m, n) { return sf(m / LEN[Lk()], n || 4) + ' ' + Lk(); }
+function fD(m, n) { return sf(m / LEN[Dk()], n || 4) + ' ' + Dk(); }
+function fE(m) { return m > 0 ? pl(m / LEN[Ek()], 3, true) + ' ' + Ek() : '0'; }
+function fV(v, n) { return sf(us() ? v / FT : v, n || 4) + (us() ? ' ft/s' : ' m/s'); }
+function fA(a) { return sf(us() ? a / (FT * FT) : a, 4) + (us() ? ' ft²' : ' m²'); }
+function fNu(nu) { return sf(us() ? nu / (FT * FT) : nu, 4) + (us() ? ' ft²/s' : ' m²/s'); }
+function fRho(rho) { return us() ? sf(rho / SLUG3, 4) + ' slug/ft³' : sf(rho, 4) + ' kg/m³'; }
+function fMu(mu) { return us() ? sf(mu / LBS2, 4) + ' lb·s/ft²' : sf(mu, 4) + ' N·s/m²'; }
+function tD(c) { return us() ? 1.8 * c + 32 : c; }
+function fTe(c) { return (Math.round(tD(c) * 10) / 10).toFixed(1).replace('-', '−') + (us() ? ' °F' : ' °C'); }
+function fW(w) { return us() ? sf(w / HPW, 3) + ' hp (' + sf(w, 3) + ' W)' : (w >= 1000 ? sf(w / 1000, 3) + ' kW' : sf(w, 3) + ' W'); }
+function fTau(p) { return us() ? sf(p / PSF, 3) + ' lb/ft²' : sf(p, 3) + ' Pa'; }
+/* flow and pressure units, chosen next to the controls */
+var UQ = { gpm: [GPM, 'gal/min'], cfs: [CFS, 'ft³/s'], cfm: [CFM, 'ft³/min'], Ls: [1e-3, 'L/s'], m3h: [1 / 3600, 'm³/h'], m3s: [1, 'm³/s'] };
+var QSYS = { us: ['gpm', 'cfs', 'cfm'], si: ['Ls', 'm3h', 'm3s'] };
+var QR = { gpm: [0.005, 500000], cfs: [2e-5, 1000], cfm: [0.001, 50000], Ls: [5e-4, 25000], m3h: [0.002, 90000], m3s: [5e-7, 25] };
+var UP = { psi: [PSI, 'psi'], psf: [PSF, 'lb/ft²'], inwg: [INWG, 'in. w.g.'], kPa: [1000, 'kPa'], Pa: [1, 'Pa'], bar: [1e5, 'bar'] };
+var PSYS = { us: ['psi', 'psf', 'inwg'], si: ['kPa', 'Pa', 'bar'] };
+var PRNG = { psi: [2e-4, 2000], psf: [0.03, 300000], inwg: [0.005, 50000], kPa: [0.002, 10000], Pa: [2, 1e7], bar: [2e-5, 100] };
+var QMAP = { gpm: 'Ls', cfs: 'm3s', cfm: 'm3h', Ls: 'gpm', m3h: 'cfm', m3s: 'cfs' }, PMAP = { psi: 'kPa', psf: 'kPa', inwg: 'Pa', kPa: 'psi', Pa: 'inwg', bar: 'psi' };
+function fQ(q, n, k) { k = k || st.qu; return sf(q / UQ[k][0], n || 4) + ' ' + UQ[k][1]; }
+function qAlt() { return us() ? (st.qu === 'gpm' ? 'cfs' : 'gpm') : (st.qu === 'Ls' ? 'm3h' : 'Ls'); }
+function fP(p, n, k) { k = k || st.pu; return sf(p / UP[k][0], n || 4) + ' ' + UP[k][1]; }
+function pAlt() { return us() ? (st.pu === 'psi' ? 'psf' : 'psi') : (st.pu === 'kPa' ? 'Pa' : 'kPa'); }
+/* control ranges, in the units on screen */
+var DR = { 'in': [0.1, 120], mm: [2.5, 3000] }, LR = { ft: [1, 10000], m: [0.3, 3000] }, HR = { ft: [1e-4, 3e6], m: [3e-5, 1e6] };
+var TR = { water: [0, 100], air: [-40, 100] }, RHOR = [0.5, 2500], MUR = [5e-7, 2.5], ECR = { ft: [1e-6, 0.1], mm: [3e-4, 30] };
+function clampU(v, rg, f) { return clamp(v, rg[0] * f, rg[1] * f); }
+
+/* ----- Pipe materials: Table 8.1 (Munson), values in ft and mm as printed ----- */
+var MATS = [
+  { k: 'riveted', name: 'Riveted steel', ft: [0.003, 0.03], mm: [0.9, 9], mft: 0.01, mmm: 3 },
+  { k: 'concrete', name: 'Concrete', ft: [0.001, 0.01], mm: [0.3, 3], mft: 0.003, mmm: 1 },
+  { k: 'wood', name: 'Wood stave', ft: [0.0006, 0.003], mm: [0.18, 0.9], mft: 0.0013, mmm: 0.4 },
+  { k: 'cast', name: 'Cast iron', ft: 0.00085, mm: 0.26 },
+  { k: 'galv', name: 'Galvanized iron', ft: 0.0005, mm: 0.15 },
+  { k: 'steel', name: 'Commercial steel or wrought iron', ft: 0.00015, mm: 0.045 },
+  { k: 'drawn', name: 'Drawn tubing (copper, brass)', ft: 0.000005, mm: 0.0015 },
+  { k: 'smooth', name: 'Plastic, glass (smooth)', ft: 0, mm: 0 },
+  { k: 'custom', name: 'Other roughness (enter ε)' }
+];
+function matOf(k) { for (var i = 0; i < MATS.length; i++) if (MATS[i].k === k) return MATS[i]; return MATS[6]; }
+function ranged(m) { return typeof m.ft === 'object'; }
+function freeEps() { var m = matOf(st.mat); return m.k === 'custom' || ranged(m); }
+function epsNow() { var m = matOf(st.mat); return freeEps() ? st.eps : us() ? m.ft * FT : m.mm / 1000; }
+function epsLim() { var m = matOf(st.mat), k = Ek(), a = m.k === 'custom' ? ECR[k] : us() ? m.ft : m.mm; return [a[0] * LEN[k], a[1] * LEN[k]]; }
+function epsMid(m) { return us() ? m.mft * FT : m.mmm / 1000; }
+function fluidName(k) { return { water: 'water', air: 'air', gasoline: 'gasoline', oil: 'oil', glycerin: 'glycerin', custom: 'the fluid' }[k] || 'fluid'; }
+
+/* ----- State (always SI: m, m³/s, Pa, kg/m³, Pa·s, °C) ----- */
+var C60 = (60 - 32) / 1.8;
+var DEF = { u: 'us', type: 'I', fluid: 'water', T: C60, rho: 999, mu: 1.12e-3, mat: 'drawn', eps: 0.000005 * FT,
+  D: 0.75 * IN, L: 60 * FT, Q: 12 * GPM, lk: 'dp', dp: 10 * PSI, hL: 20 * FT, qu: 'gpm', pu: 'psi' };
+var st = copy(DEF), anim = true, showIter = true;
+function props() { return fluidProps({ fluid: st.fluid, T: st.T, rho: st.rho, mu: st.mu }); }
+function inputs() {
+  var p = props();
+  return { type: st.type, fluid: st.fluid, T: st.T, rho: st.rho, mu: st.mu, D: st.D, L: st.L, eps: epsNow(), Q: st.Q,
+    hL: st.lk === 'dp' ? st.dp / (p.rho * G) : st.hL };
+}
+function normalize() {
+  if (!FLUIDS[st.fluid]) st.fluid = 'water';
+  if (TR[st.fluid]) st.T = clamp(st.T, TR[st.fluid][0], TR[st.fluid][1]);
+  st.rho = clamp(st.rho, RHOR[0], RHOR[1]); st.mu = clamp(st.mu, MUR[0], MUR[1]);
+  st.mat = matOf(st.mat).k;
+  if (freeEps()) { var el = epsLim(); st.eps = clamp(st.eps, el[0], el[1]); }
+  if (QSYS[st.u].indexOf(st.qu) < 0) st.qu = QSYS[st.u][0];
+  if (PSYS[st.u].indexOf(st.pu) < 0) st.pu = PSYS[st.u][0];
+  if (st.type !== 'III') st.D = clampU(st.D, DR[Dk()], LEN[Dk()]);       // inputs only; the unknown is left alone
+  st.L = clampU(st.L, LR[Lk()], LEN[Lk()]);
+  if (st.type !== 'II') st.Q = clampU(st.Q, QR[st.qu], UQ[st.qu][0]);
+  if (st.type !== 'I') {
+    if (st.lk === 'dp') st.dp = clampU(st.dp, PRNG[st.pu], UP[st.pu][0]); else st.hL = clampU(st.hL, HR[Lk()], LEN[Lk()]);
+  }
+}
+
+/* ----- Slider + number controls (values in the units on screen; log sliders for quantities spanning decades) ----- */
+var UNK = ' <span class="pf-unk">unknown</span>';
+function Ctl(parent, id, set, log) {
+  var d = document.createElement('div');
+  d.className = 'pf-ctl'; d.id = 'c-' + id;
+  d.innerHTML = '<label for="n-' + id + '" id="l-' + id + '"></label><div class="pf-inrow"><input type="range" id="r-' + id + '">' +
+    '<span class="pf-num"><input type="number" id="n-' + id + '" step="any" inputmode="decimal"><span class="pf-unit" id="u-' + id + '"><span></span></span></span></div>';
+  parent.appendChild(d);
+  var c = { el: d, rg: $('r-' + id), nb: $('n-' + id), lab: $('l-' + id), unit: $('u-' + id), min: 0, max: 1, nd: 1, value: 0, log: !!log, out: false, onset: set, sel: null, onunit: null };
+  c.utxt = c.unit.firstChild;
+  c.pos = function (v) { return c.log ? 1000 * Math.log(v / c.min) / Math.log(c.max / c.min) : v; };
+  c.val = function (p) { return c.log ? Number((c.min * Math.pow(c.max / c.min, p / 1000)).toPrecision(3)) : p; };
+  c.txt = function (v) { return c.log ? String(Number(v.toPrecision(c.nd))) : String(Number(v.toFixed(c.nd))); };
+  c.ok = function (v) { var t = 1e-9 * Math.max(Math.abs(c.min), Math.abs(c.max)); return isFinite(v) && v >= c.min - t && v <= c.max + t && (!c.log || v > 0); };
+  c.config = function (label, unit, min, max, step, nd, aria) {
+    if (c.lab.innerHTML !== label) c.lab.innerHTML = label;
+    if (unit !== null && c.utxt.innerHTML !== unit) c.utxt.innerHTML = unit;
+    c.min = min; c.max = max; c.nd = nd;
+    if (c.log) { c.rg.min = 0; c.rg.max = 1000; c.rg.step = 1; } else { c.rg.min = min; c.rg.max = max; c.rg.step = step; }
+    c.rg.setAttribute('aria-label', aria);
+    c.nb.setAttribute('aria-label', aria);
+  };
+  c.unitText = function () { if (c.sel) c.sel.hidden = true; c.utxt.hidden = false; };
+  c.unitSel = function (opts, v, aria) {
+    if (!c.sel) {
+      c.sel = document.createElement('select');
+      c.unit.appendChild(c.sel);
+      c.sel.addEventListener('change', function () { if (c.onunit) c.onunit(c.sel.value); });
+    }
+    var key = opts.join();
+    if (c.sel.getAttribute('data-k') !== key) {
+      c.sel.innerHTML = opts.map(function (k) { return '<option value="' + k + '">' + (UQ[k] || UP[k])[1] + '</option>'; }).join('');
+      c.sel.setAttribute('data-k', key);
+    }
+    c.sel.setAttribute('aria-label', aria);
+    c.sel.value = v; c.sel.hidden = false; c.utxt.hidden = true;
+  };
+  c.setOut = function (o) { c.out = o; c.rg.disabled = o; c.nb.readOnly = o; d.classList.toggle('out', o); };
+  c.show = function (v) {
+    c.value = v;
+    if (isFinite(v) && (!c.log || v > 0)) c.rg.value = c.pos(clamp(v, c.min, c.max));
+    if (document.activeElement !== c.nb || c.out) {
+      c.nb.value = isFinite(v) ? c.txt(v) : '';
+      c.nb.placeholder = isFinite(v) ? '' : '–';
+      c.nb.removeAttribute('aria-invalid');
+    }
+  };
+  c.rg.addEventListener('input', function () {
+    if (c.out) return;
+    var v = c.val(+c.rg.value);
+    c.nb.value = c.txt(v); c.nb.removeAttribute('aria-invalid'); c.value = v; c.onset(v);
+  });
+  c.nb.addEventListener('input', function () {
+    if (c.out) return;
+    var v = parseFloat(c.nb.value);
+    if (c.ok(v)) { c.nb.removeAttribute('aria-invalid'); c.rg.value = c.pos(v); c.value = v; c.onset(v); }
+    else c.nb.setAttribute('aria-invalid', 'true');
+  });
+  c.nb.addEventListener('change', function () {
+    if (c.out) return;
+    var v = parseFloat(c.nb.value);
+    if (!isFinite(v) || (c.log && !(v > 0))) v = c.value;
+    v = clamp(v, c.min, c.max);
+    c.nb.value = c.txt(v); c.nb.removeAttribute('aria-invalid'); c.rg.value = c.pos(v); c.value = v; c.onset(v);
+  });
+  return c;
+}
+var cT = Ctl($('ctl-fl'), 'T', function (v) { st.T = us() ? (v - 32) / 1.8 : v; changed(); });
+var cRho = Ctl($('ctl-fl'), 'rho', function (v) { st.rho = us() ? v * SLUG3 : v; changed(); }, true);
+var cMu = Ctl($('ctl-fl'), 'mu', function (v) { st.mu = us() ? v * LBS2 : v; changed(); }, true);
+var cEps = Ctl($('ctl-pipe'), 'eps', function (v) { st.eps = v * LEN[Ek()]; changed(); }, true);
+var cD = Ctl($('ctl-pipe'), 'D', function (v) { st.D = v * LEN[Dk()]; changed(); }, true);
+var cL = Ctl($('ctl-pipe'), 'L', function (v) { st.L = v * LEN[Lk()]; changed(); }, true);
+var cQ = Ctl($('ctl-flow'), 'Q', function (v) { st.Q = v * UQ[st.qu][0]; changed(); }, true);
+var cLoss = Ctl($('ctl-loss'), 'loss', function (v) { if (st.lk === 'dp') st.dp = v * UP[st.pu][0]; else st.hL = v * LEN[Lk()]; changed(); }, true);
+cQ.onunit = function (k) { st.qu = k; changed(); };
+cLoss.onunit = function (k) { st.pu = k; changed(); };
+var flowNote = document.createElement('p');
+flowNote.className = 'pf-derived'; flowNote.id = 'pf-flow-note';
+$('ctl-flow').parentNode.appendChild(flowNote);
+
+function setRadio(name, v) { var el = document.querySelector('input[name="' + name + '"][value="' + v + '"]'); if (el) el.checked = true; }
+function onRadio(name, fn) {
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="' + name + '"]'), function (el) {
+    el.addEventListener('change', function () { if (el.checked) fn(el.value); });
+  });
+}
+onRadio('u', function (v) { if (v === st.u) return; st.qu = QMAP[st.qu]; st.pu = PMAP[st.pu]; st.u = v; matKey = ''; changed(); });
+/* Switching the problem type keeps the state on screen: the answer becomes an input */
+onRadio('type', function (v) {
+  var r = last;
+  if (r && r.ok) { st.D = r.D; st.Q = r.Q; st.dp = r.dp; st.hL = r.hL; }
+  st.type = v; changed();
+});
+$('pf-fluid').addEventListener('change', function () {
+  var v = this.value;
+  if (v === 'custom' && last) { st.rho = last.rho; st.mu = last.mu; }
+  st.fluid = v; changed();
+});
+$('pf-mat').addEventListener('change', function () {
+  var m = matOf(this.value);
+  if (ranged(m)) st.eps = epsMid(m);
+  else if (m.k === 'custom') { var e = epsNow(); st.eps = e > 0 ? e : 0.00015 * FT; }
+  st.mat = m.k; changed();
+});
+$('pf-lk').addEventListener('change', function () {
+  var p = props(), r = last;
+  if (r && r.ok) { st.dp = r.dp; st.hL = r.hL; }
+  else if (this.value === 'hL') st.hL = st.dp / (p.rho * G); else st.dp = st.hL * p.rho * G;
+  st.lk = this.value; changed();
+});
+$('tg-iter').addEventListener('change', function () { showIter = this.checked; changed(); });
+$('tg-anim').addEventListener('change', function () { anim = this.checked; $('pf-svg').classList.toggle('pf-still', !anim); });
+
+var matKey = '';
+function buildMats() {
+  if (matKey === st.u) return;
+  matKey = st.u;
+  var k = Ek();
+  $('pf-mat').innerHTML = MATS.map(function (m) {
+    var v = us() ? m.ft : m.mm, t;
+    if (m.k === 'custom') t = m.name;
+    else if (ranged(m)) t = m.name + ', ε = ' + v[0] + '–' + v[1] + ' ' + k;
+    else t = m.name + (v === 0 ? '' : ', ε = ' + pl(v, 3, true) + ' ' + k);
+    return '<option value="' + m.k + '">' + t + '</option>';
+  }).join('');
+}
+var GIVEN = {
+  I: '<b>Given:</b> the pipe (material, <i>D</i>, ℓ) and the flow rate <i>Q</i>. <b>Find:</b> the head loss <i>h</i><sub>L</sub> and the pressure drop Δ<i>p</i>. Re and ε/<i>D</i> are known, so <i>f</i> comes straight off the chart.',
+  II: '<b>Given:</b> the pipe (material, <i>D</i>, ℓ) and the allowed loss. <b>Find:</b> the flow rate <i>Q</i>. <i>V</i> is unknown, so Re and <i>f</i> are too: guess <i>f</i>, then iterate.',
+  III: '<b>Given:</b> the material, ℓ, the flow rate <i>Q</i> and the allowed loss. <b>Find:</b> the diameter <i>D</i>. Re and ε/<i>D</i> both depend on <i>D</i>: guess <i>f</i>, then iterate.'
+};
+function syncControls(r) {
+  setRadio('u', st.u); setRadio('type', st.type); buildMats();
+  $('pf-fluid').value = st.fluid; $('pf-mat').value = st.mat; $('pf-lk').value = st.lk;
+  $('pf-given').innerHTML = GIVEN[st.type];
+  var F = st.fluid, t1 = st.type === 'I', t2 = st.type === 'II', t3 = st.type === 'III';
+  /* fluid */
+  cT.el.hidden = !TR[F];
+  if (TR[F]) {
+    cT.config('Temperature <span class="pf-sym">T</span>', us() ? '°F' : '°C', tD(TR[F][0]), tD(TR[F][1]), us() ? 1 : 0.5, 1, 'Fluid temperature');
+    cT.show(tD(st.T));
+  }
+  cRho.el.hidden = cMu.el.hidden = F !== 'custom';
+  cRho.config('Density <span class="pf-sym">ρ</span>', us() ? 'slug/ft³' : 'kg/m³', RHOR[0] / (us() ? SLUG3 : 1), RHOR[1] / (us() ? SLUG3 : 1), 0, 4, 'Fluid density');
+  cRho.show(st.rho / (us() ? SLUG3 : 1));
+  cMu.config('Viscosity <span class="pf-sym">μ</span>', us() ? 'lb·s/ft²' : 'N·s/m²', MUR[0] / (us() ? LBS2 : 1), MUR[1] / (us() ? LBS2 : 1), 0, 4, 'Fluid dynamic viscosity');
+  cMu.show(st.mu / (us() ? LBS2 : 1));
+  $('pf-fl-note').innerHTML = 'ρ = ' + fRho(r.rho) + (us() ? ' (' + pl(r.rho / LBM3, 4) + ' lbm/ft³)' : '') + '<br>μ = ' + fMu(r.mu) + '<br>ν = μ/ρ = ' + fNu(r.nu);
+  /* pipe */
+  var m = matOf(st.mat), el = epsLim();
+  cEps.el.hidden = !freeEps();
+  cEps.config('Roughness <span class="pf-sym">ε</span>', Ek(), el[0] / LEN[Ek()], el[1] / LEN[Ek()], 0, 3, 'Equivalent roughness of the pipe wall');
+  cEps.show(st.eps / LEN[Ek()]);
+  cD.config('Inside diameter <span class="pf-sym">D</span>' + (t3 ? UNK : ''), Dk(), DR[Dk()][0], DR[Dk()][1], 0, 4, 'Pipe inside diameter');
+  cD.setOut(t3); cD.show((t3 ? r.D : st.D) / LEN[Dk()]);
+  cL.config('Length <span class="pf-sym">ℓ</span>', Lk(), LR[Lk()][0], LR[Lk()][1], 0, 4, 'Pipe length');
+  cL.show(st.L / LEN[Lk()]);
+  var eps = epsNow(), pn = 'ε = ' + fE(eps) + (ranged(m) ? ' (Table 8.1: ' + (us() ? m.ft : m.mm).join('–') + ' ' + Ek() + ')' : '');
+  if (r.ok) pn += '<br>ε/<i>D</i> = ' + fRel(r.rel) + (t3 ? ' for the diameter found' : '') + ' · <i>A</i> = π<i>D</i>²/4 = ' + fA(r.A);
+  $('pf-pipe-note').innerHTML = pn;
+  /* flow */
+  cQ.config('Flow rate <span class="pf-sym">Q</span>' + (t2 ? UNK : ''), null, QR[st.qu][0], QR[st.qu][1], 0, 4, 'Volume flow rate');
+  cQ.unitSel(QSYS[st.u], st.qu, 'Flow rate unit');
+  cQ.setOut(t2); cQ.show((t2 ? r.Q : st.Q) / UQ[st.qu][0]);
+  flowNote.innerHTML = r.ok ? (t2 ? 'Found by trial and error. ' : '') + '<i>V</i> = <i>Q</i>/<i>A</i> = ' + fV(r.V) + ' · <i>Q</i> = ' + fQ(r.Q, 4, qAlt()) : '';
+  /* loss */
+  $('pf-g-loss').querySelector('legend').textContent = t1 ? 'Loss in the pipe' : 'Allowed loss';
+  var dpk = st.lk === 'dp';
+  if (dpk) {
+    cLoss.config((t1 ? 'Pressure drop ' : 'Allowed pressure drop ') + '<span class="pf-sym">Δp</span>' + (t1 ? UNK : ''), null, PRNG[st.pu][0], PRNG[st.pu][1], 0, 4, 'Pressure drop');
+    cLoss.unitSel(PSYS[st.u], st.pu, 'Pressure unit');
+  } else {
+    cLoss.config((t1 ? 'Head loss ' : 'Allowed head loss ') + '<span class="pf-sym">h<sub>L</sub></span>' + (t1 ? UNK : ''), Lk(), HR[Lk()][0], HR[Lk()][1], 0, 4, 'Head loss');
+    cLoss.unitText();
+  }
+  cLoss.setOut(t1);
+  var hLnow = t1 ? r.hL : st.lk === 'dp' ? st.dp / (r.rho * G) : st.hL, dpNow = hLnow * r.rho * G;
+  cLoss.show(dpk ? dpNow / UP[st.pu][0] : hLnow / LEN[Lk()]);
+  var wf = ' of ' + fluidName(F);
+  $('pf-loss-note').innerHTML = !isFinite(hLnow) ? '' : dpk ? '<i>h</i><sub>L</sub> = Δ<i>p</i>/ρ<i>g</i> = ' + fL(hLnow) + wf + ' · Δ<i>p</i> = ' + fP(dpNow, 4, pAlt())
+    : 'Δ<i>p</i> = ρ<i>gh</i><sub>L</sub> = ' + fP(dpNow) + ' · ' + fP(dpNow, 4, pAlt()) + ' (head of ' + fluidName(F) + ')';
+  $('tg-iter').parentNode.hidden = t1;
+}
+
+/* ----- Rendering ----- */
+var last = null, queued = false, touched = false;
+function changed() {
+  touched = true;
+  if (!queued) { queued = true; requestAnimationFrame(function () { queued = false; render(); }); }
+}
+function render() {
+  normalize();
+  var r = solvePipe(inputs());
+  last = r;
+  syncControls(r);
+  if (touched) writeHash();
+  drawChart(r); drawTiles(r); drawNotes(r); updatePipe(r); drawIter(r); drawRates(r); drawSteps(r); drawMatlab(r);
+  $('sk-re').textContent = r.ok ? fRe(r.Re, false) : '–';
+  $('sk-f').textContent = r.ok ? fF(r.f) : '–';
+  $('sk-al').firstChild.nodeValue = st.type === 'I' ? (st.lk === 'dp' ? 'Pressure drop' : 'Head loss') : st.type === 'II' ? 'Flow rate' : 'Diameter';
+  $('sk-a').innerHTML = !r.ok ? '–' : st.type === 'I' ? (st.lk === 'dp' ? fP(r.dp, 3) : fL(r.hL, 3)) : st.type === 'II' ? fQ(r.Q, 3) : fD(r.D, 3);
+}
+
+/* ----- The Moody chart: friction factor against Reynolds number, one Colebrook curve per relative roughness ----- */
+var EDS = [0.05, 0.04, 0.03, 0.02, 0.015, 0.01, 0.008, 0.006, 0.004, 0.002, 0.001, 0.0008, 0.0006, 0.0004, 0.0002, 0.0001, 0.00005, 0.00001, 0.000005, 0.000001];
+var FTK = [0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009, 0.01, 0.015, 0.02, 0.025, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1,
+  0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1, 1.5, 2, 3, 4, 5, 6, 8, 10, 15, 20, 30, 40, 50, 60, 80, 100];
+var FPRI = [0.01, 0.1, 1, 10, 100, 0.02, 0.05, 0.2, 0.5, 2, 5, 20, 50, 0.03, 0.04, 0.015, 0.025, 0.06, 0.08, 0.008, 0.3, 0.4, 3, 4, 30, 40,
+  0.15, 1.5, 15, 0.07, 0.09, 0.009, 0.006, 0.005, 0.004, 0.6, 0.8, 6, 8, 60, 80, 0.007, 0.003, 0.002];
+var CH = null;
+function tickAt(v, up) {
+  var i;
+  if (up) { for (i = 0; i < FTK.length; i++) if (FTK[i] >= v) return FTK[i]; return FTK[FTK.length - 1]; }
+  for (i = FTK.length - 1; i >= 0; i--) if (FTK[i] <= v) return FTK[i];
+  return FTK[0];
+}
+function step125(v, up) {   // 1, 2 or 5 times a power of ten, below (or above) v
+  var p = Math.pow(10, Math.floor(lg(v))), a = [1, 2, 5, 10], i;
+  if (up) { for (i = 0; i < 4; i++) if (a[i] * p >= v * (1 - 1e-12)) return a[i] * p; }
+  for (i = 3; i >= 0; i--) if (a[i] * p <= v * (1 + 1e-12)) return a[i] * p;
+  return p;
+}
+/* Moody's chart spans Re = 600 to 10⁸ and f = 0.008 to 0.1; it grows to take in points outside that */
+function chartRange(r, it) {
+  var xlo = 600, xhi = 1e8, ylo = 0.008, yhi = 0.1, pts = [];
+  if (r.ok) pts.push([r.Re, r.f]);
+  it.forEach(function (q) { pts.push([q.Re, q.f], [q.Re, q.fn]); });
+  pts.forEach(function (p) {
+    if (!(p[0] > 0 && p[1] > 0 && isFinite(p[0]) && isFinite(p[1]))) return;
+    var x = clamp(p[0], 0.1, 1e12), y = clamp(p[1], 0.002, 100);
+    if (x < xlo * 1.15) xlo = Math.min(xlo, step125(x / 1.3, false));
+    if (x > xhi / 1.15) xhi = Math.max(xhi, Math.pow(10, Math.ceil(lg(x * 1.3))));
+    if (y > yhi / 1.08) yhi = Math.max(yhi, tickAt(y * 1.1, true));
+    if (y < ylo * 1.08) ylo = Math.min(ylo, tickAt(y / 1.1, false));
+  });
+  return [xlo, xhi, ylo, yhi];
+}
+/* Re at which the Colebrook curve of ε/D crosses f = fy (f falls as Re grows) */
+function reAtF(rr, fy, a, b) {
+  var lo = lg(a), hi = lg(b), i, mid;
+  for (i = 0; i < 50; i++) { mid = 0.5 * (lo + hi); if (fFric(Math.pow(10, mid), rr) > fy) lo = mid; else hi = mid; }
+  return Math.pow(10, 0.5 * (lo + hi));
+}
+function pill(p, x, y, txt, anchor, minX, maxX) {
+  var wd = 7 * txt.length + 14, x0 = anchor === 'end' ? x - wd : anchor === 'middle' ? x - wd / 2 : x;
+  if (minX !== undefined) x0 = clamp(x0, minX, maxX - wd);
+  S('rect', { x: x0, y: y - 10, width: wd, height: 20, rx: 10, fill: ACC }, p);
+  S('text', { x: x0 + wd / 2, y: y + 4.3, 'text-anchor': 'middle', 'class': 'pf-pill' }, p, txt);
+}
+function drawChart(r) {
+  var box = $('pf-chart'), keep = box.querySelector('.pf-tip'), ok = r.ok, k, d, x, i;
+  clear(box);
+  var it = showIter && ok && r.iter && st.type !== 'I' ? r.iter : [];
+  var rg = chartRange(r, it), xlo = rg[0], xhi = rg[1], ylo = rg[2], yhi = rg[3];
+  var w = Math.max(300, Math.round(box.clientWidth || 640)), narrow = w < 520, h = Math.round(clamp(w * 0.64, 320, 540));
+  var m = { l: narrow ? 52 : 62, r: narrow ? 54 : 64, t: 10, b: 44 }, pw = w - m.l - m.r, ph = h - m.t - m.b;
+  var lx0 = lg(xlo), lx1 = lg(xhi), ly0 = lg(ylo), ly1 = lg(yhi);
+  var X = function (Re) { return m.l + (lg(Re) - lx0) / (lx1 - lx0) * pw; };
+  var Y = function (f) { return m.t + (ly1 - lg(f)) / (ly1 - ly0) * ph; };
+  var xr = m.l + pw, yb = m.t + ph;
+  CH = { m: m, pw: pw, ph: ph, xlo: xlo, xhi: xhi, ylo: ylo, yhi: yhi, w: w, h: h };
+  var svg = S('svg', { viewBox: '0 0 ' + w + ' ' + h, role: 'img', 'aria-label': 'Moody chart: friction factor f against Reynolds number Re for pipes of different relative roughness' +
+    (ok ? '. Your pipe: Re = ' + fRe(r.Re, false) + ', ε/D = ' + fRelT(r.rel) + ', f = ' + fF(r.f) + '.' : '.') }, box);
+  CH.svg = svg;
+  var cp = S('clipPath', { id: 'pf-clip' }, S('defs', {}, svg));
+  S('rect', { x: m.l, y: m.t, width: pw, height: ph }, cp);
+  var g = S('g', { 'clip-path': 'url(#pf-clip)' }, svg);
+  var busy = [];
+  var free = function (b) { return !busy.some(function (q) { return b[0] < q[2] && b[2] > q[0] && b[1] < q[3] && b[3] > q[1]; }); };
+  /* transition zone and grid */
+  S('rect', { x: X(RE_LAM), y: m.t, width: X(RE_TURB) - X(RE_LAM), height: ph, fill: '#f1eee7' }, g);
+  for (d = Math.floor(lx0); d <= Math.ceil(lx1); d++) for (k = 1; k <= 9; k++) {
+    x = k * Math.pow(10, d);
+    if (x < xlo * 0.999 || x > xhi * 1.001) continue;
+    S('line', { x1: X(x), y1: m.t, x2: X(x), y2: yb, 'class': k === 1 ? 'pf-gmaj' : 'pf-gmin' }, g);
+  }
+  FTK.forEach(function (f) {
+    if (f < ylo * 0.999 || f > yhi * 1.001) return;
+    S('line', { x1: m.l, y1: Y(f), x2: xr, y2: Y(f), 'class': f === 0.01 || f === 0.1 || f === 1 || f === 10 ? 'pf-gmaj' : 'pf-gmin' }, g);
+  });
+  /* curves */
+  var curve = function (rr, a, b, n) {
+    var s = '', j, Re;
+    for (j = 0; j <= n; j++) { Re = a * Math.pow(b / a, j / n); s += (j ? 'L' : 'M') + X(Re).toFixed(1) + ' ' + Y(fFric(Re, rr)).toFixed(1); }
+    return s;
+  };
+  var rb = [];   // Moody's boundary of the wholly turbulent zone, Re (ε/D) √f = 200
+  for (i = 0; i <= 60; i++) { var rq = 0.05 * Math.pow(1e-6 / 0.05, i / 60); rb.push([reRough(rq), fRough(rq)]); }
+  S('path', { d: rb.map(function (p, j) { return (j ? 'L' : 'M') + X(p[0]).toFixed(1) + ' ' + Y(p[1]).toFixed(1); }).join(''), 'class': 'pf-rough' }, g);
+  EDS.forEach(function (e) { S('path', { d: curve(e, RE_TURB, xhi, 40), 'class': 'pf-curve' }, g); });
+  S('path', { d: curve(0, RE_TURB, xhi, 40), 'class': 'pf-curve sm' }, g);
+  S('path', { d: 'M' + X(xlo).toFixed(1) + ' ' + Y(64 / xlo).toFixed(1) + 'L' + X(RE_LAM).toFixed(1) + ' ' + Y(64 / RE_LAM).toFixed(1), 'class': 'pf-lam' }, g);
+  S('path', { d: 'M' + X(RE_LAM).toFixed(1) + ' ' + Y(64 / RE_LAM).toFixed(1) + 'L' + X(RE_TURB).toFixed(1) + ' ' + Y(64 / RE_TURB).toFixed(1), 'class': 'pf-lam', 'stroke-dasharray': '4 4', 'stroke-width': 1.1 }, g);
+  /* your pipe */
+  var lam = ok && r.Re < RE_LAM;
+  if (ok && !lam) {
+    S('path', { d: curve(r.rel, RE_TURB, xhi, 50), stroke: '#fff', 'stroke-width': 5, fill: 'none', opacity: 0.85 }, g);
+    S('path', { d: curve(r.rel, RE_TURB, xhi, 50), stroke: ACC, 'stroke-width': 2.4, fill: 'none' }, g);
+    S('path', { d: curve(r.rel, RE_LAM, RE_TURB, 12), stroke: ACC, 'stroke-width': 2, 'stroke-dasharray': '3 3', fill: 'none' }, g);
+  }
+  if (lam) S('path', { d: 'M' + X(xlo).toFixed(1) + ' ' + Y(64 / xlo).toFixed(1) + 'L' + X(RE_LAM).toFixed(1) + ' ' + Y(64 / RE_LAM).toFixed(1), stroke: ACC, 'stroke-width': 3, fill: 'none' }, g);
+  /* points that labels must avoid */
+  if (ok) busy.push([X(r.Re) - 9, Y(r.f) - 9, X(r.Re) + 9, Y(r.f) + 9]);
+  it.forEach(function (q) { busy.push([X(q.Re) - 4, Y(q.f) - 4, X(q.Re) + 4, Y(q.f) + 4]); });
+  /* ε/D labels at the right edge, or where a curve leaves through the bottom */
+  var labs = [];
+  if (ok && !lam) labs.push([r.rel, true]);
+  EDS.forEach(function (e) { labs.push([e, false]); });
+  var rlab = S('g', {}, svg), fs = narrow ? 5.6 : 6.1;
+  labs.forEach(function (L) {
+    var rr = L[0], fe = fFric(xhi, rr), t = fRelT(rr), wd = fs * t.length + 4, b, y, xx;
+    if (fe > yhi) return;
+    if (fe >= ylo * 1.02) {
+      y = Y(fe); b = [xr + 2, y - 6, xr + 6 + wd, y + 6];
+      if (!free(b)) return;
+      busy.push(b);
+      S('text', { x: xr + 4, y: y + 3.6, 'class': L[1] ? 'pf-lab acc' : 'pf-rlab' }, rlab, t);
+    } else {
+      xx = X(reAtF(rr, ylo, RE_TURB, xhi)); y = yb - 5;
+      if (xx < X(RE_TURB) + 20) return;
+      b = [xx - wd - 3, y - 11, xx + 1, y + 2];
+      if (!free(b)) return;
+      busy.push(b);
+      S('text', { x: xx - 3, y: y, 'text-anchor': 'end', 'class': L[1] ? 'pf-lab acc' : 'pf-lab' }, rlab, t);
+    }
+  });
+  /* zone labels */
+  var zl = S('g', {}, svg);
+  var lamA = Math.max(xlo, 64 / yhi), p1 = [X(lamA), Y(64 / lamA)], p2 = [X(RE_LAM), Y(64 / RE_LAM)];
+  var segL = Math.sqrt(Math.pow(p2[0] - p1[0], 2) + Math.pow(p2[1] - p1[1], 2)), ang = Math.atan2(p2[1] - p1[1], p2[0] - p1[0]) * 180 / Math.PI;
+  var lt = segL > 150 ? 'Laminar flow, f = 64/Re' : segL > 70 ? 'Laminar' : '';
+  if (lt) {
+    // baseline 4 px off the line on the side the letters grow toward, so the text sits beside the line
+    var mx = 0.5 * (p1[0] + p2[0]) + Math.sin(ang * Math.PI / 180) * 4, my = 0.5 * (p1[1] + p2[1]) - Math.cos(ang * Math.PI / 180) * 4;
+    S('text', { x: mx, y: my, 'text-anchor': 'middle', transform: 'rotate(' + ang.toFixed(1) + ' ' + mx.toFixed(1) + ' ' + my.toFixed(1) + ')', 'class': 'pf-zone' }, zl, lt);
+  }
+  if (X(RE_TURB) - X(RE_LAM) > 14) {
+    var tx = X(Math.sqrt(RE_LAM * RE_TURB)) + 4;
+    S('text', { x: tx, y: yb - 8, transform: 'rotate(-90 ' + tx.toFixed(1) + ' ' + (yb - 8) + ')', 'class': 'pf-zone' }, zl, 'Transition');
+    busy.push([tx - 12, yb - 80, tx + 2, yb]);
+  }
+  var wt = narrow ? 'Wholly turbulent' : 'Wholly turbulent flow (rough pipes)', wb = [xr - 6 - 6.2 * wt.length, m.t + 3, xr - 4, m.t + 19];
+  if (free(wb)) { S('text', { x: xr - 6, y: m.t + 15, 'text-anchor': 'end', 'class': 'pf-zone' }, zl, wt); busy.push(wb); }
+  [2e5, 6e5, 6e4, 2e6].some(function (Rs) {
+    if (Rs < RE_TURB * 3 || Rs > xhi / 3) return false;
+    var fsm = fFric(Rs, 0), a1 = X(Rs / 1.6), a2 = X(Rs * 1.6), b1 = Y(fFric(Rs / 1.6, 0)), b2 = Y(fFric(Rs * 1.6, 0));
+    var an = Math.atan2(b2 - b1, a2 - a1) * 180 / Math.PI, sx = X(Rs), sy = Y(fsm) + 15;
+    if (sy > yb - 4 || !free([sx - 40, sy - 12, sx + 40, sy + 4])) return false;
+    S('text', { x: sx, y: sy, 'text-anchor': 'middle', transform: 'rotate(' + an.toFixed(1) + ' ' + sx.toFixed(1) + ' ' + sy.toFixed(1) + ')', 'class': 'pf-zone' }, zl, 'Smooth pipes');
+    busy.push([sx - 40, sy - 12, sx + 40, sy + 4]);
+    return true;
+  });
+  /* frame, ticks and axis titles */
+  S('rect', { x: m.l, y: m.t, width: pw, height: ph, fill: 'none', 'class': 'pf-axis' }, svg);
+  var pxd = pw / (lx1 - lx0), minors = pxd >= 150 ? [2, 3, 4, 5, 6, 8] : pxd >= 85 ? [2, 4, 6] : pxd >= 60 ? [3] : [];
+  for (d = Math.floor(lx0); d <= Math.ceil(lx1); d++) {
+    x = Math.pow(10, d);
+    if (x >= xlo * 0.999 && x <= xhi * 1.001) {
+      S('line', { x1: X(x), y1: yb, x2: X(x), y2: yb + 5, 'class': 'pf-axis' }, svg);
+      S('text', { x: X(x), y: yb + 17, 'text-anchor': 'middle', 'class': 'pf-tick' }, svg, d === 0 ? '1' : d === 1 ? '10' : '10' + supU(d));
+    }
+    minors.forEach(function (k2) {
+      var xm = k2 * Math.pow(10, d);
+      if (xm < xlo || xm > xhi) return;
+      S('text', { x: X(xm), y: yb + 15, 'text-anchor': 'middle', 'class': 'pf-tick', 'font-size': '9.5px' }, svg, String(k2));
+    });
+  }
+  var ylab = [];
+  FPRI.forEach(function (f) {
+    if (f < ylo * 0.999 || f > yhi * 1.001) return;
+    var y = Y(f);
+    if (ylab.some(function (q) { return Math.abs(q - y) < 12.5; })) return;
+    ylab.push(y);
+    S('text', { x: m.l - 6, y: y + 3.6, 'text-anchor': 'end', 'class': 'pf-tick' }, svg, String(f));
+  });
+  S('text', { x: m.l + pw / 2, y: h - 8, 'text-anchor': 'middle', 'class': 'pf-axlab' }, svg, 'Reynolds number, Re = VD/ν');
+  var tyc = m.t + ph / 2;
+  if (ok && Math.abs(Y(r.f) - tyc) < 64) tyc = Y(r.f) > tyc ? m.t + ph * 0.24 : m.t + ph * 0.76;   // keep clear of the f reading
+  S('text', { transform: 'translate(13,' + tyc.toFixed(1) + ') rotate(-90)', 'text-anchor': 'middle', 'class': 'pf-axlab' }, svg, 'Friction factor, f');
+  S('text', { transform: 'translate(' + (w - 9) + ',' + (m.t + ph / 2) + ') rotate(90)', 'text-anchor': 'middle', 'class': 'pf-axlab' }, svg, 'Relative roughness, ε/D');
+  /* trial-and-error path: assume f, compute Re (across), read the new f (up or down) */
+  if (it.length) {
+    var ig = S('g', { 'clip-path': 'url(#pf-clip)' }, svg), dp = '';
+    it.forEach(function (q, j) { dp += (j ? 'L' : 'M') + X(q.Re).toFixed(1) + ' ' + Y(q.f).toFixed(1) + 'L' + X(q.Re).toFixed(1) + ' ' + Y(q.fn).toFixed(1); });
+    S('path', { d: dp, stroke: '#fff', 'stroke-width': 4.5, fill: 'none', 'stroke-linejoin': 'round', opacity: 0.85 }, ig);
+    S('path', { d: dp, stroke: PUR, 'stroke-width': 1.7, fill: 'none', 'stroke-linejoin': 'round' }, ig);
+    it.forEach(function (q, j) { if (j < 6) S('circle', { cx: X(q.Re), cy: Y(q.f), r: 3.4, fill: '#fff', stroke: PUR, 'stroke-width': 1.6 }, ig); });
+    var q0 = it[0], sx0 = X(q0.Re), sy0 = Y(q0.f), st0 = 'start: f = 0.02', sw = 6.4 * st0.length;
+    [[8, -8, 'start'], [8, 16, 'start'], [-8, -8, 'end'], [-8, 16, 'end']].some(function (o) {
+      var bx = o[2] === 'start' ? [sx0 + o[0], sy0 + o[1] - 11, sx0 + o[0] + sw, sy0 + o[1] + 3] : [sx0 + o[0] - sw, sy0 + o[1] - 11, sx0 + o[0], sy0 + o[1] + 3];
+      if (!free(bx) || bx[0] < m.l || bx[2] > xr || bx[1] < m.t || bx[3] > yb) return false;
+      S('text', { x: sx0 + o[0], y: sy0 + o[1], 'text-anchor': o[2], 'class': 'pf-lab pur' }, svg, st0);
+      busy.push(bx);
+      return true;
+    });
+  }
+  /* the operating point and how to read it: up from Re, across to f */
+  if (ok) {
+    var px = X(r.Re), py = Y(r.f);
+    if (px >= m.l - 1 && px <= xr + 1 && py >= m.t - 1 && py <= yb + 1) {
+      S('path', { d: 'M' + px.toFixed(1) + ' ' + yb + 'V' + py.toFixed(1) + 'H' + m.l, 'class': 'pf-guide' }, svg);
+      S('circle', { cx: px, cy: py, r: 6.5, fill: ACC, stroke: '#fff', 'stroke-width': 2 }, svg);
+      pill(svg, px, yb + 15, 'Re = ' + fRe(r.Re, false), 'middle', m.l - 8, xr + 8);
+      pill(svg, m.l - 2, py, narrow ? pl(r.f, 3) : fF(r.f), 'end', 0, m.l + 30);
+    }
+  }
+  /* reader */
+  var cx1 = S('line', { 'class': 'pf-cross', visibility: 'hidden' }, svg), cy1 = S('line', { 'class': 'pf-cross', visibility: 'hidden' }, svg);
+  CH.cross = [cx1, cy1];
+  var tip = keep || document.createElement('div');
+  tip.className = 'pf-tip'; tip.style.display = 'none'; box.appendChild(tip); CH.tip = tip;
+  /* legend */
+  var key = function (c, wd, dash) { return '<i class="pf-key' + (dash ? ' dash' : '') + '" style="border-color:' + c + ';border-top-width:' + wd + 'px"></i>'; };
+  var item = function (k2, t2) { return '<span>' + k2 + '<span>' + t2 + '</span></span>'; };
+  var items = [];
+  if (ok) items.push(item('<i class="pf-dotkey" style="background:' + ACC + '"></i>', 'Your pipe: Re = ' + fRe(r.Re) + ', <i>f</i> = ' + fF(r.f)));
+  if (ok) items.push(item(key(ACC, 3), lam ? 'Laminar line (your flow)' : 'Your curve, ε/<i>D</i> = ' + fRel(r.rel)));
+  items.push(item(key(NAVY, 2), 'Laminar and smooth-pipe curves'));
+  items.push(item(key('#3d4f61', 1), 'Colebrook curves, ε/<i>D</i> at the right'));
+  items.push(item(key('#8c96a0', 2, true), 'Start of wholly turbulent flow'));
+  items.push(item('<i class="pf-dotkey" style="background:#f1eee7;border:1px solid #d9d4c7;border-radius:2px"></i>', 'Transition (uncertain)'));
+  if (it.length) items.push(item(key(PUR, 2), 'Trial-and-error path from <i>f</i> = 0.02'));
+  $('pf-legend').innerHTML = items.join('');
+}
+function hideTip() { if (!CH || !CH.tip) return; CH.tip.style.display = 'none'; CH.cross.forEach(function (e) { e.setAttribute('visibility', 'hidden'); }); }
+function trow(k, v) { return '<div class="row"><i>' + k + '</i><b>' + v + '</b></div>'; }
+function readAt(e) {
+  if (!CH || !CH.svg) return;
+  var rc = CH.svg.getBoundingClientRect(), sc = CH.w / rc.width, px = (e.clientX - rc.left) * sc, py = (e.clientY - rc.top) * sc, m = CH.m;
+  if (px < m.l || px > m.l + CH.pw || py < m.t || py > m.t + CH.ph) { hideTip(); return; }
+  var Re = Math.pow(10, lg(CH.xlo) + (px - m.l) / CH.pw * (lg(CH.xhi) - lg(CH.xlo)));
+  var f = Math.pow(10, lg(CH.yhi) - (py - m.t) / CH.ph * (lg(CH.yhi) - lg(CH.ylo)));
+  var c = CH.cross;
+  c[0].setAttribute('x1', px); c[0].setAttribute('x2', px); c[0].setAttribute('y1', m.t); c[0].setAttribute('y2', m.t + CH.ph);
+  c[1].setAttribute('x1', m.l); c[1].setAttribute('x2', m.l + CH.pw); c[1].setAttribute('y1', py); c[1].setAttribute('y2', py);
+  c.forEach(function (el) { el.setAttribute('visibility', 'visible'); });
+  var html = '<div class="hd">Re = ' + fRe(Re) + ' · <i>f</i> = ' + pl(f, 3) + '</div>';
+  if (Re < RE_LAM) html += trow('Laminar: <i>f</i> = 64/Re', pl(64 / Re, 3));
+  else if (Re < RE_TURB) html += trow('Transition', 'laminar or turbulent');
+  else { var rr = rThrough(Re, f); html += trow('ε/<i>D</i> of the curve here', rr > 1e-8 ? fRel(Number(rr.toPrecision(2))) : 'below smooth'); }
+  var r = last;
+  if (r && r.ok) {
+    var V = Re * r.nu / r.D;
+    html += trow('Your pipe at this Re: <i>f</i>', pl(fFric(Re, r.rel), 3)) + trow('<i>V</i> = Re ν/<i>D</i>', fV(V, 3)) + trow('<i>Q</i> = <i>VA</i>', fQ(V * r.A, 3));
+  }
+  var tip = CH.tip, bw = $('pf-chart').clientWidth, s2 = bw / CH.w;
+  tip.innerHTML = html; tip.style.display = 'block';
+  var tw = tip.offsetWidth, th = tip.offsetHeight, left = px * s2 + 14, top = py * s2 - th - 10;
+  if (left + tw > bw) left = px * s2 - tw - 14;
+  if (top < 0) top = py * s2 + 14;
+  tip.style.left = Math.max(0, left) + 'px'; tip.style.top = top + 'px';
+}
+(function () {
+  var box = $('pf-chart');
+  box.addEventListener('pointermove', function (e) { if (e.pointerType === 'mouse') readAt(e); });
+  box.addEventListener('pointerdown', function (e) { readAt(e); });
+  box.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse') hideTip(); });
+})();
+
+/* ----- Inside the pipe: the flow, the velocity profile, the wall roughness and the grade lines (not to scale) ----- */
+var PV = null;
+var FCOL = { water: ['#d6e9f8', '#2f7fc1'], air: ['#edf2f7', '#6f8aa8'], gasoline: ['#f7efc4', '#a8840f'], oil: ['#f4e1bb', '#a0640d'], glycerin: ['#efeadb', '#857848'], custom: ['#dde9f1', '#4d7d9b'] };
+var MCOL = { riveted: '#6b5d52', concrete: '#9b9a92', wood: '#a0764a', cast: '#4f555c', galv: '#8e9aa4', steel: '#5b6b79', drawn: '#b87333', smooth: '#b9c6d0', custom: '#6c7a86' };
+var PX0 = 50, PX1 = 740, PCY = 222, RP = 36, PWT = 9, XA = 130, XB = 610, XPR = 250;
+/* turbulent power-law exponent n against Re (Munson, Fig. 8.17) */
+function nPow(Re) {
+  var a = [[3.6, 6], [4.36, 6.6], [5.04, 7], [6.04, 8.8], [6.5, 10]], x = lg(Re), i;
+  if (x <= a[0][0]) return a[0][1];
+  for (i = 1; i < a.length; i++) if (x <= a[i][0]) return a[i - 1][1] + (a[i][1] - a[i - 1][1]) * (x - a[i - 1][0]) / (a[i][0] - a[i - 1][0]);
+  return a[a.length - 1][1];
+}
+function tx(p, x, y, cls, parts, anchor) {   // text with subscripts: parts = ['h', ['L'], ' = 24.5 ft']
+  var t = S('text', { x: x, y: y, 'class': cls, 'text-anchor': anchor || 'start' }, p), sub = false;
+  parts.forEach(function (q) {
+    if (typeof q === 'string') { S('tspan', sub ? { dy: -3.5 } : {}, t, q); sub = false; }
+    else { S('tspan', { dy: 3.5, 'font-size': '0.78em' }, t, q[0]); sub = true; }
+  });
+  return t;
+}
+function initPipe() {
+  var svg = $('pf-svg'), defs = S('defs', {}, svg);
+  var cp = S('clipPath', { id: 'pf-pclip' }, defs);
+  S('rect', { x: PX0, y: PCY - RP, width: PX1 - PX0, height: 2 * RP }, cp);
+  [['pf-arr', '#1f2933'], ['pf-arrv', NAVY]].forEach(function (a) {
+    var mk = S('marker', { id: a[0], viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 6.5, markerHeight: 6.5, orient: 'auto-start-reverse' }, defs);
+    S('path', { d: 'M0 0L10 5L0 10z', fill: a[1] }, mk);
+  });
+  var fluid = S('rect', { x: PX0, y: PCY - RP, width: PX1 - PX0, height: 2 * RP }, svg);
+  var sg = S('g', { 'clip-path': 'url(#pf-pclip)' }, svg), lines = [];
+  [0, -0.32, 0.32, -0.62, 0.62, -0.86, 0.86].forEach(function (eta) {
+    lines.push({ eta: eta, el: S('line', { x1: PX0 - 36, y1: PCY + eta * RP, x2: PX1 + 36, y2: PCY + eta * RP, 'class': 'pf-flow', 'stroke-width': 2.6, 'stroke-linecap': 'round' }, sg) });
+  });
+  PV = { svg: svg, fluid: fluid, lines: lines, dyn: S('g', {}, svg), fd: [] };
+}
+function updatePipe(r) {
+  if (!PV) initPipe();
+  var ok = r.ok, g = PV.dyn, col = FCOL[st.fluid] || FCOL.custom, mc = MCOL[st.mat] || MCOL.steel, k;
+  clear(g);
+  PV.fluid.setAttribute('fill', col[0]);
+  var lam = ok && r.Re < RE_LAM, n = ok ? nPow(r.Re) : 7;
+  var phi = function (eta) { var a = Math.abs(eta); return lam ? 1 - a * a : Math.pow(Math.max(0, 1 - a), 1 / n); };
+  var mean = lam ? 0.5 : 2 * n * n / ((n + 1) * (2 * n + 1));
+  var base = ok ? clamp(26 * Math.sqrt(r.V / FT), 5, 170) : 0;    // screen speed of the mean flow, px/s
+  PV.lines.forEach(function (ln, i) {
+    ln.el.setAttribute('stroke', col[1]);
+    var sp = base * phi(ln.eta) / mean, dur = sp > 0.3 ? 36 / sp : 120;
+    if (!PV.fd[i] || Math.abs(dur / PV.fd[i] - 1) > 0.03) { PV.fd[i] = dur; ln.el.style.setProperty('--fd', dur.toFixed(3) + 's'); }
+  });
+  PV.svg.classList.toggle('pf-still', !anim || !ok);
+  /* walls, with the roughness exaggerated */
+  var rel = ok ? r.rel : epsNow() / st.D, amp = clamp(100 * Math.sqrt(rel), 0, 7);
+  [-1, 1].forEach(function (s) {
+    var face = PCY + s * RP, outer = face + s * PWT;
+    S('rect', { x: PX0, y: Math.min(face, outer), width: PX1 - PX0, height: PWT, fill: mc }, g);
+    if (amp > 0.35) {
+      var d = 'M' + PX0 + ' ' + face, x;
+      for (k = 0, x = PX0; x < PX1 - 0.1; k++, x += 7) {
+        var hgt = 0.35 + 0.65 * Math.abs(Math.sin(k * 12.9898 + (s > 0 ? 3.1 : 0)) * 43758.5453 % 1);
+        d += 'L' + (x + 3.5).toFixed(1) + ' ' + (face - s * amp * hgt).toFixed(1) + 'L' + Math.min(x + 7, PX1) + ' ' + face;
+      }
+      S('path', { d: d + 'Z', fill: mc }, g);
+    }
+    S('line', { x1: PX0, y1: outer, x2: PX1, y2: outer, stroke: '#2e3a45', 'stroke-width': 1.2 }, g);
+  });
+  [PX0, PX1].forEach(function (x) {
+    S('line', { x1: x, y1: PCY - RP - PWT, x2: x, y2: PCY - RP, stroke: '#2e3a45', 'stroke-width': 1.2 }, g);
+    S('line', { x1: x, y1: PCY + RP, x2: x, y2: PCY + RP + PWT, stroke: '#2e3a45', 'stroke-width': 1.2 }, g);
+  });
+  /* diameter and length */
+  S('line', { x1: PX1 + 16, y1: PCY - RP + 1, x2: PX1 + 16, y2: PCY + RP - 1, stroke: '#1f2933', 'stroke-width': 1.2, 'marker-start': 'url(#pf-arr)', 'marker-end': 'url(#pf-arr)' }, g);
+  S('text', { x: PX1 + 24, y: PCY + 4.5, 'class': 'lb b' }, g, 'D = ' + (ok ? pl(r.D / LEN[Dk()], 4, true) : pl(st.D / LEN[Dk()], 4, true)) + ' ' + Dk());
+  S('line', { x1: PX0 + 1, y1: 306, x2: PX1 - 1, y2: 306, stroke: '#1f2933', 'stroke-width': 1.2, 'marker-start': 'url(#pf-arr)', 'marker-end': 'url(#pf-arr)' }, g);
+  S('line', { x1: PX0, y1: PCY + RP + PWT + 4, x2: PX0, y2: 314, stroke: '#7b8794' }, g);
+  S('line', { x1: PX1, y1: PCY + RP + PWT + 4, x2: PX1, y2: 314, stroke: '#7b8794' }, g);
+  S('text', { x: (PX0 + PX1) / 2, y: 310.5, 'text-anchor': 'middle', 'class': 'lb b' }, g, 'ℓ = ' + pl(st.L / LEN[Lk()], 4, true) + ' ' + Lk());
+  if (!ok) {
+    S('text', { x: (PX0 + PX1) / 2, y: PCY + 5, 'text-anchor': 'middle', 'class': 'lb b' }, g, 'No solution for these inputs');
+    $('pf-svg-desc').textContent = 'Pipe schematic: no solution for these inputs.';
+    $('pf-svg-note').innerHTML = '';
+    return;
+  }
+  /* velocity profile */
+  var U = 74, pts = [];
+  for (k = 0; k <= 40; k++) { var eta = -1 + k / 20; pts.push((XPR + U * phi(eta)).toFixed(1) + ' ' + (PCY + eta * RP).toFixed(1)); }
+  S('path', { d: 'M' + XPR + ' ' + (PCY - RP) + 'L' + pts.join('L') + 'L' + XPR + ' ' + (PCY + RP) + 'Z', fill: '#fff', 'fill-opacity': 0.55, stroke: NAVY, 'stroke-width': 1.6 }, g);
+  [-0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75].forEach(function (eta) {
+    var xe = XPR + U * phi(eta);
+    if (xe - XPR > 6) S('line', { x1: XPR, y1: PCY + eta * RP, x2: xe - 1, y2: PCY + eta * RP, stroke: NAVY, 'stroke-width': 1.3, 'marker-end': 'url(#pf-arrv)' }, g);
+  });
+  S('text', { x: XPR + U + 12, y: PCY + 4.5, 'class': 'lb' }, g, lam ? 'parabolic profile (laminar)' : 'turbulent profile, flatter (n ≈ ' + n.toFixed(1) + ')');
+  /* piezometers and grade lines: the HGL falls by hL; the EGL runs V²/2g above it */
+  var ya = 70, yb = 130, kL = r.f * r.L / r.D, vh = clamp((yb - ya) / kL, 4, 40), x1 = 90, x2 = 655;
+  var hy = function (x) { return ya + (yb - ya) * (x - XA) / (XB - XA); }, top = PCY - RP - PWT;
+  [XA, XB].forEach(function (x, i) {
+    var lvl = i ? yb : ya;
+    S('rect', { x: x - 6, y: lvl, width: 12, height: top - lvl, fill: col[1], 'fill-opacity': 0.35 }, g);
+    S('path', { d: 'M' + (x - 6) + ' 30V' + top + 'M' + (x + 6) + ' 30V' + top, stroke: '#42515e', 'stroke-width': 1.6, fill: 'none' }, g);
+    S('text', { x: x - 11, y: top - 5, 'text-anchor': 'end', 'class': 'lb b' }, g, String(i + 1));
+  });
+  S('line', { x1: XA, y1: ya, x2: 712, y2: ya, stroke: '#7b8794', 'stroke-dasharray': '2 3' }, g);
+  S('line', { x1: XB + 6, y1: yb, x2: 712, y2: yb, stroke: '#7b8794', 'stroke-dasharray': '2 3' }, g);
+  S('line', { x1: x1, y1: hy(x1), x2: x2, y2: hy(x2), stroke: col[1], 'stroke-width': 2.2 }, g);
+  S('line', { x1: x1, y1: hy(x1) - vh, x2: x2, y2: hy(x2) - vh, stroke: NAVY, 'stroke-width': 1.6, 'stroke-dasharray': '7 4' }, g);
+  var sep = vh < 14 ? 7 - vh / 2 : 0;
+  S('text', { x: x2 + 5, y: hy(x2) + 4 + sep, 'class': 'lb s' }, g, 'HGL');
+  S('text', { x: x2 + 5, y: hy(x2) - vh + 4 - sep, 'class': 'lb s' }, g, 'EGL');
+  S('line', { x1: 704, y1: ya + 1, x2: 704, y2: yb - 1, stroke: '#1f2933', 'stroke-width': 1.2, 'marker-start': 'url(#pf-arr)', 'marker-end': 'url(#pf-arr)' }, g);
+  tx(g, 711, (ya + yb) / 2 - 3, 'lb acc', ['h', ['L'], ' = ' + pl(r.hL / LEN[Lk()], 4) + ' ' + Lk()]);
+  S('text', { x: 711, y: (ya + yb) / 2 + 14, 'class': 'lb s' }, g, 'Δp = ' + pl(r.dp / UP[st.pu][0], 4) + ' ' + UP[st.pu][1]);
+  var vx = XA + 20, vt = hy(vx) - vh;
+  if (vh >= 9) S('line', { x1: vx, y1: vt + 1, x2: vx, y2: hy(vx) - 1, stroke: '#1f2933', 'stroke-width': 1, 'marker-start': 'url(#pf-arr)', 'marker-end': 'url(#pf-arr)' }, g);
+  S('text', { x: vx + 6, y: vt - 7, 'class': 'lb s' }, g, 'V²/2g = ' + pl(r.V * r.V / (2 * G) / LEN[Lk()], 3) + ' ' + Lk());
+  /* flow rate and velocity */
+  S('text', { x: 370, y: top - 8, 'text-anchor': 'middle', 'class': 'lb' }, g, 'Q = ' + pl(r.Q / UQ[st.qu][0], 4, true) + ' ' + UQ[st.qu][1] + '  →  V = ' + pl(us() ? r.V / FT : r.V, 4) + (us() ? ' ft/s' : ' m/s') + ', Re = ' + fRe(r.Re, false));
+  /* entrance length */
+  var fr = clamp(r.Le / r.L, 0, 1), xe2 = PX0 + fr * (PX1 - PX0), ly = PCY + RP + PWT + 16;
+  S('line', { x1: PX0, y1: ly, x2: Math.max(xe2, PX0 + 2), y2: ly, stroke: ACC, 'stroke-width': 3 }, g);
+  S('line', { x1: Math.max(xe2, PX0 + 2), y1: ly - 5, x2: Math.max(xe2, PX0 + 2), y2: ly + 5, stroke: ACC, 'stroke-width': 1.5 }, g);
+  var lt = ['entrance length ℓ', ['e'], ' ≈ ' + pl(r.Le / LEN[Lk()], 3) + ' ' + Lk() + (r.Le > r.L ? ', longer than the pipe' : ', then fully developed')];
+  if (xe2 < 430) tx(g, xe2 + 8, ly + 4, 'lb s', lt); else tx(g, PX0 + 6, ly + 4, 'lb s', lt);
+  $('pf-svg-desc').textContent = 'Pipe schematic: ' + fluidName(st.fluid) + ' flowing at ' + pl(us() ? r.V / FT : r.V, 3) + (us() ? ' ft/s' : ' m/s') + ', ' + r.regime +
+    ' flow; the hydraulic grade line falls by the head loss of ' + pl(r.hL / LEN[Lk()], 3) + ' ' + Lk() + '.';
+  $('pf-svg-note').innerHTML = 'Not to scale. Piezometers 1 and 2 show the hydraulic grade line (HGL) falling by <i>h</i><sub>L</sub> along the pipe; the energy grade line (EGL) runs <i>V</i>²/2<i>g</i> above it, parallel in a pipe of constant diameter. The dots move with the local velocity, and the bumps on the wall show the roughness, exaggerated.';
+}
+
+/* ----- Result tiles ----- */
+function tile(k, v, s, cls) { return '<div class="pf-tile' + (cls ? ' ' + cls : '') + '"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="s">' + s + '</div></div>'; }
+var REGT = { laminar: 'laminar', transition: 'transition: laminar or turbulent', turbulent: 'turbulent', rough: 'wholly turbulent (fully rough)' };
+function fSource(r) {
+  if (r.regime === 'laminar') return '64/Re: laminar, roughness plays no part';
+  if (r.regime === 'transition') return 'uncertain: laminar ' + fF(64 / r.Re) + ', turbulent ' + fF(r.fCole);
+  if (r.regime === 'rough') return 'Colebrook; fully rough value ' + fF(r.fRough);
+  return 'Colebrook (the Moody chart curve)';
+}
+function errText(r) {
+  if (r.err === 'range') return st.type === 'II' ? 'No flow rate gives this loss: it would take Re above 10<sup>12</sup>. Lower the allowed loss or lengthen the pipe.'
+    : 'No diameter gives this loss: even a pipe as thin as its own roughness loses less. Lower the allowed loss, raise the flow rate or lengthen the pipe.';
+  return 'Check the inputs.';
+}
+function drawTiles(r) {
+  var h = [], t = st.type, ok = r.ok, mat = matOf(st.mat), dash = '–';
+  if (!ok) {
+    h.push(tile('Reynolds number Re', dash, '', 'off'), tile('Relative roughness ε/<i>D</i>', dash, '', 'off'), tile('Friction factor <i>f</i>', dash, '', 'off'));
+    h.push(tile(t === 'II' ? 'Flow rate <i>Q</i>' : t === 'III' ? 'Inside diameter <i>D</i>' : 'Head loss', dash, errText(r), 'ans off'));
+    $('pf-tiles').innerHTML = h.join('');
+    return;
+  }
+  var wf = fluidName(st.fluid);
+  h.push(tile('Reynolds number Re', fRe(r.Re), (r.Re >= 1e5 ? Math.round(r.Re).toLocaleString('en-US') + ' · ' : 'ρ<i>VD</i>/μ · ') + REGT[r.regime]));
+  h.push(tile('Relative roughness ε/<i>D</i>', fRel(r.rel), 'ε = ' + fE(r.eps) + (mat.k === 'custom' ? '' : ', ' + mat.name.replace(/ \(.*\)$/, '').toLowerCase())));
+  h.push(tile('Friction factor <i>f</i>', fF(r.f), fSource(r)));
+  h.push(tile('Average velocity <i>V</i>', fV(r.V), '<i>V</i>²/2<i>g</i> = ' + fL(r.V * r.V / (2 * G), 3) + ' of ' + wf));
+  if (t === 'I') {
+    h.push(tile('Head loss <i>h</i><sub>L</sub>', fL(r.hL), 'of ' + wf + ' · <i>f</i>(ℓ/<i>D</i>)<i>V</i>²/2<i>g</i>', 'ans'));
+    h.push(tile('Pressure drop Δ<i>p</i>', fP(r.dp), fP(r.dp, 4, pAlt()) + ' · ρ<i>gh</i><sub>L</sub>', 'ans'));
+  } else {
+    if (t === 'II') h.push(tile('Flow rate <i>Q</i>', fQ(r.Q), fQ(r.Q, 4, qAlt()) + ' · by trial and error', 'ans'));
+    else h.push(tile('Inside diameter <i>D</i>', fD(r.D), fL(r.D) + ' · the smallest pipe within the allowed loss', 'ans'));
+    if (st.lk === 'dp') h.push(tile('Head loss <i>h</i><sub>L</sub>', fL(r.hL), 'of ' + wf + ', from Δ<i>p</i> = ' + fP(r.dp) + ' (given)'));
+    else h.push(tile('Pressure drop Δ<i>p</i>', fP(r.dp), 'from <i>h</i><sub>L</sub> = ' + fL(r.hL) + ' of ' + wf + ' (given)'));
+  }
+  $('pf-tiles').innerHTML = h.join('');
+}
+
+/* ----- Notes under the chart ----- */
+function drawNotes(r) {
+  var n = [], t = st.type;
+  if (!r.ok) { $('pf-notes').innerHTML = '<li class="warn"><b>No solution.</b> ' + errText(r) + '</li>'; return; }
+  var fs = colebrook(r.Re, 0), it = r.iter;
+  if (r.regime === 'laminar') n.push('<li><b>Laminar flow</b> (Re &lt; 2100): <i>f</i> = 64/Re = ' + fF(r.f) + ', whatever the roughness. Try another material: nothing changes.</li>');
+  else if (r.regime === 'transition') n.push('<li class="warn"><b>Transition</b> (2100 &lt; Re &lt; 4000): the flow can switch between laminar and turbulent, so <i>f</i> is uncertain, anywhere from ' + fF(64 / r.Re) + ' (laminar) to ' + fF(r.fCole) + ' (Colebrook). The simulator takes ' + fF(r.f) + ' on a straight line between them; a design should avoid this range.</li>');
+  else if (r.regime === 'rough') n.push('<li><b>Wholly turbulent flow.</b> Re is past Moody&rsquo;s dashed line (Re &gt; ' + fRe(r.reRough) + ' for ε/<i>D</i> = ' + fRel(r.rel) + '), so <i>f</i> hardly depends on Re: the fully rough value is ' + fF(r.fRough) + '.</li>');
+  else {
+    var smooth = r.rel === 0 || (r.f - fs) / fs < 0.01;
+    n.push('<li><b>Turbulent flow</b> (Re &gt; 4000): <i>f</i> = ' + fF(r.f) + ' from the Colebrook curve for ε/<i>D</i> = ' + fRel(r.rel) + '. ' +
+      (r.rel === 0 ? 'A smooth pipe: the lowest curve on the chart.' : smooth ? 'The pipe acts as <b>hydraulically smooth</b>: <i>f</i> is within 1% of the smooth-pipe value ' + fF(fs) + ', because the roughness is buried in the viscous layer at the wall.'
+        : 'A smooth pipe would have ' + fF(fs) + '; wholly turbulent flow starts at Re = ' + fRe(r.reRough) + '.') + '</li>');
+  }
+  if (it && t !== 'I') n.push('<li><b>Trial and error:</b> from <i>f</i> = 0.02, <i>f</i> settled at ' + fF(it[it.length - 1].fn) + ' after ' + it.length + ' round' + (it.length > 1 ? 's' : '') +
+    (r.regime === 'laminar' ? '; in laminar flow the closed form gives the answer at once' : '') + ' (table below' + (showIter ? ', path on the chart' : '') + ').</li>');
+  if (r.rel > 0.05) n.push('<li class="warn"><b>Very rough pipe.</b> ε/<i>D</i> = ' + fRel(r.rel) + ' is beyond the Moody chart (largest curve 0.05), so the result extrapolates the Colebrook equation' +
+    (r.rel >= 0.2 ? '; with the roughness this large a part of the diameter, neither the chart nor the equation really applies.' : '.') + '</li>');
+  if (r.gas) {
+    var Tk = st.T + 273.15, Ma = r.V / Math.sqrt(1.4 * 287.05 * Tk);
+    if (Ma > 0.3) n.push('<li class="warn"><b>Compressible flow.</b> The Mach number is ' + pl(Ma, 2) + ', above about 0.3: the air density changes along the pipe, so the incompressible result is only an estimate.</li>');
+    if (r.dp > 0.1 * 101325) n.push('<li class="warn"><b>Large pressure drop for a gas.</b> Δ<i>p</i> is ' + pl(100 * r.dp / 101325, 2) + '% of atmospheric pressure (keep it under about 10%), so the density does not stay constant.</li>');
+  } else if (r.V > 4.6) n.push('<li><b>Fast for a liquid.</b> ' + fV(r.V, 3) + ' is above the 3 to 10 ft/s (1 to 3 m/s) usual in liquid lines; fast flow is noisy, erodes fittings and makes water hammer worse.</li>');
+  var fr = r.Le / r.L;
+  if (fr > 1) n.push('<li class="warn"><b>Not fully developed.</b> The entrance length ' + fL(r.Le, 3) + ' is longer than the pipe, so the wall friction is higher than <i>f</i> predicts over most of it.</li>');
+  else if (fr > 0.25) n.push('<li><b>Entrance length</b> ' + fL(r.Le, 3) + ' (' + pl(r.Le / r.D, 3) + ' diameters) is ' + pl(100 * fr, 2) + '% of the pipe: there the flow is still developing and the friction is a little higher.</li>');
+  $('pf-notes').innerHTML = n.join('');
+}
+
+/* ----- Trial and error ----- */
+function colebrookRows(Re, rel) {
+  var f = 0.02, rows = [], k, x, fn;
+  for (k = 1; k <= 30; k++) {
+    x = -2 * lg(rel / 3.7 + 2.51 / (Re * Math.sqrt(f)));
+    fn = 1 / (x * x);
+    rows.push({ f: f, x: x, fn: fn });
+    if (Math.abs(fn - f) <= 1e-6 * f) break;
+    f = fn;
+  }
+  return rows;
+}
+function rowsHtml(rows, cells) {
+  var h = '', show = rows.length <= 8 ? rows.map(function (q, i) { return i; }) : [0, 1, 2, 3, 4, -1, rows.length - 2, rows.length - 1];
+  show.forEach(function (i) {
+    if (i < 0) { h += '<tr class="gap"><td colspan="9">⋮</td></tr>'; return; }
+    h += '<tr' + (i === rows.length - 1 ? ' class="fin"' : '') + '><td>' + (i + 1) + '</td>' + cells(rows[i]).map(function (c) { return '<td>' + c + '</td>'; }).join('') + '</tr>';
+  });
+  return h;
+}
+function drawIter(r) {
+  var box = $('pf-iter'), t = st.type, hd = $('pf-iter-h');
+  if (!r.ok) { hd.textContent = 'Trial and error'; box.innerHTML = '<p class="pf-sub-note">' + errText(r) + '</p>'; return; }
+  var h = '';
+  if (t === 'I') {
+    hd.textContent = 'Solving for the friction factor';
+    if (r.regime === 'laminar') h = '<p class="pf-sub-note">A Type I problem needs no trial and error: Re and ε/<i>D</i> come straight from the data. Laminar flow: <i>f</i> = 64/Re = 64/' + fRe(r.Re) + ' = ' + fF(r.f) + '.</p>';
+    else if (r.regime === 'transition') h = '<p class="pf-sub-note">A Type I problem needs no trial and error: Re and ε/<i>D</i> come straight from the data. In the transition range the chart has no curve; the simulator joins 64/2100 = ' + fF(64 / 2100) + ' at Re = 2100 to the Colebrook value ' + fF(colebrook(4000, r.rel)) + ' at Re = 4000 with a straight line on the log-log chart: <i>f</i> = ' + fF(r.f) + '.</p>';
+    else {
+      var rows = colebrookRows(r.Re, r.rel);
+      h = '<p class="pf-sub-note">Re and ε/<i>D</i> come straight from the data, but Colebrook has <i>f</i> on both sides, so it is solved by iteration too (<code>Colebrook.m</code> uses <code>fzero</code>). Guess <i>f</i>, evaluate the right side, repeat:</p>' +
+        '<div class="pf-scroll"><table class="pf-table"><thead><tr><th>Round</th><th>Assumed <i>f</i></th><th>1/√<i>f</i> from Colebrook</th><th>New <i>f</i></th></tr></thead><tbody>' +
+        rowsHtml(rows, function (q) { return [fF(q.f), pl(q.x, 5), fF(q.fn)]; }) + '</tbody></table></div>' +
+        '<p class="pf-sub-note">Re = ' + fRe(r.Re) + ', ε/<i>D</i> = ' + fRel(r.rel) + ': <i>f</i> settles at ' + fF(r.f) + ' after ' + rows.length + ' rounds.</p>';
+    }
+    box.innerHTML = h;
+    return;
+  }
+  var it = r.iter, lam = r.regime === 'laminar';
+  hd.textContent = 'Trial and error, starting from f = 0.02';
+  if (t === 'II') {
+    h = '<p class="pf-sub-note">Assume <i>f</i>, find <i>V</i> = √(2<i>gh</i><sub>L</sub><i>D</i>/(<i>f</i>ℓ)), then Re = <i>VD</i>/ν, and read a new <i>f</i> from the chart for ε/<i>D</i> = ' + fRel(r.rel) + '. Repeat until <i>f</i> stops changing.</p>' +
+      '<div class="pf-scroll"><table class="pf-table"><thead><tr><th>Round</th><th>Assumed <i>f</i></th><th><i>V</i>, ' + (us() ? 'ft/s' : 'm/s') + '</th><th>Re</th><th>New <i>f</i></th></tr></thead><tbody>' +
+      rowsHtml(it, function (q) { return [fF(q.f), pl(us() ? q.V / FT : q.V, 4), fRe(q.Re), fF(q.fn)]; }) + '</tbody></table></div>';
+    h += '<p class="pf-sub-note">' + (lam ? 'Laminar flow: each round only halves the error in ln <i>f</i>, so it takes ' + it.length + ' rounds; the Hagen&ndash;Poiseuille closed form <i>V</i> = <i>gD</i>²<i>h</i><sub>L</sub>/(32νℓ) = ' + fV(r.V) + ' gives the answer at once.'
+      : 'After ' + it.length + ' rounds <i>V</i> = ' + fV(r.V) + ' and <i>Q</i> = <i>VA</i> = ' + fQ(r.Q) + '.') + '</p>';
+  } else {
+    h = '<p class="pf-sub-note">Assume <i>f</i>, find <i>D</i> = (8<i>f</i>ℓ<i>Q</i>²/(π²<i>gh</i><sub>L</sub>))<sup>1/5</sup>, then Re = 4<i>Q</i>/(πν<i>D</i>) and ε/<i>D</i>, and read a new <i>f</i>. Repeat until <i>f</i> stops changing.</p>' +
+      '<div class="pf-scroll"><table class="pf-table"><thead><tr><th>Round</th><th>Assumed <i>f</i></th><th><i>D</i>, ' + Dk() + '</th><th>Re</th><th>ε/<i>D</i></th><th>New <i>f</i></th></tr></thead><tbody>' +
+      rowsHtml(it, function (q) { return [fF(q.f), pl(q.D / LEN[Dk()], 4), fRe(q.Re), fRel(q.r), fF(q.fn)]; }) + '</tbody></table></div>';
+    h += '<p class="pf-sub-note">' + (lam ? 'Laminar flow: the closed form <i>D</i><sup>4</sup> = 128νℓ<i>Q</i>/(π<i>gh</i><sub>L</sub>) gives <i>D</i> = ' + fD(r.D) + ' at once.'
+      : '<i>D</i> changes only as <i>f</i><sup>1/5</sup>, so it settles fast: <i>D</i> = ' + fD(r.D) + ' after ' + it.length + ' rounds.') + '</p>';
+  }
+  box.innerHTML = h;
+}
+
+/* ----- More results ----- */
+function dd(k, v, s) { return '<div><dt>' + k + '</dt><dd>' + v + (s ? '<small>' + s + '</small>' : '') + '</dd></div>'; }
+function drawRates(r) {
+  if (!r.ok) { $('pf-rates').innerHTML = dd('No solution', '–', errText(r)); return; }
+  var h = [], vh = r.V * r.V / (2 * G), K = r.f * r.L / r.D, per = us() ? 100 * FT : 100, wf = fluidName(st.fluid);
+  h.push(dd('Fluid properties', 'ρ = ' + fRho(r.rho), 'μ = ' + fMu(r.mu) + '; ν = μ/ρ = ' + fNu(r.nu)));
+  h.push(dd('Mass flow rate ρ<i>Q</i>', us() ? sf(r.rho * r.Q / 0.45359237, 4) + ' lbm/s' : sf(r.rho * r.Q, 4) + ' kg/s', us() ? sf(r.rho * r.Q / 14.593902937, 4) + ' slug/s' : ''));
+  h.push(dd('Velocity head <i>V</i>²/2<i>g</i>', fL(vh, 4) + ' of ' + wf, 'the pipe costs <i>f</i>ℓ/<i>D</i> = ' + pl(K, 4) + ' velocity heads'));
+  h.push(dd('Loss per ' + (us() ? '100 ft' : '100 m') + ' of pipe', fP(r.dp / r.L * per, 4), fL(r.hL / r.L * per, 4) + ' of head'));
+  h.push(dd('Wall shear stress τ<sub>w</sub>', fTau(r.tauW), '<i>f</i> = 8τ<sub>w</sub>/(ρ<i>V</i>²); Δ<i>p</i> = 4ℓτ<sub>w</sub>/<i>D</i>'));
+  h.push(dd('Power lost to friction <i>Q</i>Δ<i>p</i>', fW(r.power), 'what a pump must add to keep the flow going'));
+  h.push(dd('Entrance length', fL(r.Le, 3), r.Re < RE_LAM ? '0.06 Re <i>D</i> (laminar) = ' + pl(r.Le / r.D, 3) + ' diameters' : '4.4 Re<sup>1/6</sup> <i>D</i> (turbulent) = ' + pl(r.Le / r.D, 3) + ' diameters'));
+  if (r.Re >= RE_TURB) {
+    var eh = (r.fHaa - r.fCole) / r.fCole * 100;
+    h.push(dd('Explicit formulas', 'Haaland ' + fF(r.fHaa), (eh >= 0 ? '+' : '−') + pl(Math.abs(eh), 2) + '% from Colebrook' + (r.rel === 0 && r.Re <= 1e5 ? '; Blasius 0.316/Re<sup>1/4</sup> = ' + fF(r.fBla) : r.rel === 0 ? '; Blasius (smooth, Re &lt; 10<sup>5</sup>) does not apply' : '')));
+    h.push(dd('Wholly turbulent from', r.rel > 0 ? 'Re = ' + fRe(r.reRough) : 'never (smooth pipe)', r.rel > 0 ? 'Moody&rsquo;s dashed line Re(ε/<i>D</i>)√<i>f</i> = 200; fully rough <i>f</i> = ' + fF(r.fRough) : 'a smooth pipe has no fully rough limit'));
+  } else h.push(dd('Laminar check', '<i>f</i> Re = ' + pl(r.f * r.Re, 4), r.Re < RE_LAM ? '= 64 for laminar flow: Hagen&ndash;Poiseuille' : 'the laminar value would be 64'));
+  if (st.type === 'II' && r.Re >= RE_TURB) h.push(dd('Re√<i>f</i> (known without guessing)', pl(r.reSqrtF, 4), '(<i>D</i>/ν)√(2<i>gh</i><sub>L</sub><i>D</i>/ℓ): Colebrook then gives <i>f</i> directly'));
+  if (r.gas) h.push(dd('Mach number', pl(r.V / Math.sqrt(1.4 * 287.05 * (st.T + 273.15)), 3), 'compressibility matters above about 0.3'));
+  $('pf-rates').innerHTML = h.join('');
+}
+
+/* ----- Step-by-step solution (in the units on screen) ----- */
+function li(lbl, eq, res, arrow) { return '<li><span class="lbl">' + lbl + '</span><span class="eq">' + eq + '</span>' + (res ? ' <span class="res">' + (arrow ? '→ ' : '= ') + res + '</span>' : '') + '</li>'; }
+function bu(v, n) { var t = sf(v, n || 4); return t.indexOf('×') >= 0 ? '(' + t + ')' : t; }   // a number in base units on screen (ft or m)
+function bg(v) { var a = Math.abs(v), t = a >= 1e7 || a < 1e-4 ? sci(v, 4, true, true) : pl(v, 4, true); return t.indexOf('×') >= 0 ? '(' + t + ')' : t; }   // a given value, without trailing zeros
+function drawSteps(r) {
+  var h = [], t = st.type, U = us(), L1 = LEN[Lk()], g = gD(), wf = fluidName(st.fluid);
+  var done = function () { $('pf-steps').innerHTML = h.join(''); };
+  var rhoV = U ? r.rho / SLUG3 : r.rho, nuV = U ? r.nu / (FT * FT) : r.nu, lu = Lk();
+  var Lv = r.L / L1, epsV = r.eps / L1;
+  var fl = st.fluid === 'custom' ? 'The fluid' : st.fluid === 'water' || st.fluid === 'air' ? (st.fluid === 'water' ? 'Water' : 'Air') + ' at ' + fTe(st.T) : FLUIDS[st.fluid].name.replace(' at 20 °C', '') + ' at ' + (U ? '68 °F' : '20 °C');
+  h.push(li(fl + ': density and viscosity', 'ρ = ' + fRho(r.rho) + ', μ = ' + fMu(r.mu) + ', ν = μ/ρ', fNu(r.nu)));
+  var hLstep = function () {
+    if (st.lk === 'dp') h.push(li('Head loss from the allowed pressure drop, Δ<i>p</i> = ' + bg(st.dp / UP[st.pu][0]) + ' ' + UP[st.pu][1], '<i>h</i><sub>L</sub> = Δ<i>p</i>/ρ<i>g</i> = ' + (U ? bg(st.dp / PSF) + ' lb/ft²' : bg(st.dp) + ' Pa') + ' / (' + bu(rhoV) + ' × ' + bu(g) + ')', fL(r.hL) + ' of ' + wf));
+  };
+  var regLine = function () { return r.Re < RE_LAM ? 'laminar' : r.Re < RE_TURB ? 'transition' : 'turbulent'; };
+  var fStep = function () {
+    if (r.Re < RE_LAM) h.push(li('Friction factor: laminar, so roughness does not matter', '<i>f</i> = 64/Re = 64/' + fRe(r.Re), fF(r.f)));
+    else if (r.Re < RE_TURB) h.push(li('Friction factor: transition range, between the laminar line and the Colebrook curve', 'straight line on the log-log chart from ' + fF(64 / RE_LAM) + ' at Re = 2100 to ' + fF(colebrook(RE_TURB, r.rel)) + ' at Re = 4000', fF(r.f)));
+    else h.push(li('Friction factor: Moody chart at Re = ' + fRe(r.Re) + ' and ε/<i>D</i> = ' + fRel(r.rel) + ', or the Colebrook equation', '1/√<i>f</i> = −2.0 log[(ε/<i>D</i>)/3.7 + 2.51/(Re√<i>f</i>)]', fF(r.f)));
+  };
+  if (!r.ok) {
+    if (t !== 'I') hLstep();
+    h.push(li('Stop', errText(r)));
+    return done();
+  }
+  var Dv = r.D / L1, Qv = U ? r.Q / CFS : r.Q, Vv = r.V / L1, Av = r.A / (L1 * L1), au = U ? 'ft²' : 'm²', qu = U ? 'ft³/s' : 'm³/s', vu = U ? 'ft/s' : 'm/s';
+  var Ds = t === 'III' ? bu(Dv) : bg(Dv), Qs = t === 'II' ? bu(Qv) : bg(Qv), Ls = bg(Lv), hs = st.lk === 'hL' && t !== 'I' ? bg(r.hL / L1) : bu(r.hL / L1);   // given values without trailing zeros
+  var dpLine = function () {
+    h.push(li('Pressure drop', 'Δ<i>p</i> = ρ<i>gh</i><sub>L</sub> = ' + bu(rhoV) + ' × ' + bu(g) + ' × ' + hs, U ? bu(r.dp / PSF) + ' lb/ft² = ' + fP(r.dp, 4, 'psi') : fP(r.dp, 4, 'Pa') + ' = ' + fP(r.dp, 4, 'kPa')));
+  };
+  if (t === 'I') {
+    h.push(li('Flow area, <i>D</i> = ' + bg(r.D / LEN[Dk()]) + ' ' + Dk() + ' = ' + bg(Dv) + ' ' + lu, '<i>A</i> = π<i>D</i>²/4', bu(Av) + ' ' + au));
+    h.push(li('Average velocity, <i>Q</i> = ' + bg(r.Q / UQ[st.qu][0]) + ' ' + UQ[st.qu][1] + (st.qu === (U ? 'cfs' : 'm3s') ? '' : ' = ' + bu(Qv) + ' ' + qu), '<i>V</i> = <i>Q</i>/<i>A</i> = ' + Qs + '/' + bu(Av), bu(Vv) + ' ' + vu));
+    h.push(li('Reynolds number', 'Re = <i>VD</i>/ν = ' + bu(Vv) + ' × ' + Ds + '/' + bu(nuV), fRe(r.Re) + ', ' + regLine()));
+    h.push(li('Relative roughness, ε = ' + fE(r.eps), 'ε/<i>D</i> = ' + bg(epsV) + '/' + bg(Dv), fRel(r.rel)));
+    fStep();
+    h.push(li('Head loss (Darcy&ndash;Weisbach)', '<i>h</i><sub>L</sub> = <i>f</i>(ℓ/<i>D</i>)<i>V</i>²/2<i>g</i> = ' + fF(r.f) + ' × (' + Ls + '/' + Ds + ') × ' + bu(Vv) + '²/(2 × ' + bu(g) + ')', fL(r.hL) + ' of ' + wf));
+    dpLine();
+    return done();
+  }
+  hLstep();
+  var it = r.iter, q0 = it[0], fin = it[it.length - 1];
+  if (t === 'II') {
+    h.push(li('Relative roughness, <i>D</i> = ' + bg(r.D / LEN[Dk()]) + ' ' + Dk() + ' = ' + bg(Dv) + ' ' + lu, 'ε/<i>D</i> = ' + bg(epsV) + '/' + bg(Dv), fRel(r.rel)));
+    h.push(li('Guess <i>f</i> = 0.02 and find the velocity', '<i>V</i> = √(2<i>gh</i><sub>L</sub><i>D</i>/(<i>f</i>ℓ)) = √(2 × ' + bu(g) + ' × ' + hs + ' × ' + Ds + '/(0.02 × ' + Ls + '))', bu(q0.V / L1) + ' ' + vu));
+    h.push(li('Reynolds number and a new <i>f</i> from the chart', 'Re = <i>VD</i>/ν = ' + fRe(q0.Re), '<i>f</i> = ' + fF(q0.fn), true));
+    h.push(li('Repeat until <i>f</i> stops changing (table above)', it.length + ' rounds', '<i>f</i> = ' + fF(fin.fn) + ', <i>V</i> = ' + fV(r.V), true));
+    if (r.Re < RE_LAM) h.push(li('Laminar shortcut (Hagen&ndash;Poiseuille)', '<i>V</i> = <i>gD</i>²<i>h</i><sub>L</sub>/(32νℓ) = ' + bu(g) + ' × ' + Ds + '² × ' + hs + '/(32 × ' + bu(nuV) + ' × ' + Ls + ')', fV(r.V)));
+    h.push(li('Flow rate', '<i>Q</i> = <i>VA</i> = ' + bu(Vv) + ' × π × ' + Ds + '²/4', bu(Qv) + ' ' + qu + (st.qu === (U ? 'cfs' : 'm3s') ? '' : ' = ' + fQ(r.Q))));
+    if (r.Re >= RE_TURB) h.push(li('Check without guessing: Re√<i>f</i> is known from the data', 'Re√<i>f</i> = (<i>D</i>/ν)√(2<i>gh</i><sub>L</sub><i>D</i>/ℓ) = ' + pl(r.reSqrtF, 4) + ', so 1/√<i>f</i> = −2.0 log[(ε/<i>D</i>)/3.7 + 2.51/' + pl(r.reSqrtF, 4) + ']', '<i>f</i> = ' + fF(r.f)));
+  } else {
+    h.push(li('Guess <i>f</i> = 0.02 and find the diameter', '<i>D</i> = (8<i>f</i>ℓ<i>Q</i>²/(π²<i>gh</i><sub>L</sub>))<sup>1/5</sup> = (8 × 0.02 × ' + Ls + ' × ' + Qs + '²/(π² × ' + bu(g) + ' × ' + hs + '))<sup>1/5</sup>', bu(q0.D / L1) + ' ' + lu));
+    h.push(li('Re and ε/<i>D</i> for that diameter, and a new <i>f</i>', 'Re = 4<i>Q</i>/(πν<i>D</i>) = ' + fRe(q0.Re) + ', ε/<i>D</i> = ' + fRel(q0.r), '<i>f</i> = ' + fF(q0.fn), true));
+    h.push(li('Repeat until <i>f</i> stops changing (table above)', it.length + ' rounds', '<i>f</i> = ' + fF(fin.fn) + ', <i>D</i> = ' + bu(Dv) + ' ' + lu, true));
+    if (r.Re < RE_LAM) h.push(li('Laminar shortcut', '<i>D</i> = (128νℓ<i>Q</i>/(π<i>gh</i><sub>L</sub>))<sup>1/4</sup>', bu(Dv) + ' ' + lu));
+    h.push(li('Diameter', '<i>D</i> = ' + bu(Dv) + ' ' + lu, fD(r.D) + '; choose the next larger standard size'));
+    h.push(li('Check: velocity, Re and the head loss', '<i>V</i> = <i>Q</i>/<i>A</i> = ' + fV(r.V) + ', Re = ' + fRe(r.Re) + ', <i>h</i><sub>L</sub> = <i>f</i>(ℓ/<i>D</i>)<i>V</i>²/2<i>g</i>', fL(r.hL) + ' ✓'));
+  }
+  done();
+}
+
+/* ----- MATLAB check with the course function Colebrook.m (SI units) ----- */
+function m6(x) { return String(Number(x.toPrecision(6))); }
+function drawMatlab(r) {
+  var L = [], NL = String.fromCharCode(10), c = function (s) { L.push('% ' + s); }, t = st.type, U = us();
+  var out = function () { $('pf-matlab').textContent = L.join(NL); };
+  var fl = st.fluid === 'water' || st.fluid === 'air' ? st.fluid + ' at ' + fTe(st.T) : st.fluid === 'custom' ? 'the fluid' : FLUIDS[st.fluid].name;
+  var regime = !r.ok ? 'turbulent' : r.Re < RE_LAM ? 'laminar' : r.Re < RE_TURB ? 'transition' : 'turbulent';
+  c(fl + ': density (kg/m^3) and viscosity (Pa s)');
+  L.push('rho = ' + m6(r.rho) + ';  mu = ' + m6(r.mu) + ';  nu = mu/rho;  g = 9.80665;');
+  var mat = matOf(st.mat);
+  c((mat.k === 'custom' ? 'roughness' : mat.name.replace(/ \(.*\)$/, '').toLowerCase()) + ', e = ' + pl(r.eps / LEN[Ek()], 4, true) + ' ' + Ek() + (U && t !== 'III' ? '; D = ' + pl(st.D / IN, 4, true) + ' in' : '') + (U ? '; L = ' + pl(st.L / FT, 4, true) + ' ft' : '') + ' (in m)');
+  L.push('e = ' + m6(r.eps) + ';' + (t !== 'III' ? '  D = ' + m6(r.D) + ';' : '') + '  L = ' + m6(r.L) + ';');
+  var fric = function (ind, rr) {   // the friction factor line for the regime of the answer
+    if (regime === 'laminar') return [ind + 'fn = 64/Re;'];
+    if (regime === 'transition') return [ind + 'f4 = Colebrook(4000, ' + rr + ');      % transition: straight line on the log-log chart',
+      ind + 'fn = exp(log(64/2100) + log(Re/2100)/log(4000/2100)*(log(f4) - log(64/2100)));'];
+    return [ind + 'fn = Colebrook(Re, ' + rr + ');'];
+  };
+  var hl = function () {
+    if (st.lk === 'dp') {
+      L.push('dp = ' + m6(st.dp) + ';                    % Pa (' + pl(st.dp / UP[st.pu][0], 4, true) + ' ' + UP[st.pu][1] + ')');
+      L.push('hL = dp/(rho*g)                    % m of ' + fluidName(st.fluid));
+    } else L.push('hL = ' + m6(st.hL) + ';                    % m of ' + fluidName(st.fluid) + (U ? ' (' + pl(st.hL / FT, 4, true) + ' ft)' : ''));
+  };
+  if (t === 'I') {
+    L.push('Q = ' + m6(r.Q) + ';                     % m^3/s (' + pl(r.Q / UQ[st.qu][0], 4, true) + ' ' + UQ[st.qu][1] + ')');
+    L.push('V = Q/(pi*D^2/4)');
+    L.push('Re = V*D/nu');
+    fric('', 'e/D').forEach(function (s) { L.push(s.replace('fn =', 'f =').replace('fn ', 'f ')); });
+    L[L.length - 1] = L[L.length - 1] + (regime === 'turbulent' ? '      % turbulent: Re > 4000' : regime === 'laminar' ? '             % laminar: Re < 2100' : '');
+    L.push('f');
+    L.push('hL = f*L/D*V^2/(2*g)               % m');
+    L.push('dp = rho*g*hL                      % Pa');
+    if (U) L.push('dp_psi = dp/6894.757');
+    c('simulator: V = ' + m6(r.V) + ' m/s, Re = ' + m6(r.Re) + ', f = ' + m6(r.f) + ', hL = ' + m6(r.hL) + ' m, dp = ' + m6(r.dp) + ' Pa');
+    return out();
+  }
+  hl();
+  if (!r.ok) { c('simulator: no solution: ' + errText(r).replace(/<[^>]+>/g, '')); return out(); }
+  if (t === 'II') {
+    L.push('f = 0.02;                          % first guess');
+    L.push('for k = 1:200');
+    L.push('    V = sqrt(2*g*hL*D/(f*L));');
+    L.push('    Re = V*D/nu;');
+    fric('    ', 'e/D').forEach(function (s) { L.push(s); });
+    L.push('    if abs(fn - f) < 1e-12*f, break, end');
+    L.push('    f = fn;');
+    L.push('end');
+    L.push('f, V, Re');
+    L.push('Q = V*pi*D^2/4                     % m^3/s');
+    if (U) L.push('Q_gpm = Q/' + m6(GPM));
+    if (regime === 'laminar') L.push('V_closed_form = g*D^2*hL/(32*nu*L)  % laminar: Hagen-Poiseuille');
+    c('simulator: f = ' + m6(r.f) + ', V = ' + m6(r.V) + ' m/s, Re = ' + m6(r.Re) + ', Q = ' + m6(r.Q) + ' m^3/s');
+  } else {
+    L.push('Q = ' + m6(r.Q) + ';                     % m^3/s (' + pl(r.Q / UQ[st.qu][0], 4, true) + ' ' + UQ[st.qu][1] + ')');
+    L.push('f = 0.02;                          % first guess');
+    L.push('for k = 1:200');
+    L.push('    D = (8*f*L*Q^2/(pi^2*g*hL))^(1/5);');
+    L.push('    Re = 4*Q/(pi*nu*D);');
+    fric('    ', 'e/D').forEach(function (s) { L.push(s); });
+    L.push('    if abs(fn - f) < 1e-12*f, break, end');
+    L.push('    f = fn;');
+    L.push('end');
+    L.push('f, D, Re');
+    if (U) L.push('D_in = D/0.0254'); else L.push('D_mm = D*1000');
+    if (regime === 'laminar') L.push('D_closed_form = (128*nu*L*Q/(pi*g*hL))^(1/4)');
+    c('simulator: f = ' + m6(r.f) + ', D = ' + m6(r.D) + ' m, Re = ' + m6(r.Re) + ', V = ' + m6(r.V) + ' m/s');
+  }
+  out();
+}
+
+/* ----- Shareable links: the setup is kept in the address after the # ----- */
+var KEYS = ['u', 'type', 'fluid', 'T', 'rho', 'mu', 'mat', 'eps', 'D', 'L', 'Q', 'lk', 'dp', 'hL', 'qu', 'pu'];
+var CHOICE = { u: ['us', 'si'], type: ['I', 'II', 'III'], fluid: ['water', 'air', 'gasoline', 'oil', 'glycerin', 'custom'],
+  mat: MATS.map(function (m) { return m.k; }), lk: ['dp', 'hL'], qu: Object.keys(UQ), pu: Object.keys(UP) };
+var LIM = { T: [-40, 100], rho: RHOR, mu: MUR, eps: [0, 0.1], D: [1e-4, 10], L: [0.1, 1e4], Q: [1e-8, 100], dp: [0.1, 1e9], hL: [1e-6, 1e8] };
+function writeHash() {
+  var parts = KEYS.map(function (k) { return k + '=' + (typeof st[k] === 'number' ? Number(st[k].toPrecision(8)) : st[k]); });
+  try { history.replaceState(null, '', '#' + parts.join('&')); } catch (e) { /* ignore */ }
+}
+function readHash() {
+  var h = location.hash.slice(1), got = {}, k;
+  if (h.indexOf('=') < 0) return false;
+  for (k in DEF) st[k] = DEF[k];
+  h.split('&').forEach(function (kv) { var i = kv.indexOf('='); if (i > 0) got[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1)); });
+  KEYS.forEach(function (key) {
+    if (got[key] === undefined) return;
+    if (CHOICE[key]) { if (CHOICE[key].indexOf(got[key]) >= 0) st[key] = got[key]; return; }
+    var x = parseFloat(got[key]);
+    if (isFinite(x)) st[key] = clamp(x, LIM[key][0], LIM[key][1]);
+  });
+  if (QSYS[st.u].indexOf(st.qu) < 0) st.qu = QMAP[st.qu];
+  if (PSYS[st.u].indexOf(st.pu) < 0) st.pu = PMAP[st.pu];
+  matKey = '';
+  return true;
+}
+
+/* ----- Examples (US values, converted to SI) ----- */
+function F2C(f) { return (f - 32) / 1.8; }
+var EX = {
+  copper: {},
+  quiz: { mat: 'smooth', D: 12 * IN, L: 500 * FT, Q: 'Re' },
+  oil: { fluid: 'oil', mat: 'steel', D: 1 * IN, L: 50 * FT, Q: 5 * GPM },
+  concrete: { mat: 'concrete', eps: 0.003 * FT, D: 48 * IN, L: 5000 * FT, Q: 40000 * GPM },
+  duct: { fluid: 'air', T: F2C(70), mat: 'galv', D: 12 * IN, L: 100 * FT, Q: 1000 * CFM, qu: 'cfm', pu: 'inwg' },
+  copper2: { type: 'II', dp: 10 * PSI },
+  steel2: { type: 'II', mat: 'steel', D: 6 * IN, L: 1000 * FT, lk: 'hL', hL: 20 * FT },
+  drip: { type: 'II', D: 0.125 * IN, L: 10 * FT, lk: 'hL', hL: 2 * FT },
+  air3: { type: 'III', fluid: 'air', T: 15, mat: 'galv', Q: 2 * CFS, L: 100 * FT, dp: 0.5 * PSI, qu: 'cfs' },
+  water3: { type: 'III', mat: 'cast', Q: 500 * GPM, L: 1000 * FT, lk: 'hL', hL: 5 * FT }
+};
+function apply(o) {
+  var k, u = st.u;
+  for (k in DEF) st[k] = DEF[k];
+  st.u = u;
+  for (k in o) st[k] = o[k];
+  if (o.Q === 'Re') { var p = props(); st.Q = 1e6 * p.mu / p.rho * Math.PI * st.D / 4; }   // Re = 4Q/(πνD) = 10⁶
+  if (ranged(matOf(st.mat)) && o.eps === undefined) st.eps = epsMid(matOf(st.mat));
+  if (QSYS[st.u].indexOf(st.qu) < 0) st.qu = QMAP[st.qu];
+  if (PSYS[st.u].indexOf(st.pu) < 0) st.pu = PMAP[st.pu];
+  changed();
+}
+$('pf-example').addEventListener('change', function () { var e = EX[this.value]; if (e) apply(e); this.value = ''; });
+$('pf-reset').addEventListener('click', function () { apply({}); });
+$('pf-link').addEventListener('click', function () {
+  var b = this; writeHash();
+  var done = function (ok) { b.textContent = ok ? 'Link copied' : 'Copy the address-bar link'; setTimeout(function () { b.textContent = 'Copy link to this setup'; }, 2200); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(location.href).then(function () { done(true); }, function () { done(false); });
+  else done(false);
+});
+
+/* ----- Start ----- */
+var lastW = 0, rt = null;
+window.addEventListener('resize', function () {
+  clearTimeout(rt);
+  rt = setTimeout(function () { var w = $('pf-chart').clientWidth; if (w !== lastW) { lastW = w; render(); } }, 120);
+});
+window.addEventListener('hashchange', function () { if (readHash()) render(); });
+initPipe();
+readHash();
+render();
+lastW = $('pf-chart').clientWidth;
+function renderTex() {
+  if (!window.katex) return;
+  Array.prototype.forEach.call(document.querySelectorAll('.tex-d'), function (el) {
+    try { window.katex.render(el.getAttribute('data-tex'), el, { displayMode: true, throwOnError: false }); } catch (e) { /* keep the source text */ }
+  });
+}
+Array.prototype.forEach.call(document.querySelectorAll('.tex-d'), function (el) { if (!el.textContent) el.textContent = el.getAttribute('data-tex'); });
+if (window.katex) renderTex(); else window.addEventListener('load', renderTex);
+})();
+</script>
+{% endraw %}
