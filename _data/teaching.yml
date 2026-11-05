@@ -41,6 +41,19 @@ tools:
       blowdown and makeup water, and the fan power, on an animated picture of the tower. Set the
       approach yourself or let a rated tower (ε-NTU model) predict it, with the fan holding a cold
       water setpoint, and read a short write-up of the equations behind it.
+  - title: Pipe flow simulator
+    label: Interactive tool
+    courses: ENSC 3233 Fluid Mechanics · MAE 3524 Thermal Fluids Design
+    url: /teaching/pipe-flow/
+    image: pipe-flow-simulator.svg
+    button: Open the simulator
+    text: >-
+      Read the Moody chart the way you would by hand. Choose the fluid, the pipe material, the
+      diameter, the length and the flow rate, and watch the Reynolds number and the friction factor
+      move on an interactive Moody chart. Solve the three classic pipe flow problems, finding the
+      pressure drop (Type I), the flow rate (Type II) or the pipe diameter (Type III), with the
+      trial-and-error path drawn on the chart, a step-by-step solution, a MATLAB check with
+      Colebrook.m and a short write-up of the equations behind it.
 
 asme:
   intro: >-
