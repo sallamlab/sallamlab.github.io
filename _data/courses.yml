@@ -14,6 +14,9 @@
     similitude, viscous flow in ducts, inviscid flow, boundary layer theory, open channel flow,
     turbomachinery and fluid measurement techniques.
   prerequisites: ENSC 2113 and MATH 2153 with a grade of "C" or better.
+  resources:
+    - label: "Interactive pipe flow simulator (Moody chart, Type I, II and III problems)"
+      url: /teaching/pipe-flow/
 
 - code: MAE 3013
   title: Engineering Analysis and Methods
@@ -102,6 +105,8 @@
       url: /teaching/psychrometrics/
     - label: "Interactive cooling tower simulator (HVAC condenser water)"
       url: /teaching/cooling-tower/
+    - label: "Interactive pipe flow simulator (Moody chart, major losses)"
+      url: /teaching/pipe-flow/
     - label: "Video 1: How to install MATLAB"
       url: https://youtu.be/h6tytgQH8rI
     - label: "Video 2: Running MATLAB for the first time"
