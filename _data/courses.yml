@@ -107,6 +107,8 @@
       url: /teaching/cooling-tower/
     - label: "Interactive pipe flow simulator (Moody chart, major losses)"
       url: /teaching/pipe-flow/
+    - label: "Interactive vapor compression cycle simulator (p-h diagram, COP)"
+      url: /teaching/vapor-compression/
     - label: "Video 1: How to install MATLAB"
       url: https://youtu.be/h6tytgQH8rI
     - label: "Video 2: Running MATLAB for the first time"

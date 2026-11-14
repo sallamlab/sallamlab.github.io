@@ -1,0 +1,997 @@
+---
+layout: default
+title: Vapor Compression Cycle Simulator
+permalink: /teaching/vapor-compression/
+description: Interactive mechanical vapor compression cycle simulator. Set the evaporator and condenser temperatures, the compressor isentropic efficiency, the superheat and the subcooling, see the cycle on the pressure-enthalpy diagram of R-410A, R-134a and other refrigerants, and read the coefficient of performance for refrigeration and for a heat pump. Properties from CoolProp. MAE 3524 Thermal Fluids Design, Oklahoma State University.
+---
+{% raw %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<style>
+/* Vapor compression cycle simulator: page styles. Site tokens (colors, fonts) come from /assets/css/site.css. */
+.vc { --chord: #7d5fb2; }
+.vc-hero .vc-crumb { margin: 0 0 10px; font-size: .92rem; color: #c3cfdb; }
+.vc-hero .vc-crumb a { color: #ffb48f; }
+.vc-app { display: grid; gap: 24px; grid-template-columns: minmax(290px, 350px) minmax(0, 1fr); align-items: start; }
+.vc-panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px; min-width: 0; }
+.vc-controls { padding: 18px 18px 6px; }
+.vc-intro { font-size: .9rem; color: var(--ink-soft); margin: 0 0 12px; }
+.vc-group { border: 0; padding: 0; margin: 0 0 18px; min-width: 0; }
+.vc-group[hidden] { display: none; }
+.vc-group legend { font-family: var(--serif); font-weight: 600; color: var(--navy); font-size: 1.05rem; padding: 0; margin: 0 0 8px; }
+.vc-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0 0 16px; }
+.vc-seg.three { grid-template-columns: 1fr 1fr 1fr; }
+.vc-seg label { position: relative; display: block; cursor: pointer; min-width: 0; }
+.vc-seg input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.vc-seg span { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; box-sizing: border-box; text-align: center; padding: 8px 4px; border: 1px solid var(--line); border-radius: 8px; font-size: .86rem; font-weight: 500; line-height: 1.25; background: #fff; color: var(--ink); transition: background .15s, border-color .15s; }
+.vc-seg span small { display: block; font-size: .74rem; font-weight: 400; color: var(--ink-soft); margin-top: 2px; }
+.vc-seg label:hover span { border-color: var(--ink-faint); }
+.vc-seg input:checked + span { background: var(--navy); border-color: var(--navy); color: #fff; }
+.vc-seg input:checked + span small { color: #c3cfdb; }
+.vc-seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.vc-ctl { margin-bottom: 12px; }
+.vc-ctl[hidden], .vc-field[hidden], .vc-derived[hidden] { display: none; }
+.vc-ctl > label { display: block; font-size: .9rem; margin-bottom: 1px; }
+.vc-sym { color: var(--ink-soft); margin-left: 3px; }
+.vc-inrow { display: flex; align-items: center; gap: 10px; }
+.vc-inrow input[type=range] { flex: 1; min-width: 0; margin: 0; height: 26px; accent-color: var(--accent); cursor: pointer; }
+.vc-num { display: inline-flex; align-items: center; gap: 5px; flex: none; }
+.vc-num input { width: 84px; font: inherit; font-size: .92rem; text-align: right; padding: 4px 6px; border: 1px solid #cbd2d9; border-radius: 6px; background: #fff; color: var(--ink); font-variant-numeric: tabular-nums; }
+.vc-num input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.vc-num input[aria-invalid=true] { border-color: #d03b3b; background: #fdecec; }
+.vc-unit { font-size: .8rem; color: var(--ink-soft); width: 72px; }
+.vc-unit select { font: inherit; font-size: .78rem; padding: 2px 1px; border: 1px solid #cbd2d9; border-radius: 5px; background: #fff; color: var(--ink); width: 100%; }
+.vc-derived { font-size: .85rem; color: var(--ink-soft); margin: -2px 0 0; line-height: 1.45; }
+.vc-field { display: block; font-size: .9rem; margin-bottom: 12px; }
+.vc-field select { display: block; width: 100%; margin-top: 4px; font: inherit; font-size: .9rem; padding: 7px 8px; border: 1px solid #cbd2d9; border-radius: 8px; background: #fff; color: var(--ink); }
+.vc-given { margin: -4px 0 14px; font-size: .84rem; color: var(--ink-soft); background: #f3f1ec; border-radius: 8px; padding: 7px 10px; line-height: 1.4; }
+.vc-given b { color: var(--navy); }
+.vc-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.vc-btn { font: inherit; font-size: .86rem; font-weight: 600; padding: 6px 14px; border-radius: 999px; border: 2px solid var(--navy); background: #fff; color: var(--navy); cursor: pointer; }
+.vc-btn:hover { background: var(--navy); color: #fff; }
+.vc-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.vc-out { display: grid; gap: 18px; min-width: 0; }
+.vc-card-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin-bottom: 8px; }
+.vc-card-head h2, .vc-card-head h3 { margin: 0; font-size: 1.22rem; }
+.vc-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: .84rem; color: var(--ink-soft); cursor: pointer; }
+.vc-toggle input { margin: 0; accent-color: var(--navy); width: 15px; height: 15px; }
+.vc-scroll { overflow-x: auto; }
+.vc-chart { position: relative; touch-action: pan-y; }
+.vc-chart svg { display: block; width: 100%; height: auto; overflow: visible; -webkit-user-select: none; user-select: none; }
+.vc-chart text, .vc-svg text { font-family: var(--sans); }
+.vc-gmin { stroke: #e3e6ea; stroke-width: 1; }
+.vc-gmaj { stroke: #c4cad1; stroke-width: 1; }
+.vc-curve { stroke: #3d4f61; stroke-width: 1.05; fill: none; }
+.vc-curve.sm { stroke: #14293d; stroke-width: 1.6; }
+.vc-lam { stroke: #14293d; stroke-width: 1.6; fill: none; }
+.vc-rough { stroke: #8c96a0; stroke-width: 1.3; stroke-dasharray: 7 5; fill: none; }
+.vc-axis { stroke: #9aa5b1; stroke-width: 1; }
+.vc-tick { font-size: 11px; fill: #6b7682; font-variant-numeric: tabular-nums; }
+.vc-axlab { font-size: 12.5px; fill: var(--ink-soft); }
+.vc-lab { font-size: 11px; fill: var(--ink-soft); paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; font-variant-numeric: tabular-nums; }
+.vc-lab.dark { fill: var(--ink); font-weight: 600; }
+.vc-lab.acc { fill: #a3361a; font-weight: 700; }
+.vc-lab.pur { fill: var(--chord); font-weight: 600; }
+.vc-rlab { font-size: 10.5px; fill: #4b5a68; font-variant-numeric: tabular-nums; }
+.vc-pill { font-size: 12px; font-weight: 700; fill: #fff; font-variant-numeric: tabular-nums; }
+.vc-cross { stroke: var(--navy); stroke-width: 1; opacity: .4; pointer-events: none; }
+.vc-tip { position: absolute; z-index: 5; pointer-events: none; background: #fff; border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: 8px 10px; font-size: .8rem; line-height: 1.45; min-width: 170px; display: none; }
+.vc-tip .hd { color: var(--ink); font-weight: 600; margin-bottom: 3px; font-variant-numeric: tabular-nums; }
+.vc-tip .row { display: flex; justify-content: space-between; gap: 12px; }
+.vc-tip .row b { font-variant-numeric: tabular-nums; font-weight: 600; }
+.vc-tip .row i { font-style: normal; color: var(--ink-soft); }
+.vc-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: .82rem; color: var(--ink-soft); margin-top: 6px; }
+.vc-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.vc-key { display: inline-block; width: 18px; height: 0; border-top: 2px solid; vertical-align: middle; flex: none; }
+.vc-key.dash { border-top-style: dashed; }
+.vc-dotkey { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.vc-hint { font-size: .82rem; color: var(--ink-soft); margin: 6px 0 0; }
+.vc-notes { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.vc-notes li { font-size: .9rem; background: #f3f1ec; border-radius: 8px; padding: 8px 12px; }
+.vc-notes li b { color: var(--navy); }
+.vc-notes li.warn { background: #fdecec; }
+.vc-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.vc-tile { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 11px 14px 12px; min-width: 0; }
+.vc-tile.ans { border: 2px solid var(--accent); background: #fff8f4; }
+.vc-tile .k { font-size: .82rem; color: var(--ink-soft); }
+.vc-tile .v { font-size: 1.45rem; font-weight: 600; color: var(--navy); line-height: 1.25; margin-top: 2px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.vc-tile.ans .v { color: #a3361a; }
+.vc-tile .s { font-size: .78rem; color: var(--ink-soft); line-height: 1.35; }
+.vc-tile.off .v { color: #9aa5b1; }
+.vc-svg { display: block; width: 100%; height: auto; }
+.vc-svg .lb { font-size: 13.5px; fill: #1f2933; paint-order: stroke; stroke: #fff; stroke-width: 4px; stroke-linejoin: round; }
+.vc-svg .lb.b { font-weight: 700; }
+.vc-svg .lb.s { font-size: 12.5px; fill: var(--ink-soft); }
+.vc-svg .lb.acc { fill: #a3361a; font-weight: 700; }
+.vc-flow { stroke-dasharray: 2 16; animation: vc-flow var(--fd, 1s) linear infinite; }
+@keyframes vc-flow { to { stroke-dashoffset: -36; } }
+.vc-still .vc-flow { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .vc-flow { animation: none; } }
+.vc-row2 { display: grid; gap: 18px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 18px; align-items: start; }
+.vc-sub-note { font-size: .82rem; color: var(--ink-soft); margin: 2px 0 6px; }
+.vc-table { width: 100%; border-collapse: collapse; font-size: .86rem; font-variant-numeric: tabular-nums; }
+.vc-table th, .vc-table td { padding: 6px 7px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.vc-table th:first-child, .vc-table td:first-child { text-align: center; }
+.vc-table thead th { font-weight: 600; color: var(--ink-soft); font-size: .78rem; }
+.vc-table tr.fin td { font-weight: 700; color: #a3361a; }
+.vc-rates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; margin: 4px 0 0; font-size: .9rem; }
+.vc-rates div { min-width: 0; }
+.vc-rates dt { color: var(--ink-soft); font-size: .8rem; }
+.vc-rates dd { margin: 0; font-weight: 600; color: var(--navy); font-variant-numeric: tabular-nums; }
+.vc-rates dd small { display: block; font-weight: 400; color: var(--ink-soft); }
+.vc-steps { list-style: none; counter-reset: st; margin: 0; padding: 0; font-size: .9rem; }
+.vc-steps li { counter-increment: st; position: relative; padding: 7px 0 7px 30px; border-bottom: 1px dashed var(--line); }
+.vc-steps li::before { content: counter(st); position: absolute; left: 0; top: 8px; width: 21px; height: 21px; border-radius: 50%; background: var(--navy); color: #fff; font-size: .72rem; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+.vc-steps .lbl { display: block; font-size: .78rem; color: var(--ink-soft); }
+.vc-steps .eq { overflow-wrap: anywhere; }
+.vc-steps .res { font-weight: 600; color: var(--navy); white-space: nowrap; }
+.vc-matlab { margin: 12px 0 0; font-size: .82rem; }
+.vc-matlab pre { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: break-word; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: #14293d; color: #e6edf3; padding: 10px 12px; border-radius: 8px; font-size: .78rem; line-height: 1.5; }
+.vc-sticky { display: none; }
+.vc-doc .tex-d { overflow-x: auto; overflow-y: hidden; padding: 2px 0; }
+.vc-doc .tex-d .katex-display { margin: .4em 0; }
+.vc-eqs { width: 100%; border-collapse: collapse; margin: 8px 0 4px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
+.vc-eqs th, .vc-eqs td { text-align: left; vertical-align: middle; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.vc-eqs tr:last-child th, .vc-eqs tr:last-child td { border-bottom: 0; }
+.vc-eqs th { font-weight: 600; font-size: .92rem; color: var(--navy); width: 30%; }
+.vc-eqs th small { display: block; font-weight: 400; color: var(--ink-soft); }
+.vc-eqs td { min-width: 0; max-width: 0; width: 70%; }
+.vc-mat { border-collapse: collapse; font-size: .9rem; margin: 8px 0 0; background: var(--card); border: 1px solid var(--line); }
+.vc-mat th, .vc-mat td { padding: 6px 14px; border-bottom: 1px solid var(--line); text-align: left; }
+.vc-mat td + td { text-align: right; font-variant-numeric: tabular-nums; }
+.vc-twocol { display: grid; gap: 8px 40px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); }
+.vc-twocol ul { margin: 0; }
+.vc-twocol li { margin-bottom: 10px; }
+.vc-try { counter-reset: tr; list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+.vc-try li { counter-increment: tr; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px 14px 52px; position: relative; font-size: .97rem; }
+.vc-try li::before { content: counter(tr); position: absolute; left: 14px; top: 13px; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: #9a3a0f; font-weight: 700; font-size: .85rem; display: flex; align-items: center; justify-content: center; }
+.vc-credit { font-size: .88rem; color: var(--ink-soft); margin-top: 28px; }
+.vc-ctl.out input[type=range] { opacity: .55; cursor: default; }
+.vc-ctl.out .vc-num input { border-color: var(--accent); background: #fff8f4; color: #a3361a; font-weight: 600; }
+.vc-unk { display: inline-block; font-size: .66rem; font-weight: 700; color: #a3361a; background: #fde6da; border-radius: 4px; padding: 0 5px; margin-left: 6px; text-transform: uppercase; letter-spacing: .04em; vertical-align: 1px; }
+.vc-toggle[hidden] { display: none; }
+.vc-guide { stroke: #d9541e; stroke-width: 1.3; stroke-dasharray: 5 4; fill: none; }
+.vc-zone { font-size: 11.5px; fill: #6b7682; font-style: italic; paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; }
+.vc-table tr.gap td { text-align: center; color: var(--ink-soft); padding: 1px; }
+@media (max-width: 1080px) { .vc-row2 { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 920px) {
+  .vc-app { grid-template-columns: minmax(0, 1fr); }
+  .vc-sticky { display: flex; position: sticky; top: 71px; z-index: 40; justify-content: space-between; gap: 10px; background: rgba(255,255,255,.97); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); padding: 7px 12px; font-size: .8rem; color: var(--ink-soft); }
+  .vc-sticky b { display: block; color: var(--navy); font-size: .95rem; font-variant-numeric: tabular-nums; }
+}
+@media (max-width: 560px) {
+  .vc-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .vc-panel { padding: 14px; }
+  .vc-tile .v { font-size: 1.25rem; }
+  .vc-rates { grid-template-columns: minmax(0, 1fr); }
+  .vc-seg span small { display: none; }
+  .vc-svg { min-width: 600px; }
+  .vc-eqs, .vc-eqs tbody, .vc-eqs tr, .vc-eqs th, .vc-eqs td { display: block; width: 100%; max-width: none; }
+  .vc-eqs th { padding-bottom: 0; border-bottom: 0; }
+}
+/* Additions for the vapor compression cycle simulator */
+.vc-vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.vc-toggles { display: inline-flex; flex-wrap: wrap; gap: 4px 14px; }
+.vc-status { font-size: .9rem; background: #f3f1ec; border-radius: 8px; padding: 8px 12px; margin: 0 0 8px; }
+.vc-status.err { background: #fdecec; }
+.vc-status[hidden] { display: none; }
+.vc-frame { fill: none; stroke: #9aa5b1; stroke-width: 1; }
+.vc-dome { stroke: #14293d; stroke-width: 2.2; fill: none; stroke-linejoin: round; }
+.vc-qline { stroke: #8c96a0; stroke-width: .9; fill: none; }
+.vc-iso { stroke: #b0521a; stroke-width: .9; fill: none; opacity: .75; }
+.vc-iso.lt { opacity: .38; }
+.vc-iso.tie { stroke-dasharray: 2 4; opacity: .6; }
+.vc-isen { stroke: #7d5fb2; stroke-width: .9; fill: none; opacity: .8; }
+.vc-rlab { paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; }
+.vc-rlab.t { fill: #8a3f12; }
+.vc-rlab.s { fill: #5d4391; }
+.vc-chart.noT .vc-gT, .vc-chart.nos .vc-gs, .vc-chart.nox .vc-gx { display: none; }
+.vc-guide2 { stroke: #6b7682; stroke-width: 1; stroke-dasharray: 2 3; fill: none; }
+.vc-lab { font-size: 12px; font-weight: 600; }
+.vc-tile .v small { font-size: .8rem; font-weight: 500; color: var(--ink-soft); }
+.vc-st td:last-child, .vc-st th:last-child { text-align: left; white-space: normal; }
+.vc-st td small { display: block; color: var(--ink-soft); font-size: .76rem; }
+.vc-st tr.alt td { color: #5d4391; }
+.vc-matlab pre { white-space: pre; overflow-x: auto; }
+.vc-st td:last-child { min-width: 150px; }
+.vc-swipe { display: none; }
+@media (max-width: 560px) {
+  .vc-chart { overflow-x: auto; touch-action: pan-x pan-y; }
+  .vc-chart svg { min-width: 640px; }
+  .vc-swipe { display: block; }
+}
+</style>
+
+<section class="page-hero vc-hero">
+  <div class="container">
+    <p class="vc-crumb"><a href="/teaching/">Teaching</a> <span aria-hidden="true">&rsaquo;</span> MAE 3524 Thermal Fluids Design</p>
+    <h1>Vapor compression cycle simulator: the p&ndash;h diagram</h1>
+    <p>Set the evaporator and condenser temperatures, the compressor efficiency, the superheat and the subcooling, and watch the mechanical vapor compression cycle move on the pressure&ndash;enthalpy diagram. Read the coefficient of performance of the same cycle working as a refrigerator or air conditioner (&beta;) or as a heat pump (&gamma;).</p>
+  </div>
+</section>
+
+<section class="section vc" id="simulator" aria-label="Vapor compression cycle simulator">
+  <div class="container">
+    <noscript><p class="callout">The simulator needs JavaScript. The equations it uses are explained <a href="#equations">below</a>.</p></noscript>
+    <div class="vc-app">
+      <div class="vc-sticky" id="vc-sticky" aria-hidden="true">
+        <span>&beta; (cooling)<b id="sk-b">&ndash;</b></span><span>&gamma; (heating)<b id="sk-g">&ndash;</b></span><span>Work<b id="sk-w">&ndash;</b></span>
+      </div>
+
+      <form class="vc-panel vc-controls" id="vc-form" autocomplete="off" onsubmit="return false">
+        <p class="vc-intro">Drag a slider or type a value; the diagram and everything below it update as you go.</p>
+        <div class="vc-seg" role="radiogroup" aria-label="What the cycle is used for">
+          <label><input type="radio" name="mode" value="ref"><span>Refrigeration<small>&beta; = q<sub>L</sub> / w</small></span></label>
+          <label><input type="radio" name="mode" value="hp"><span>Heat pump<small>&gamma; = q<sub>H</sub> / w</small></span></label>
+        </div>
+
+        <fieldset class="vc-group">
+          <legend>Refrigerant</legend>
+          <label class="vc-field"><span class="vc-vh">Refrigerant</span>
+            <select id="vc-fluid"></select>
+          </label>
+          <p class="vc-derived" id="vc-fl-note"></p>
+        </fieldset>
+
+        <fieldset class="vc-group">
+          <legend>Cycle temperatures</legend>
+          <div id="ctl-Te"></div>
+          <p class="vc-derived" id="vc-pe-note"></p>
+          <div id="ctl-Tc"></div>
+          <p class="vc-derived" id="vc-pc-note"></p>
+        </fieldset>
+
+        <fieldset class="vc-group">
+          <legend>Compressor</legend>
+          <div id="ctl-eta"></div>
+        </fieldset>
+
+        <fieldset class="vc-group">
+          <legend>Superheat and subcooling</legend>
+          <div id="ctl-sh"></div>
+          <p class="vc-derived" id="vc-sh-note"></p>
+          <div id="ctl-sc"></div>
+          <p class="vc-derived" id="vc-sc-note"></p>
+        </fieldset>
+
+        <fieldset class="vc-group">
+          <legend>Size of the machine</legend>
+          <div id="ctl-md"></div>
+          <p class="vc-derived">The COP does not depend on the flow rate; it only sets the power and the capacity under &ldquo;More results&rdquo;.</p>
+        </fieldset>
+
+        <fieldset class="vc-group">
+          <legend>Examples</legend>
+          <label class="vc-field"><span class="vc-vh">Load an example</span>
+            <select id="vc-ex">
+              <option value="">Load an example&hellip;</option>
+              <option value="ac">R-410A air conditioner, 5 / 45 &deg;C (the starting point)</option>
+              <option value="ideal">The same cycle, ideal: 100% compressor, no superheat or subcooling</option>
+              <option value="house">Lecture: house on a 100 &deg;F day, coils at 60 &deg;F and 120 &deg;F</option>
+              <option value="lec-ref">Lecture example: R-134a refrigeration cycle (&beta; = 3.86 in the lecture)</option>
+              <option value="lec-hp">Lecture example: R-134a heat pump (&gamma; = 6.4 in the lecture)</option>
+              <option value="cold">Heat pump on a very cold day, &minus;25 &deg;C evaporator</option>
+              <option value="freezer">Propane (R-290) freezer, &minus;30 / 40 &deg;C</option>
+              <option value="nh3">Ammonia cold storage, &minus;20 / 35 &deg;C</option>
+            </select>
+          </label>
+          <div class="vc-buttons">
+            <button type="button" class="vc-btn" id="vc-reset">Reset</button>
+            <button type="button" class="vc-btn" id="vc-link">Copy link to this setup</button>
+          </div>
+        </fieldset>
+      </form>
+
+      <div class="vc-out" id="vc-out">
+        <div class="vc-panel">
+          <div class="vc-card-head"><h2 id="vc-chart-h">Pressure&ndash;enthalpy diagram</h2>
+            <span class="vc-toggles">
+              <label class="vc-toggle"><input type="checkbox" id="tg-T" checked> Isotherms</label>
+              <label class="vc-toggle"><input type="checkbox" id="tg-s" checked> Entropy lines</label>
+              <label class="vc-toggle"><input type="checkbox" id="tg-x" checked> Quality lines</label>
+            </span>
+          </div>
+          <p class="vc-status" id="vc-status" role="status">Loading the CoolProp property library (about 7 MB the first time)&hellip;</p>
+          <div class="vc-chart" id="vc-chart"></div>
+          <p class="vc-hint vc-swipe">Swipe the diagram sideways to see all of it.</p>
+          <div class="vc-legend" id="vc-legend"></div>
+          <ul class="vc-notes" id="vc-notes" aria-live="polite"></ul>
+        </div>
+        <div class="vc-tiles" id="vc-tiles" aria-live="polite"></div>
+        <div class="vc-panel">
+          <div class="vc-card-head"><h3>The four components</h3></div>
+          <div class="vc-scroll"><svg class="vc-svg" id="vc-svg" viewBox="0 0 860 330" role="img" aria-labelledby="vc-svg-desc"><desc id="vc-svg-desc">Schematic of the vapor compression cycle: evaporator, compressor, condenser and expansion valve, with the four state points.</desc></svg></div>
+          <p class="vc-hint" id="vc-svg-note"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="vc-row2">
+      <div class="vc-panel">
+        <div class="vc-card-head"><h3>State points</h3></div>
+        <div class="vc-scroll" id="vc-states"></div>
+        <p class="vc-hint">Enthalpy and entropy use the reference state of the ASHRAE charts: h = 200 kJ/kg and s = 1.00 kJ/(kg&middot;K) for saturated liquid at 0 &deg;C. Tables with another reference state list different values of h and s, but the same differences.</p>
+      </div>
+      <div class="vc-panel">
+        <div class="vc-card-head"><h3>More results</h3></div>
+        <dl class="vc-rates" id="vc-more"></dl>
+      </div>
+    </div>
+    <div class="vc-row2">
+      <div class="vc-panel">
+        <div class="vc-card-head"><h3>Step-by-step solution</h3></div>
+        <ol class="vc-steps" id="vc-steps"></ol>
+      </div>
+      <div class="vc-panel">
+        <div class="vc-card-head"><h3>Check it in MATLAB</h3></div>
+        <p class="vc-sub-note">The same calculation with CoolProp called from MATLAB through Python (<code>py.CoolProp</code>). With the course files, run <code>setup_coolprop</code> first.</p>
+        <div class="vc-matlab"><pre id="vc-matlab"></pre></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt vc-doc" id="equations">
+  <div class="container">
+    <div class="section-head"><h2>How the simulator works</h2></div>
+    <p class="measure">Heat does not flow from a cold space to a warm one by itself. The mechanical vapor compression cycle moves it there with four components: the refrigerant boils in the <strong>evaporator</strong> at a temperature below the cold space and absorbs heat from it; the <strong>compressor</strong> raises its pressure, and with it the temperature at which it condenses; it condenses in the <strong>condenser</strong> at a temperature above the warm surroundings and gives the heat up; and the <strong>expansion valve</strong> drops the pressure back to the evaporator pressure. On the pressure&ndash;enthalpy diagram the two heat exchangers are horizontal lines (constant pressure), the valve is a vertical line (constant enthalpy), and every energy transfer per kilogram of refrigerant is a horizontal distance.</p>
+
+    <h3 style="margin-top:28px">Equations</h3>
+    <table class="vc-eqs">
+      <tr><th>Pressures<small>The evaporator and condenser temperatures are saturation temperatures; each one fixes a pressure. No pressure drop in the heat exchangers or the piping.</small></th><td><div class="tex-d" data-tex="p_1=p_4=p_{\mathrm{sat}}(T_{\mathrm{evap}}),\qquad p_2=p_3=p_{\mathrm{sat}}(T_{\mathrm{cond}})"></div></td></tr>
+      <tr><th>State 1, compressor inlet<small>Saturated vapor, or vapor superheated above the evaporator temperature so that no liquid reaches the compressor.</small></th><td><div class="tex-d" data-tex="T_1=T_{\mathrm{evap}}+\Delta T_{\mathrm{superheat}},\qquad h_1=h(p_1,T_1),\quad s_1=s(p_1,T_1)"></div></td></tr>
+      <tr><th>Compressor (Eq. 10.4 and 6.48)<small>Adiabatic. State 2s is where an isentropic compression would end; the isentropic efficiency gives the actual state 2.</small></th><td><div class="tex-d" data-tex="h_{2s}=h(p_2,\,s_1),\qquad \eta_c=\frac{h_{2s}-h_1}{h_2-h_1}\;\Rightarrow\; h_2=h_1+\frac{h_{2s}-h_1}{\eta_c},\qquad w_c=h_2-h_1"></div></td></tr>
+      <tr><th>Condenser (Eq. 10.5)<small>The refrigerant leaves as saturated liquid, or subcooled below the condenser temperature.</small></th><td><div class="tex-d" data-tex="T_3=T_{\mathrm{cond}}-\Delta T_{\mathrm{subcool}},\qquad h_3=h(p_3,T_3),\qquad q_H=h_2-h_3"></div></td></tr>
+      <tr><th>Expansion valve (Eq. 10.6)<small>Throttling: no work, no heat transfer, so the enthalpy does not change. Part of the liquid flashes to vapor.</small></th><td><div class="tex-d" data-tex="h_4=h_3,\qquad x_4=\frac{h_4-h_f(p_1)}{h_g(p_1)-h_f(p_1)}"></div></td></tr>
+      <tr><th>Evaporator (Eq. 10.3)<small>The refrigerating effect. The energy balance of the whole cycle follows.</small></th><td><div class="tex-d" data-tex="q_L=h_1-h_4,\qquad q_H=q_L+w_c"></div></td></tr>
+      <tr><th>Coefficient of performance (Eq. 10.7 and 10.10)<small>&beta; when the cycle cools, &gamma; when it heats. The same cycle has both.</small></th><td><div class="tex-d" data-tex="\beta=\frac{q_L}{w_c}=\frac{h_1-h_4}{h_2-h_1},\qquad \gamma=\frac{q_H}{w_c}=\frac{h_2-h_3}{h_2-h_1}=\beta+1"></div></td></tr>
+      <tr><th>Carnot limit (Eq. 10.1 and 10.9)<small>Absolute temperatures. The simulator uses the two refrigerant temperatures, the most favorable choice for the cycle; the real limit between the cold space and the warm surroundings is higher still.</small></th><td><div class="tex-d" data-tex="\beta_{\max}=\frac{T_C}{T_H-T_C},\qquad \gamma_{\max}=\frac{T_H}{T_H-T_C}"></div></td></tr>
+      <tr><th>Power and capacity<small>With the refrigerant mass flow rate. One ton of refrigeration is 211 kJ/min (200 Btu/min).</small></th><td><div class="tex-d" data-tex="\dot W_c=\dot m\,w_c,\qquad \dot Q_L=\dot m\,q_L,\qquad \dot Q_H=\dot m\,q_H,\qquad 1\ \mathrm{ton}=211\ \mathrm{kJ/min}"></div></td></tr>
+    </table>
+    <p class="small muted">Equation numbers as in Moran, Shapiro, Boettner and Bailey, <i>Fundamentals of Engineering Thermodynamics</i>, chapter 10. Refrigerant properties are computed in your browser by the open-source CoolProp library (Bell, Wronski, Quoilin and Lemort, <i>Ind. Eng. Chem. Res.</i> 53, 2498&ndash;2508, 2014; <a href="http://www.coolprop.org">coolprop.org</a>), which is why the page takes a moment to load. R-410A is a blend that CoolProp treats as a single (pseudo-pure) fluid: at one pressure its boiling and condensing temperatures differ by about 0.1 K, so the evaporator temperature is taken at the saturated-vapor side and the condenser temperature at the saturated-liquid side.</p>
+
+    <h3 style="margin-top:28px">Good habits</h3>
+    <div class="vc-twocol">
+      <ul>
+        <li><strong>Read the diagram the right way.</strong> Pressure lines are horizontal and enthalpy is read on the horizontal axis. Inside the dome the temperature lines are horizontal too; in the vapor region they bend down, and the entropy lines run up and to the right. Do not mix the two up.</li>
+        <li><strong>Find 2s first.</strong> Follow the entropy line through state 1 up to the condenser pressure. Then use the efficiency: the actual work is the isentropic work divided by &eta;<sub>c</sub>, so state 2 lies to the right of 2s.</li>
+        <li><strong>The valve is a vertical line.</strong> h<sub>4</sub> = h<sub>3</sub>. It is not isentropic: throttling is irreversible and the entropy goes up.</li>
+      </ul>
+      <ul>
+        <li><strong>COP, not efficiency.</strong> &beta; and &gamma; are larger than 1 because the cycle moves heat instead of making it. Use big <i>h</i> minus small <i>h</i> so that every energy transfer is positive.</li>
+        <li><strong>Carnot is a limit, not a method.</strong> Use absolute temperatures, and use it only to check that your answer is below it. The COP of an actual cycle comes from the enthalpies.</li>
+        <li><strong>Watch the units.</strong> kW is kJ/s; 1 MPa = 10 bar = 1000 kPa; to get tons, multiply kW by 60 and divide by 211.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="section vc-doc" id="activities">
+  <div class="container">
+    <div class="section-head"><h2>Try it yourself</h2></div>
+    <ol class="vc-try">
+      <li>Load the ideal cycle. Find states 1, 2, 3 and 4 on your own R-410A chart, read the four enthalpies and compute &beta;. How close are you to the simulator?</li>
+      <li>Lower the compressor efficiency from 100% to 60%. Which state points move, and which stay? Why does the refrigerating effect q<sub>L</sub> stay the same while &beta; drops?</li>
+      <li>Raise the condenser temperature from 35 to 55 &deg;C (a hotter day). What happens to the compressor work, to q<sub>L</sub> and to &beta;? Explain both changes from the shape of the diagram.</li>
+      <li>Add 10 K of subcooling to the ideal cycle. Which way does state 4 move, and why does &beta; go up at no cost in compressor work?</li>
+      <li>Add 10 K of superheat. What happens to the discharge temperature T<sub>2</sub> and to &beta;? Why does a real system still need some superheat?</li>
+      <li>Switch to the heat pump and lower the evaporator temperature from 5 to &minus;25 &deg;C (a colder day). Plot &gamma; against the evaporator temperature. Why does the cycle &ldquo;squeeze&rdquo; on the diagram?</li>
+      <li>A power plant turns about half of its fuel energy into electricity. At what &gamma; does a heat pump deliver more heat per unit of fuel than a gas furnace? Find the evaporator temperature where your heat pump reaches it.</li>
+      <li>Compare R-410A, R-134a, propane (R-290) and ammonia between the same two temperatures. Which gives the highest &beta;? Which has the highest pressures, and the hottest discharge?</li>
+      <li>Load the lecture R-134a example and set the mass flow to 0.08 kg/s. Reproduce the compressor power, the capacity in tons and &beta; by hand from the state table.</li>
+    </ol>
+    <p class="vc-credit">Refrigerant properties: the CoolProp library, compiled to WebAssembly and run in your browser. Questions or suggestions: <a href="mailto:sallam@okstate.edu">sallam@okstate.edu</a>.</p>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous" defer></script>
+<script>
+(function () {
+'use strict';
+/* Vapor compression cycle simulator. Refrigerant properties come from the CoolProp library (WebAssembly build).
+   To host CoolProp on this site instead of the CDN, put coolprop.js and coolprop.wasm in one folder
+   (for example /assets/coolprop/) and put that address first in this list. */
+var COOLPROP_URLS = [
+  'https://cdn.jsdelivr.net/gh/dvd101x/CoolPropJavascriptDemo@509bd2d0a91041fed237960ef3cad51c81c3e041/public/coolprop.js'
+];
+
+var $ = function (id) { return document.getElementById(id); };
+var FLUIDS = [
+  { id: 'R410A', name: 'R-410A', kind: 'HFC blend (R-32 and R-125): home air conditioners and heat pumps', Tc: 344.494, pc: 4.9012e6, blend: true },
+  { id: 'R134a', name: 'R-134a', kind: 'HFC: car air conditioners, refrigerators, chillers', Tc: 374.21, pc: 4.0593e6 },
+  { id: 'R32', name: 'R-32', kind: 'HFC with a lower global warming potential than R-410A: newer air conditioners; mildly flammable', Tc: 351.255, pc: 5.782e6 },
+  { id: 'R22', name: 'R-22', kind: 'HCFC: older air conditioners; phased out because it depletes ozone', Tc: 369.295, pc: 4.99e6 },
+  { id: 'R12', name: 'R-12', kind: 'CFC: the original &ldquo;Freon&rdquo;; banned because it depletes ozone', Tc: 385.12, pc: 4.1361e6 },
+  { id: 'R1234yf', name: 'R-1234yf', kind: 'HFO with a very low global warming potential: newer car air conditioners; mildly flammable', Tc: 367.85, pc: 3.3822e6 },
+  { id: 'R290', name: 'R-290 (propane)', kind: 'Natural refrigerant with a very low global warming potential; flammable', Tc: 369.89, pc: 4.2512e6 },
+  { id: 'R600a', name: 'R-600a (isobutane)', kind: 'Natural refrigerant: household refrigerators; flammable', Tc: 407.81, pc: 3.629e6 },
+  { id: 'Ammonia', name: 'R-717 (ammonia)', kind: 'Natural refrigerant: industrial refrigeration and cold storage; toxic', Tc: 405.56, pc: 11.363e6 }
+];
+var CTL = {
+  Te: { label: 'Evaporator temperature', sym: 'T<sub>evap</sub>', min: -40, max: 15, step: 0.5, unit: '&deg;C', dec: 1 },
+  Tc: { label: 'Condenser temperature', sym: 'T<sub>cond</sub>', min: 25, max: 65, step: 0.5, unit: '&deg;C', dec: 1 },
+  eta: { label: 'Isentropic efficiency', sym: '&eta;<sub>c</sub>', min: 50, max: 100, step: 1, unit: '%', dec: 0 },
+  sh: { label: 'Superheat at the compressor inlet', sym: '', min: 0, max: 30, step: 0.5, unit: 'K', dec: 1 },
+  sc: { label: 'Subcooling at the condenser exit', sym: '', min: 0, max: 20, step: 0.5, unit: 'K', dec: 1 },
+  md: { label: 'Refrigerant mass flow rate', sym: 'm&#775;', min: 0.01, max: 0.5, step: 0.005, unit: 'kg/s', dec: 3 }
+};
+var DEF = { mode: 'ref', fluid: 'R410A', Te: 5, Tc: 45, eta: 80, sh: 5, sc: 5, md: 0.08 };
+var EX = {
+  ac: {},
+  ideal: { eta: 100, sh: 0, sc: 0 },
+  house: { Te: 15.5, Tc: 49, eta: 80, sh: 5, sc: 5 },
+  'lec-ref': { fluid: 'R134a', Te: -10, Tc: 35.5, eta: 80, sh: 0, sc: 5.5, md: 0.08 },
+  'lec-hp': { mode: 'hp', fluid: 'R134a', Te: -5.4, Tc: 31.3, eta: 89, sh: 0, sc: 0, md: 0.086 },
+  cold: { mode: 'hp', Te: -25, Tc: 45 },
+  freezer: { fluid: 'R290', Te: -30, Tc: 40, eta: 75, sh: 10, sc: 3 },
+  nh3: { fluid: 'Ammonia', Te: -20, Tc: 35, eta: 80, sh: 5, sc: 3 }
+};
+var EXNOTE = {
+  'lec-ref': 'Lecture example (Moran, Example 10.3): saturated vapor leaves the evaporator at &minus;10 &deg;C, the condenser is at 9 bar and the liquid leaves it at 30 &deg;C. The lecture reads h<sub>1</sub> = 241.35, h<sub>2s</sub> = 272.39, h<sub>2</sub> = 280.15 and h<sub>3</sub> = 91.49 kJ/kg from the textbook tables, which use another reference state, and finds &beta; = 3.86, 3.1 kW and 3.41 tons.',
+  'lec-hp': 'Lecture example: R-134a heat pump between 2.4 and 8 bar with 0.086 kg/s. The lecture uses h<sub>1</sub> = 244.1, h<sub>2</sub> = 272.0 and h<sub>3</sub> = 93.4 kJ/kg and finds 2.4 kW, 15.4 kW and &gamma; = 6.4. The compressor efficiency here (89%) was chosen to match that &gamma;.',
+  house: 'Lecture: to cool a house when it is 100 &deg;F outside, the indoor coil runs at about 60 &deg;F (15.5 &deg;C) and the outdoor coil at about 120 &deg;F (49 &deg;C).'
+};
+var S = {}, CP = null, F = null, CH = {}, R = null, exNote = '', bgKey = '';
+var TON = 211 / 60; /* kW per ton of refrigeration */
+var W = 860, HT = 580, ML = 62, MR = 18, MT = 20, MB = 46, PW = W - ML - MR, PH = HT - MT - MB;
+
+/* ---------- small helpers ---------- */
+function fx(v, d) { if (!isFinite(v)) return '&ndash;'; var s = v.toFixed(d); if (/^-0\.?0*$/.test(s)) s = s.slice(1); return s.replace('-', '&minus;'); }
+function fa(v, d) { return v.toFixed(d); }
+function sig(v, n) { if (!isFinite(v)) return '&ndash;'; if (v === 0) return '0'; var d = Math.max(0, n - 1 - Math.floor(Math.log10(Math.abs(v)))); return fx(v, Math.min(d, 6)); }
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+function clamp(v, a, b) { return Math.min(b, Math.max(a, v)); }
+function logspace(a, b, n) { var o = [], i; for (i = 0; i < n; i++) o.push(a * Math.pow(b / a, n === 1 ? 0 : i / (n - 1))); return o; }
+function niceStep(x) { var e = Math.pow(10, Math.floor(Math.log10(x))), m = x / e; return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * e; }
+function pFloor(p) { var e = Math.pow(10, Math.floor(Math.log10(p))), m = p / e, c = [1, 2, 4, 6, 8], r = 1, i; for (i = 0; i < c.length; i++) if (c[i] <= m * 1.0000001) r = c[i]; return r * e; }
+function pCeil(p) { var e = Math.pow(10, Math.floor(Math.log10(p))), m = p / e, c = [1, 2, 4, 6, 8, 10], i; for (i = 0; i < c.length; i++) if (c[i] >= m * 0.9999999) return c[i] * e; return 10 * e; }
+function fluidById(id) { for (var i = 0; i < FLUIDS.length; i++) if (FLUIDS[i].id === id) return FLUIDS[i]; return null; }
+
+/* ---------- CoolProp ---------- */
+/* PropsSI in SI units (K, Pa, J/kg, J/kg-K). A failed call returns NaN instead of CoolProp's huge number. */
+function props(out, n1, v1, n2, v2) {
+  var v;
+  try { v = CP.PropsSI(out, n1, v1, n2, v2, F.id); } catch (e) { return NaN; }
+  return (typeof v === 'number' && isFinite(v) && Math.abs(v) < 1e30) ? v : NaN;
+}
+function loadCoolProp(i) {
+  return import(COOLPROP_URLS[i]).then(function (ns) {
+    var make = ns.default || ns.Module;
+    if (typeof make !== 'function') throw new Error('unexpected CoolProp module');
+    return make();
+  }).then(function (m) {
+    if (!m || typeof m.PropsSI !== 'function') throw new Error('PropsSI is missing');
+    var t = m.PropsSI('T', 'P', 101325, 'Q', 0, 'Water');
+    if (!(Math.abs(t - 373.12) < 0.1)) throw new Error('CoolProp self-check failed');
+    return m;
+  }).catch(function (e) {
+    if (i + 1 < COOLPROP_URLS.length) return loadCoolProp(i + 1);
+    throw e;
+  });
+}
+/* Enthalpy and entropy are shifted to the reference state of the ASHRAE charts (IIR):
+   h = 200 kJ/kg and s = 1 kJ/(kg K) for saturated liquid at 0 C. */
+function setFluid(id) {
+  F = fluidById(id) || FLUIDS[0];
+  if (F.dh === undefined) {
+    var t, p;
+    try { t = CP.Props1SI(F.id, 'Tcrit'); p = CP.Props1SI(F.id, 'Pcrit'); } catch (e) { t = NaN; }
+    if (isFinite(t) && isFinite(p) && Math.abs(t - F.Tc) < 2) { F.Tc = t; F.pc = p; }
+    F.dh = 200e3 - props('H', 'T', 273.15, 'Q', 0);
+    F.ds = 1000 - props('S', 'T', 273.15, 'Q', 0);
+  }
+}
+function hk(v) { return (v + F.dh) / 1e3; }
+function sk(v) { return (v + F.ds) / 1e3; }
+
+/* ---------- the cycle ---------- */
+function solve() {
+  var Te = S.Te + 273.15, Tc = S.Tc + 273.15, eta = S.eta / 100, r = { ok: false };
+  var pe = props('P', 'T', Te, 'Q', 1), pc = props('P', 'T', Tc, 'Q', 0);
+  var h1, s1, T1 = Te + S.sh, h3, s3, T3 = Tc - S.sc;
+  if (S.sh > 0) { h1 = props('H', 'P', pe, 'T', T1); s1 = props('S', 'P', pe, 'T', T1); }
+  else { h1 = props('H', 'P', pe, 'Q', 1); s1 = props('S', 'P', pe, 'Q', 1); }
+  var h2s = props('H', 'P', pc, 'S', s1), T2s = props('T', 'P', pc, 'S', s1);
+  var h2 = h1 + (h2s - h1) / eta, T2 = props('T', 'P', pc, 'H', h2), s2 = props('S', 'P', pc, 'H', h2);
+  if (S.sc > 0) { h3 = props('H', 'P', pc, 'T', T3); s3 = props('S', 'P', pc, 'T', T3); }
+  else { h3 = props('H', 'P', pc, 'Q', 0); s3 = props('S', 'P', pc, 'Q', 0); }
+  var hf = props('H', 'P', pe, 'Q', 0), hg = props('H', 'P', pe, 'Q', 1), sf = props('S', 'P', pe, 'Q', 0), sg = props('S', 'P', pe, 'Q', 1);
+  var hgc = props('H', 'P', pc, 'Q', 1), hfc = props('H', 'P', pc, 'Q', 0);
+  var x4 = (h3 - hf) / (hg - hf);
+  if (![pe, pc, h1, s1, h2s, T2s, h2, T2, s2, h3, s3, hf, hg, sf, sg, hgc, hfc].every(isFinite)) { r.err = 'CoolProp could not evaluate this state. Try other temperatures.'; return r; }
+  if (x4 <= 0) { r.err = 'With this much subcooling the liquid leaving the condenser is colder than the evaporator, so nothing flashes in the valve. Reduce the subcooling or lower the evaporator temperature.'; return r; }
+  var T4 = props('T', 'P', pe, 'Q', clamp(x4, 0, 1));
+  if (!isFinite(T4)) T4 = Te;
+  var path = [], i, n = 8, p, h;
+  for (i = 0; i <= n; i++) { p = pe * Math.pow(pc / pe, i / n); h = i === 0 ? h1 : i === n ? h2s : props('H', 'P', p, 'S', s1); if (isFinite(h)) path.push([hk(h), p / 1e6]); }
+  r.ok = true;
+  r.pe = pe / 1e6; r.pc = pc / 1e6; r.Te = Te; r.Tc = Tc;
+  r.T = { 1: T1 - 273.15, '2s': T2s - 273.15, 2: T2 - 273.15, 3: T3 - 273.15, 4: T4 - 273.15 };
+  r.h = { 1: hk(h1), '2s': hk(h2s), 2: hk(h2), 3: hk(h3), 4: hk(h3) };
+  r.s = { 1: sk(s1), '2s': sk(s1), 2: sk(s2), 3: sk(s3), 4: sk(sf + x4 * (sg - sf)) };
+  r.x4 = x4; r.hf = hk(hf); r.hg = hk(hg);
+  r.x2 = h2 < hgc ? (h2 - hfc) / (hgc - hfc) : NaN;
+  r.x2s = h2s < hgc ? (h2s - hfc) / (hgc - hfc) : NaN;
+  r.path = path;
+  r.qL = r.h[1] - r.h[4]; r.w = r.h[2] - r.h[1]; r.ws = r.h['2s'] - r.h[1]; r.qH = r.h[2] - r.h[3];
+  r.beta = r.qL / r.w; r.gamma = r.qH / r.w;
+  r.bmax = Te / (Tc - Te); r.gmax = Tc / (Tc - Te);
+  r.Wd = S.md * r.w; r.QL = S.md * r.qL; r.QH = S.md * r.qH;
+  return r;
+}
+function phaseTxt(k) {
+  if (k === '1') return S.sh > 0 ? 'superheated vapor' : 'saturated vapor';
+  if (k === '2') return isFinite(R.x2) ? 'two-phase, x = ' + fx(R.x2, 3) : 'superheated vapor';
+  if (k === '2s') return isFinite(R.x2s) ? 'two-phase, x = ' + fx(R.x2s, 3) : 'superheated vapor';
+  if (k === '3') return S.sc > 0 ? 'subcooled liquid' : 'saturated liquid';
+  return 'two-phase, x = ' + fx(R.x4, 3);
+}
+
+/* ---------- chart data: dome, isotherms, entropy lines (computed once per refrigerant) ---------- */
+function buildChart() {
+  var c = { iso: [], isen: [] }, Tlo = 273.15 - 48, Tc = F.Tc, i, n = 64, T, d = { T: [], p0: [], p1: [], hf: [], hg: [], sf: [], sg: [] };
+  for (i = 0; i <= n; i++) {
+    T = Tc - (Tc - Tlo) * Math.pow(1 - i / n, 2.2);
+    if (Tc - T < 0.08) break;
+    var p1 = props('P', 'T', T, 'Q', 1), p0 = F.blend ? props('P', 'T', T, 'Q', 0) : p1;
+    var hf = props('H', 'T', T, 'Q', 0), hg = props('H', 'T', T, 'Q', 1), sf = props('S', 'T', T, 'Q', 0), sg = props('S', 'T', T, 'Q', 1);
+    if (![p1, p0, hf, hg, sf, sg].every(isFinite)) continue;
+    d.T.push(T); d.p0.push(p0 / 1e6); d.p1.push(p1 / 1e6); d.hf.push(hk(hf)); d.hg.push(hk(hg)); d.sf.push(sk(sf)); d.sg.push(sk(sg));
+  }
+  c.d = d;
+  var m = d.T.length - 1, pcr = F.pc / 1e6;
+  c.ptop = Math.max(d.p0[m], d.p1[m]);
+  c.plo = pFloor(d.p1[0]); c.phi = pCeil(1.6 * pcr);
+  var hgmax = Math.max.apply(null, d.hg), span = hgmax - d.hf[0];
+  c.hstep = niceStep(span / 5);
+  c.hlo = Math.floor((d.hf[0] - 0.03 * span) / c.hstep) * c.hstep;
+  c.hhi = Math.ceil((hgmax + 0.42 * span) / c.hstep) * c.hstep;
+  c.span = span;
+  var hcap = hgmax + 0.95 * span;
+  /* isotherms every 10 C */
+  var tc, ps, k, pts, h, pl;
+  for (tc = -40; tc <= 320; tc += 10) {
+    T = tc + 273.15;
+    var o = { tc: tc };
+    if (T < Tc - 1) {
+      var q1 = props('P', 'T', T, 'Q', 1), q0 = F.blend ? props('P', 'T', T, 'Q', 0) : q1, a = props('H', 'T', T, 'Q', 0), b = props('H', 'T', T, 'Q', 1);
+      if (![q1, q0, a, b].every(isFinite)) continue;
+      o.tie = [[hk(a), q0 / 1e6], [hk(b), q1 / 1e6]];
+      pts = [[hk(a), q0 / 1e6]]; pl = logspace(q0 * 1.004, c.phi * 1e6, 5);
+      for (k = 0; k < pl.length; k++) { h = props('H', 'T', T, 'P', pl[k]); if (isFinite(h)) pts.push([hk(h), pl[k] / 1e6]); }
+      o.liq = pts;
+      pts = [[hk(b), q1 / 1e6]]; pl = logspace(q1 * 0.996, c.plo * 1e6, Math.max(4, Math.ceil(13 * Math.log10(q1 / (c.plo * 1e6)))));
+      for (k = 0; k < pl.length; k++) { h = props('H', 'T', T, 'P', pl[k]); if (isFinite(h)) pts.push([hk(h), pl[k] / 1e6]); }
+      o.vap = pts;
+    } else if (T > Tc + 1) {
+      pts = []; pl = logspace(c.phi * 1e6, c.plo * 1e6, Math.ceil(14 * Math.log10(c.phi / c.plo)));
+      for (k = 0; k < pl.length; k++) { h = props('H', 'T', T, 'P', pl[k]); if (isFinite(h)) pts.push([hk(h), pl[k] / 1e6]); }
+      o.vap = pts;
+    } else continue;
+    if (!o.vap.length) break;
+    c.iso.push(o);
+    if (o.vap[o.vap.length - 1][0] > hcap) break;
+  }
+  /* constant-entropy lines in the vapor region */
+  var smin = (d.sf[m] + d.sg[m]) / 2, smax = sk(props('S', 'P', c.plo * 1e6, 'H', hcap * 1e3 - F.dh));
+  if (isFinite(smax) && smax > smin) {
+    var st = niceStep((smax - smin) / 11), sv, seg, inside, prevP, pg = logspace(c.plo, c.phi, Math.ceil(11 * Math.log10(c.phi / c.plo)) + 1);
+    c.sstep = st;
+    for (sv = Math.ceil((smin + 0.25 * st) / st) * st; sv < smax; sv += st) {
+      seg = []; var segs = [], was = null; prevP = null;
+      for (k = 0; k < pg.length; k++) {
+        var sgp = pg[k] < c.ptop ? satV(c, pg[k]) : null;
+        inside = !!(sgp && sv < sgp.sg);
+        if (was !== null && inside !== was) {
+          /* the line crosses the saturated-vapor curve between prevP and pg[k] */
+          var lo = prevP, hi = pg[k], it, mid, sm;
+          for (it = 0; it < 40; it++) { mid = Math.sqrt(lo * hi); sm = satV(c, mid); if (!sm) { hi = mid; continue; } if ((sv < sm.sg) === was) lo = mid; else hi = mid; }
+          sm = satV(c, Math.sqrt(lo * hi));
+          if (sm) { if (was) seg = [[sm.hg, Math.sqrt(lo * hi)]]; else { seg.push([sm.hg, Math.sqrt(lo * hi)]); segs.push(seg); seg = []; } }
+        }
+        if (!inside) {
+          h = hk(props('H', 'P', pg[k] * 1e6, 'S', sv * 1e3 - F.ds));
+          if (isFinite(h)) { seg.push([h, pg[k]]); if (h > hcap) { was = inside; break; } }
+        }
+        was = inside; prevP = pg[k];
+      }
+      if (seg.length > 1) segs.push(seg);
+      if (segs.length) c.isen.push({ s: sv, segs: segs });
+    }
+  }
+  return c;
+}
+/* saturation properties at a pressure (MPa), interpolated on the dome; null above the dome */
+function interp(c, arrP, p, keys) {
+  var d = c.d, n = arrP.length, lo = 0, hi = n - 1, mid, o = {}, i;
+  if (p >= arrP[hi] || p < arrP[0] * 0.999) return null;
+  if (p < arrP[0]) p = arrP[0];
+  while (hi - lo > 1) { mid = (lo + hi) >> 1; if (arrP[mid] <= p) lo = mid; else hi = mid; }
+  var t = Math.log(p / arrP[lo]) / Math.log(arrP[hi] / arrP[lo]);
+  for (i = 0; i < keys.length; i++) o[keys[i]] = d[keys[i]][lo] + t * (d[keys[i]][hi] - d[keys[i]][lo]);
+  return o;
+}
+function satV(c, p) { return interp(c, c.d.p1, p, ['T', 'hg', 'sg']); }
+function satL(c, p) { return interp(c, c.d.p0, p, ['T', 'hf', 'sf']); }
+
+/* ---------- drawing ---------- */
+var VX, VY; /* current scales */
+function scales(c, hlo, hhi) {
+  var lp = Math.log(c.phi), ll = Math.log(c.plo);
+  VX = function (h) { return ML + (h - hlo) / (hhi - hlo) * PW; };
+  VY = function (p) { return MT + (lp - Math.log(p)) / (lp - ll) * PH; };
+  VX.inv = function (x) { return hlo + (x - ML) / PW * (hhi - hlo); };
+  VY.inv = function (y) { return Math.exp(lp - (y - MT) / PH * (lp - ll)); };
+}
+function pathOf(pts) { var s = '', i; for (i = 0; i < pts.length; i++) s += (i ? 'L' : 'M') + VX(pts[i][0]).toFixed(1) + ' ' + VY(pts[i][1]).toFixed(1); return s; }
+function pnum(p) { return p >= 1 ? String(+p.toFixed(2)) : String(+p.toPrecision(2)); }
+function bgSvg(c, hlo, hhi) {
+  var s = '', i, k, x, y, d = c.d, m = d.T.length - 1, x0 = ML, x1 = ML + PW, y0 = MT, y1 = MT + PH;
+  s += '<defs><clipPath id="vc-clip"><rect x="' + x0 + '" y="' + y0 + '" width="' + PW + '" height="' + PH + '"/></clipPath></defs>';
+  s += '<rect x="' + x0 + '" y="' + y0 + '" width="' + PW + '" height="' + PH + '" fill="#fff"/>';
+  /* grid */
+  var hs = c.hstep, e, mlt;
+  for (x = Math.ceil(hlo / (hs / 5) - 1e-9) * (hs / 5); x <= hhi + 1e-9; x += hs / 5) {
+    var major = Math.abs(x / hs - Math.round(x / hs)) < 1e-6;
+    s += '<line class="' + (major ? 'vc-gmaj' : 'vc-gmin') + '" x1="' + VX(x).toFixed(1) + '" x2="' + VX(x).toFixed(1) + '" y1="' + y0 + '" y2="' + y1 + '"/>';
+    if (major) s += '<text class="vc-tick" text-anchor="middle" x="' + VX(x).toFixed(1) + '" y="' + (y1 + 16) + '">' + Math.round(x) + '</text>';
+  }
+  for (e = Math.floor(Math.log10(c.plo)); e <= Math.ceil(Math.log10(c.phi)); e++) for (mlt = 1; mlt < 10; mlt++) {
+    var p = mlt * Math.pow(10, e);
+    if (p < c.plo * 0.9999 || p > c.phi * 1.0001) continue;
+    y = VY(p).toFixed(1);
+    s += '<line class="' + (mlt === 1 ? 'vc-gmaj' : 'vc-gmin') + '" x1="' + x0 + '" x2="' + x1 + '" y1="' + y + '" y2="' + y + '"/>';
+    if (mlt === 1 || mlt === 2 || mlt === 4 || mlt === 6 || mlt === 8) s += '<text class="vc-tick" text-anchor="end" x="' + (x0 - 7) + '" y="' + (+y + 4) + '">' + pnum(p) + '</text>';
+  }
+  s += '<text class="vc-axlab" text-anchor="middle" x="' + (x0 + PW / 2) + '" y="' + (HT - 8) + '">Enthalpy h (kJ/kg)</text>';
+  s += '<text class="vc-axlab" text-anchor="middle" transform="translate(15 ' + (y0 + PH / 2) + ') rotate(-90)">Pressure p (MPa)</text>';
+  var g = '<g clip-path="url(#vc-clip)">';
+  /* quality lines */
+  var gx = '', q, pts, lab = '';
+  for (q = 1; q <= 9; q++) {
+    pts = [];
+    for (i = 0; i <= m; i++) pts.push([d.hf[i] + q / 10 * (d.hg[i] - d.hf[i]), d.p0[i] + q / 10 * (d.p1[i] - d.p0[i])]);
+    gx += '<path class="vc-qline" d="' + pathOf(pts) + '"/>';
+    lab += '<text class="vc-rlab" text-anchor="middle" x="' + VX(pts[1][0]).toFixed(1) + '" y="' + (VY(pts[1][1]) - 3).toFixed(1) + '">' + (q === 1 ? 'x = 0.1' : '0.' + q) + '</text>';
+  }
+  g += '<g class="vc-gx">' + gx + lab + '</g>';
+  /* isotherms */
+  var gT = '', o, lb = '', px, ni = c.iso.length, lastLab = -1e9;
+  /* thin the isotherms out when they would be closer than about 7 px (wide enthalpy ranges, such as ammonia) */
+  var gap = ni > 1 ? Math.abs(VX(c.iso[ni - 1].vap[c.iso[ni - 1].vap.length - 1][0]) - VX(c.iso[0].vap[c.iso[0].vap.length - 1][0])) / (ni - 1) : 99;
+  var stride = gap < 3.5 ? 40 : gap < 7 ? 20 : 10;
+  for (k = 0; k < ni; k++) {
+    o = c.iso[k];
+    if (o.tc % stride !== 0) continue;
+    var ic = o.tc % (2 * stride) === 0 ? 'vc-iso' : 'vc-iso lt';
+    if (o.liq) gT += '<path class="' + ic + '" d="' + pathOf(o.liq) + '"/><path class="vc-iso tie" d="' + pathOf(o.tie) + '"/>';
+    gT += '<path class="' + ic + '" d="' + pathOf(o.vap) + '"/>';
+    if (o.tc % (2 * stride) === 0) {
+      if (o.tie && o.tie[0][1] > c.plo * 1.25) lb += '<text class="vc-rlab t" text-anchor="middle" x="' + VX(o.tie[0][0] + 0.3 * (o.tie[1][0] - o.tie[0][0])).toFixed(1) + '" y="' + (VY(o.tie[0][1]) - 3).toFixed(1) + '">' + (o.tc < 0 ? '&minus;' : '') + Math.abs(o.tc) + ' &deg;C</text>';
+      px = VX(o.vap[o.vap.length - 1][0]);
+      if (px > x0 + 10 && px < x1 - 8 && px - lastLab > 24 && (lastLab = px)) lb += '<text class="vc-rlab t" text-anchor="middle" x="' + px.toFixed(1) + '" y="' + (y1 - 4) + '">' + (o.tc < 0 ? '&minus;' : '') + Math.abs(o.tc) + '</text>';
+    }
+  }
+  g += '<g class="vc-gT">' + gT + lb + '</g>';
+  /* entropy lines */
+  var gs = '', sl = '', j, dec = c.sstep < 0.1 ? 2 : 1, first = true;
+  for (k = 0; k < c.isen.length; k++) {
+    o = c.isen[k];
+    for (j = 0; j < o.segs.length; j++) gs += '<path class="vc-isen" d="' + pathOf(o.segs[j]) + '"/>';
+    pts = o.segs[o.segs.length - 1];
+    /* label where the line leaves the plot (top or right edge) */
+    var best = null;
+    for (i = 1; i < pts.length; i++) {
+      var ax = VX(pts[i - 1][0]), ay = VY(pts[i - 1][1]), bx = VX(pts[i][0]), by = VY(pts[i][1]);
+      if (ax < x1 - 4 && ay > y0 + 4) { var t = Math.min(1, by < y0 + 14 ? (ay - (y0 + 14)) / (ay - by) : 1, bx > x1 - 6 ? (x1 - 6 - ax) / (bx - ax) : 1); t = Math.max(0, t); best = [ax + t * (bx - ax), ay + t * (by - ay)]; }
+    }
+    if (best && best[0] > x0 + 40) { sl += '<text class="vc-rlab s" text-anchor="end" x="' + (best[0] - 3).toFixed(1) + '" y="' + (best[1] + 3).toFixed(1) + '">' + (first ? 's = ' : '') + o.s.toFixed(dec) + '</text>'; first = false; }
+  }
+  g += '<g class="vc-gs">' + gs + sl + '</g>';
+  /* dome */
+  var dome = [], pk = F.pc / 1e6;
+  for (i = 0; i <= m; i++) dome.push([d.hf[i], d.p0[i]]);
+  dome.push([(d.hf[m] + d.hg[m]) / 2, Math.max(pk, c.ptop)]);
+  for (i = m; i >= 0; i--) dome.push([d.hg[i], d.p1[i]]);
+  g += '<path class="vc-dome" d="' + pathOf(dome) + '"/>';
+  g += '</g>';
+  s += g + '<rect class="vc-frame" x="' + x0 + '" y="' + y0 + '" width="' + PW + '" height="' + PH + '"/>';
+  return s;
+}
+function sub(a, b) { return a + '<tspan dy="3" font-size="9">' + b + '</tspan><tspan dy="-3">'; }
+function arrow(xa, ya, xb, yb, col, t) {
+  var x = xa + (xb - xa) * (t || 0.5), y = ya + (yb - ya) * (t || 0.5), ang = Math.atan2(yb - ya, xb - xa) * 180 / Math.PI;
+  return '<path d="M-6 -4.5L5 0L-6 4.5Z" fill="' + col + '" transform="translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + ang.toFixed(1) + ')"/>';
+}
+function dimBar(xa, xb, y, col, bold) {
+  return '<path d="M' + xa.toFixed(1) + ' ' + (y - 4) + 'V' + (y + 4) + 'M' + xa.toFixed(1) + ' ' + y + 'H' + xb.toFixed(1) + 'M' + xb.toFixed(1) + ' ' + (y - 4) + 'V' + (y + 4) + '" stroke="' + col + '" stroke-width="' + (bold ? 2.4 : 1.4) + '" fill="none"/>';
+}
+function cycleSvg() {
+  var s = '', X = {}, k, ye = VY(R.pe), yc = VY(R.pc), ks = ['1', '2s', '2', '3', '4'];
+  for (k = 0; k < ks.length; k++) X[ks[k]] = VX(R.h[ks[k]]);
+  var cold = '#1f6fb2', hot = '#c0392b', navy = '#14293d', pur = '#7d5fb2', ref = S.mode === 'ref';
+  var yb = Math.min(ye + 30, MT + PH - 20), yt = Math.max(yc - 30, MT + 22);
+  /* guides */
+  s += '<path class="vc-guide2" d="M' + X[4].toFixed(1) + ' ' + ye + 'V' + yb + 'M' + X[1].toFixed(1) + ' ' + ye + 'V' + yb + 'M' + X[2].toFixed(1) + ' ' + yt + 'V' + yb + 'M' + X[3].toFixed(1) + ' ' + yc + 'V' + yt + '"/>';
+  /* processes */
+  s += '<path d="M' + X[4].toFixed(1) + ' ' + ye.toFixed(1) + 'H' + X[1].toFixed(1) + '" stroke="' + cold + '" stroke-width="3.2" fill="none"/>' + arrow(X[4], ye, X[1], ye, cold);
+  s += '<path d="M' + X[2].toFixed(1) + ' ' + yc.toFixed(1) + 'H' + X[3].toFixed(1) + '" stroke="' + hot + '" stroke-width="3.2" fill="none"/>' + arrow(X[2], yc, X[3], yc, hot);
+  s += '<path d="M' + X[3].toFixed(1) + ' ' + yc.toFixed(1) + 'V' + ye.toFixed(1) + '" stroke="#52606d" stroke-width="2.6" stroke-dasharray="7 4" fill="none"/>' + arrow(X[3], yc, X[4], ye, '#52606d');
+  if (S.eta >= 99.95) s += '<path d="' + pathOf(R.path) + '" stroke="' + navy + '" stroke-width="3.2" fill="none"/>';
+  else {
+    s += '<path d="' + pathOf(R.path) + '" stroke="' + pur + '" stroke-width="1.8" stroke-dasharray="5 4" fill="none"/>';
+    s += '<path d="M' + X[1].toFixed(1) + ' ' + ye.toFixed(1) + 'L' + X[2].toFixed(1) + ' ' + yc.toFixed(1) + '" stroke="' + navy + '" stroke-width="3.2" fill="none"/>';
+  }
+  s += arrow(X[1], ye, X[2], yc, navy);
+  /* energy bars: horizontal distances on the diagram */
+  s += dimBar(X[4], X[1], yb, cold, ref) + dimBar(X[1], X[2], yb, navy, false) + dimBar(X[3], X[2], yt, hot, !ref);
+  s += '<text class="vc-lab' + (ref ? ' acc' : '') + '" text-anchor="middle" x="' + ((X[4] + X[1]) / 2).toFixed(1) + '" y="' + (yb + 15) + '" style="fill:' + cold + '">' + sub('q', 'L') + ' = ' + fx(R.qL, 1) + ' kJ/kg</tspan></text>';
+  s += '<text class="vc-lab" text-anchor="start" x="' + (X[2] + 6).toFixed(1) + '" y="' + (yb + 4) + '" style="fill:' + navy + '">w = ' + fx(R.w, 1) + '</text>';
+  s += '<text class="vc-lab' + (!ref ? ' acc' : '') + '" text-anchor="middle" x="' + ((X[3] + X[2]) / 2).toFixed(1) + '" y="' + (yt - 7) + '" style="fill:' + hot + '">' + sub('q', 'H') + ' = ' + fx(R.qH, 1) + ' kJ/kg</tspan></text>';
+  /* state points */
+  var near = X[2] - X['2s'] < 26;
+  if (S.eta < 99.95) s += '<circle cx="' + X['2s'].toFixed(1) + '" cy="' + yc.toFixed(1) + '" r="4" fill="#fff" stroke="' + pur + '" stroke-width="1.8"/><text class="vc-lab pur" text-anchor="middle" x="' + X['2s'].toFixed(1) + '" y="' + (near ? yc + 17 : yc - 9).toFixed(1) + '">2s</text>';
+  var P = [['1', X[1], ye, 8, 16, 'start'], ['2', X[2], yc, 8, -9, 'start'], ['3', X[3], yc, -8, -9, 'end'], ['4', X[4], ye, -8, 16, 'end']];
+  for (k = 0; k < 4; k++) s += '<circle cx="' + P[k][1].toFixed(1) + '" cy="' + P[k][2].toFixed(1) + '" r="5" fill="#fff" stroke="' + navy + '" stroke-width="2.2"/><text class="vc-lab dark" style="font-size:13px" text-anchor="' + P[k][5] + '" x="' + (P[k][1] + P[k][3]).toFixed(1) + '" y="' + (P[k][2] + P[k][4]).toFixed(1) + '">' + P[k][0] + '</text>';
+  return s;
+}
+function drawChart() {
+  var c = CH[F.id];
+  if (!c) return;
+  var hhi = c.hhi, hlo = c.hlo;
+  if (R && R.ok) while (R.h[2] + 0.06 * c.span > hhi) hhi += c.hstep;
+  scales(c, hlo, hhi);
+  var key = F.id + '|' + hlo + '|' + hhi, box = $('vc-chart');
+  if (key !== bgKey || !$('vc-bg')) {
+    box.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + HT + '" role="img" aria-label="Pressure-enthalpy diagram of ' + F.name + ' with the cycle"><g id="vc-bg">' + bgSvg(c, hlo, hhi) + '</g><g id="vc-cy"></g><g id="vc-hv"></g></svg><div class="vc-tip" id="vc-tip"></div>';
+    bgKey = key;
+    if (box.scrollWidth > box.clientWidth) box.scrollLeft = (box.scrollWidth - box.clientWidth) / 2; /* narrow screens: start on the cycle */
+  }
+  $('vc-cy').innerHTML = R && R.ok ? cycleSvg() : '';
+}
+
+/* ---------- hover reader ---------- */
+var hvRaf = 0, hvEvt = null;
+function hover(ev) {
+  hvEvt = ev;
+  if (!hvRaf) hvRaf = requestAnimationFrame(function () { hvRaf = 0; hoverNow(hvEvt); });
+}
+function hoverNow(ev) {
+  var svg = $('vc-chart').querySelector('svg'), tip = $('vc-tip'), c = CH[F.id];
+  if (!svg || !c || !CP) return;
+  var rc = svg.getBoundingClientRect(), t = ev.touches && ev.touches[0] ? ev.touches[0] : ev;
+  var x = (t.clientX - rc.left) * W / rc.width, y = (t.clientY - rc.top) * HT / rc.height;
+  if (x < ML || x > ML + PW || y < MT || y > MT + PH) { hoverOff(); return; }
+  var h = VX.inv(x), p = VY.inv(y), sl = satL(c, p), sv = satV(c, p), T, s, ph;
+  if (sl && sv && h >= sl.hf && h <= sv.hg) {
+    var q = (h - sl.hf) / (sv.hg - sl.hf);
+    T = sl.T + q * (sv.T - sl.T); s = sl.sf + q * (sv.sg - sl.sf); ph = 'two-phase, x = ' + fx(q, 2);
+  } else {
+    T = props('T', 'P', p * 1e6, 'H', h * 1e3 - F.dh); s = sk(props('S', 'P', p * 1e6, 'H', h * 1e3 - F.dh));
+    ph = sl && h < sl.hf ? 'subcooled liquid' : sv && h > sv.hg ? 'superheated vapor' : T < F.Tc ? 'compressed liquid' : 'supercritical';
+  }
+  $('vc-hv').innerHTML = '<line class="vc-cross" x1="' + x.toFixed(1) + '" x2="' + x.toFixed(1) + '" y1="' + MT + '" y2="' + (MT + PH) + '"/><line class="vc-cross" x1="' + ML + '" x2="' + (ML + PW) + '" y1="' + y.toFixed(1) + '" y2="' + y.toFixed(1) + '"/>';
+  tip.innerHTML = '<div class="hd">' + esc(F.name) + '</div><div class="row"><i>h</i><b>' + fx(h, 1) + ' kJ/kg</b></div><div class="row"><i>p</i><b>' + sig(p, 3) + ' MPa</b></div><div class="row"><i>T</i><b>' + (isFinite(T) ? fx(T - 273.15, 1) + ' &deg;C' : '&ndash;') + '</b></div><div class="row"><i>s</i><b>' + (isFinite(s) ? fx(s, 3) + ' kJ/(kg&middot;K)' : '&ndash;') + '</b></div><div class="row"><i>' + (isFinite(T) ? ph : '') + '</i></div>';
+  tip.style.display = 'block';
+  var bw = $('vc-chart').clientWidth, px = (t.clientX - rc.left), py = (t.clientY - rc.top), tw = tip.offsetWidth, th = tip.offsetHeight;
+  tip.style.left = clamp(px + 14 + tw > bw ? px - tw - 14 : px + 14, 0, Math.max(0, bw - tw)) + 'px';
+  tip.style.top = Math.max(0, py - th - 10 < 0 ? py + 14 : py - th - 10) + 'px';
+}
+function hoverOff() { var t = $('vc-tip'), g = $('vc-hv'); if (t) t.style.display = 'none'; if (g) g.innerHTML = ''; }
+
+/* ---------- schematic ---------- */
+function schematic() {
+  var ref = S.mode === 'ref', s = '', cold = '#1f6fb2', hot = '#c0392b', c1 = '#5b9bd5', c3 = '#e08a3c';
+  function st(n, x, y, up) {
+    var k = String(n), t = fx(R.T[k], 1) + ' &deg;C, ' + sig(k === '1' || k === '4' ? R.pe : R.pc, 3) + ' MPa';
+    return '<circle cx="' + x + '" cy="' + y + '" r="11" fill="#14293d"/><text x="' + x + '" y="' + (y + 4.5) + '" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">' + k + '</text>' +
+      '<text class="lb b" text-anchor="middle" x="' + x + '" y="' + (up ? y - 32 : y + 30) + '">' + t + '</text><text class="lb s" text-anchor="middle" x="' + x + '" y="' + (up ? y - 17 : y + 45) + '">' + phaseTxt(k) + '</text>';
+  }
+  /* pipes, colored by the state of the refrigerant in them */
+  s += '<path d="M580 255H700V202" stroke="' + c1 + '" stroke-width="5" fill="none"/>' + arrow(700, 255, 700, 202, c1, 0.45);
+  s += '<path d="M700 138V85H580" stroke="' + hot + '" stroke-width="5" fill="none"/>' + arrow(700, 85, 580, 85, hot, 0.25);
+  s += '<path d="M280 85H160V152" stroke="' + c3 + '" stroke-width="5" fill="none"/>' + arrow(160, 85, 160, 152, c3, 0.5);
+  s += '<path d="M160 188V255H280" stroke="' + cold + '" stroke-width="5" fill="none"/>' + arrow(160, 255, 280, 255, cold, 0.3);
+  /* condenser and evaporator */
+  s += '<rect x="280" y="58" width="300" height="54" rx="8" fill="#fbe3dc" stroke="' + hot + '" stroke-width="2"/><path d="M296 85h14l8-13 16 26 16-26 16 26 16-26 16 26 16-26 16 26 16-26 16 26 16-26 16 26 16-26 16 26 8-13h14" stroke="' + hot + '" stroke-width="2" fill="none" opacity=".3"/>';
+  s += '<rect x="280" y="228" width="300" height="54" rx="8" fill="#dceaf6" stroke="' + cold + '" stroke-width="2"/><path d="M296 255h14l8-13 16 26 16-26 16 26 16-26 16 26 16-26 16 26 16-26 16 26 16-26 16 26 16-26 16 26 8-13h14" stroke="' + cold + '" stroke-width="2" fill="none" opacity=".3"/>';
+  s += '<text class="lb b" text-anchor="middle" x="430" y="90">Condenser, ' + fx(S.Tc, 1) + ' &deg;C</text><text class="lb b" text-anchor="middle" x="430" y="260">Evaporator, ' + fx(S.Te, 1) + ' &deg;C</text>';
+  /* compressor and valve */
+  s += '<path d="M670 202H730L716 138H684Z" fill="#e9edf1" stroke="#14293d" stroke-width="2"/><text class="lb b" text-anchor="middle" x="700" y="176" style="font-size:12px">C</text>';
+  s += '<text class="lb b" text-anchor="start" x="738" y="150">Compressor</text><text class="lb s" text-anchor="start" x="738" y="166">&eta;<tspan dy="3" font-size="9">c</tspan><tspan dy="-3"> = ' + fx(S.eta, 0) + '%</tspan></text>';
+  s += '<path d="M144 152H176L160 170ZM144 188H176L160 170Z" fill="#e9edf1" stroke="#14293d" stroke-width="2"/><text class="lb b" text-anchor="end" x="136" y="166">Expansion</text><text class="lb b" text-anchor="end" x="136" y="182">valve</text>';
+  /* energy arrows */
+  s += '<path d="M430 58V22" stroke="' + hot + '" stroke-width="' + (ref ? 3 : 5) + '"/><path d="M421 26L430 10L439 26Z" fill="' + hot + '"/>';
+  s += '<text class="lb' + (ref ? '' : ' acc') + '" text-anchor="start" x="446" y="26" style="fill:' + hot + '">' + sub('q', 'H') + ' = ' + fx(R.qH, 1) + ' kJ/kg</tspan> ' + (ref ? 'to the warm surroundings' : 'to the building (the useful heat)') + '</text>';
+  s += '<path d="M430 326V298" stroke="' + cold + '" stroke-width="' + (ref ? 5 : 3) + '"/><path d="M421 300L430 284L439 300Z" fill="' + cold + '"/>';
+  s += '<text class="lb' + (ref ? ' acc' : '') + '" text-anchor="start" x="446" y="322" style="fill:' + cold + '">' + sub('q', 'L') + ' = ' + fx(R.qL, 1) + ' kJ/kg</tspan> ' + (ref ? 'from the cold space (the useful cooling)' : 'from the outdoor air') + '</text>';
+  s += '<path d="M800 190H742" stroke="#14293d" stroke-width="3"/><path d="M746 181L730 190L746 199Z" fill="#14293d"/><text class="lb b" text-anchor="start" x="738" y="216">w = ' + fx(R.w, 1) + ' kJ/kg</text>';
+  s += st(1, 652, 255, false) + st(2, 652, 85, true) + st(3, 206, 85, true) + st(4, 206, 255, false);
+  $('vc-svg').innerHTML = '<desc>Schematic of the vapor compression cycle</desc>' + s;
+  $('vc-svg-note').innerHTML = ref ? 'Refrigeration or air conditioning: the evaporator is in the cold space and the condenser rejects the heat outdoors.' : 'Heat pump: a reversing valve swaps the two coils, so the condenser is inside the building and the evaporator takes heat from the cold outdoor air.';
+}
+
+/* ---------- text outputs ---------- */
+function tile(k, v, s, cls) { return '<div class="vc-tile' + (cls ? ' ' + cls : '') + '"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="s">' + s + '</div></div>'; }
+function outputs() {
+  var ref = S.mode === 'ref', cop = ref ? R.beta : R.gamma, cmax = ref ? R.bmax : R.gmax, i, k, s;
+  $('vc-tiles').innerHTML =
+    tile('COP for cooling, &beta;', fx(R.beta, 2), 'q<sub>L</sub> / w', ref ? 'ans' : '') +
+    tile('COP for heating, &gamma;', fx(R.gamma, 2), 'q<sub>H</sub> / w = &beta; + 1', ref ? '' : 'ans') +
+    tile('Carnot limit, ' + (ref ? '&beta;' : '&gamma;') + '<sub>max</sub>', fx(cmax, 2), 'between ' + fx(S.Te, 1) + ' and ' + fx(S.Tc, 1) + ' &deg;C; the cycle reaches ' + fx(100 * cop / cmax, 0) + '% of it') +
+    tile('Compressor work, w', fx(R.w, 1) + ' <small>kJ/kg</small>', 'h<sub>2</sub> &minus; h<sub>1</sub>; isentropic: ' + fx(R.ws, 1) + ' kJ/kg') +
+    tile((ref ? 'Refrigerating effect' : 'Heat from the outdoor air') + ', q<sub>L</sub>', fx(R.qL, 1) + ' <small>kJ/kg</small>', 'h<sub>1</sub> &minus; h<sub>4</sub>, absorbed in the evaporator') +
+    tile((ref ? 'Heat rejected' : 'Heat delivered') + ', q<sub>H</sub>', fx(R.qH, 1) + ' <small>kJ/kg</small>', 'h<sub>2</sub> &minus; h<sub>3</sub> = q<sub>L</sub> + w');
+  $('sk-b').innerHTML = fx(R.beta, 2); $('sk-g').innerHTML = fx(R.gamma, 2); $('sk-w').innerHTML = fx(R.w, 1) + ' kJ/kg';
+  /* state table */
+  var nm = { 1: 'Compressor inlet', '2s': 'Isentropic compressor exit', 2: 'Compressor exit', 3: 'Condenser exit', 4: 'Evaporator inlet' }, ks = ['1', '2s', '2', '3', '4'];
+  s = '<table class="vc-table vc-st"><thead><tr><th>State</th><th>T (&deg;C)</th><th>p (MPa)</th><th>h (kJ/kg)</th><th>s (kJ/kg&middot;K)</th><th>Condition</th></tr></thead><tbody>';
+  for (i = 0; i < ks.length; i++) { k = ks[i]; s += '<tr' + (k === '2s' ? ' class="alt"' : '') + '><td><b>' + k + '</b></td><td>' + fx(R.T[k], 1) + '</td><td>' + sig(k === '1' || k === '4' ? R.pe : R.pc, 4) + '</td><td>' + fx(R.h[k], 1) + '</td><td>' + fx(R.s[k], 3) + '</td><td>' + phaseTxt(k) + '<small>' + nm[k] + '</small></td></tr>'; }
+  $('vc-states').innerHTML = s + '</tbody></table>';
+  /* more results */
+  function dd(t, v, sm) { return '<div><dt>' + t + '</dt><dd>' + v + (sm ? '<small>' + sm + '</small>' : '') + '</dd></div>'; }
+  $('vc-more').innerHTML =
+    dd('Evaporator pressure', sig(R.pe, 4) + ' MPa', fx(R.pe * 10, 2) + ' bar') +
+    dd('Condenser pressure', sig(R.pc, 4) + ' MPa', fx(R.pc * 10, 2) + ' bar') +
+    dd('Pressure ratio p<sub>2</sub>/p<sub>1</sub>', fx(R.pc / R.pe, 2)) +
+    dd('Compressor exit temperature T<sub>2</sub>', fx(R.T[2], 1) + ' &deg;C', 'isentropic: ' + fx(R.T['2s'], 1) + ' &deg;C') +
+    dd('Quality after the valve x<sub>4</sub>', fx(R.x4, 3), fx(100 * R.x4, 0) + '% of the refrigerant flashes to vapor') +
+    dd('Compressor power W&#775;<sub>c</sub>', fx(R.Wd, 2) + ' kW', 'm&#775; = ' + fx(S.md, 3) + ' kg/s') +
+    dd('Refrigeration capacity Q&#775;<sub>L</sub>', fx(R.QL, 2) + ' kW', fx(R.QL / TON, 2) + ' tons of refrigeration') +
+    dd('Heat delivered Q&#775;<sub>H</sub>', fx(R.QH, 2) + ' kW', fx(R.QH * 3412.14 / 1000, 1) + ' thousand Btu/h');
+  /* notes */
+  var n = [];
+  if (ref) n.push('<li>For every kJ of compressor work the cycle takes <b>' + fx(R.beta, 2) + ' kJ</b> of heat out of the cold space.</li>');
+  else n.push('<li>For every kJ of compressor work the cycle delivers <b>' + fx(R.gamma, 2) + ' kJ</b> of heat: ' + fx(R.beta, 2) + ' kJ taken from the outdoor air plus the work itself. An electric resistance heater delivers 1 kJ.</li>');
+  if (exNote) n.push('<li>' + exNote + '</li>');
+  if (isFinite(R.x2)) n.push('<li class="warn"><b>Wet compression.</b> State 2 is inside the dome, so the compressor would be handling liquid. Add superheat at the compressor inlet.</li>');
+  else if (isFinite(R.x2s)) n.push('<li>The isentropic state 2s falls inside the dome: the saturated-vapor line of this refrigerant leans to the right. The actual state 2 is still vapor.</li>');
+  if (R.T[2] > 150) n.push('<li class="warn"><b>Very hot compressor exit</b> (' + fx(R.T[2], 0) + ' &deg;C). Real compressors are kept much cooler than this to protect the lubricating oil; a pressure ratio this large is usually split into two stages.</li>');
+  if (R.pe < 0.101325) n.push('<li class="warn"><b>Evaporator below atmospheric pressure</b> (' + fx(R.pe * 1000, 0) + ' kPa). Air and moisture can leak into the system through any small opening.</li>');
+  $('vc-notes').innerHTML = n.join('');
+  /* derived values next to the controls */
+  $('vc-pe-note').innerHTML = 'Evaporator pressure ' + sig(R.pe, 3) + ' MPa';
+  $('vc-pc-note').innerHTML = 'Condenser pressure ' + sig(R.pc, 3) + ' MPa';
+  $('vc-sh-note').innerHTML = S.sh > 0 ? 'The vapor enters the compressor at ' + fx(R.T[1], 1) + ' &deg;C.' : 'Saturated vapor enters the compressor.';
+  $('vc-sc-note').innerHTML = S.sc > 0 ? 'The liquid leaves the condenser at ' + fx(R.T[3], 1) + ' &deg;C.' : 'Saturated liquid leaves the condenser.';
+  steps(); matlab();
+}
+function steps() {
+  var ref = S.mode === 'ref', s = '';
+  function li(lbl, eq, res) { return '<li><span class="lbl">' + lbl + '</span><span class="eq">' + eq + '</span>' + (res ? ' <span class="res">' + res + '</span>' : '') + '</li>'; }
+  s += li('Pressures from the two saturation temperatures', 'p<sub>1</sub> = p<sub>4</sub> = p<sub>sat</sub>(' + fx(S.Te, 1) + ' &deg;C) = ' + sig(R.pe, 4) + ' MPa; p<sub>2</sub> = p<sub>3</sub> = p<sub>sat</sub>(' + fx(S.Tc, 1) + ' &deg;C) =', sig(R.pc, 4) + ' MPa');
+  s += li('State 1: ' + phaseTxt('1') + ' at p<sub>1</sub>' + (S.sh > 0 ? ' and ' + fx(S.Te, 1) + ' + ' + fx(S.sh, 1) + ' = ' + fx(R.T[1], 1) + ' &deg;C' : ''), 'h<sub>1</sub> = ' + fx(R.h[1], 1) + ' kJ/kg, s<sub>1</sub> =', fx(R.s[1], 3) + ' kJ/(kg&middot;K)');
+  s += li('State 2s: follow the entropy line s = s<sub>1</sub> up to p<sub>2</sub>', 'h<sub>2s</sub> = h(p<sub>2</sub>, s<sub>1</sub>) =', fx(R.h['2s'], 1) + ' kJ/kg');
+  s += li('State 2: isentropic compressor efficiency', 'h<sub>2</sub> = h<sub>1</sub> + (h<sub>2s</sub> &minus; h<sub>1</sub>)/&eta;<sub>c</sub> = ' + fx(R.h[1], 1) + ' + (' + fx(R.h['2s'], 1) + ' &minus; ' + fx(R.h[1], 1) + ')/' + fx(S.eta / 100, 2) + ' =', fx(R.h[2], 1) + ' kJ/kg');
+  s += li('State 3: ' + phaseTxt('3') + ' at p<sub>2</sub>' + (S.sc > 0 ? ' and ' + fx(S.Tc, 1) + ' &minus; ' + fx(S.sc, 1) + ' = ' + fx(R.T[3], 1) + ' &deg;C' : '') + '; state 4: throttling', 'h<sub>4</sub> = h<sub>3</sub> =', fx(R.h[3], 1) + ' kJ/kg');
+  s += li('Energy per kilogram of refrigerant', 'q<sub>L</sub> = h<sub>1</sub> &minus; h<sub>4</sub> = ' + fx(R.qL, 1) + '; w = h<sub>2</sub> &minus; h<sub>1</sub> = ' + fx(R.w, 1) + '; q<sub>H</sub> = h<sub>2</sub> &minus; h<sub>3</sub> =', fx(R.qH, 1) + ' kJ/kg');
+  if (ref) s += li('Coefficient of performance, refrigeration', '&beta; = q<sub>L</sub>/w = ' + fx(R.qL, 1) + '/' + fx(R.w, 1) + ' =', fx(R.beta, 2));
+  else s += li('Coefficient of performance, heat pump', '&gamma; = q<sub>H</sub>/w = ' + fx(R.qH, 1) + '/' + fx(R.w, 1) + ' =', fx(R.gamma, 2));
+  s += li('Check against the Carnot limit (absolute temperatures)', ref ? '&beta;<sub>max</sub> = T<sub>C</sub>/(T<sub>H</sub> &minus; T<sub>C</sub>) = ' + fx(R.Te, 2) + '/(' + fx(R.Tc, 2) + ' &minus; ' + fx(R.Te, 2) + ') =' : '&gamma;<sub>max</sub> = T<sub>H</sub>/(T<sub>H</sub> &minus; T<sub>C</sub>) = ' + fx(R.Tc, 2) + '/(' + fx(R.Tc, 2) + ' &minus; ' + fx(R.Te, 2) + ') =', fx(ref ? R.bmax : R.gmax, 2));
+  if (ref) s += li('Power and capacity with m&#775; = ' + fx(S.md, 3) + ' kg/s', 'W&#775;<sub>c</sub> = m&#775;w = ' + fx(R.Wd, 2) + ' kW; Q&#775;<sub>L</sub> = m&#775;q<sub>L</sub> = ' + fx(R.QL, 2) + ' kW &times; 60/211 =', fx(R.QL / TON, 2) + ' tons');
+  else s += li('Power and heating with m&#775; = ' + fx(S.md, 3) + ' kg/s', 'W&#775;<sub>c</sub> = m&#775;w = ' + fx(R.Wd, 2) + ' kW; Q&#775;<sub>H</sub> = m&#775;q<sub>H</sub> =', fx(R.QH, 2) + ' kW');
+  $('vc-steps').innerHTML = s;
+}
+function matlab() {
+  var t = [], g = function (v) { return String(+v.toFixed(3)); };
+  t.push('P = @(varargin) double(py.CoolProp.CoolProp.PropsSI(varargin{:}));');
+  t.push("fluid = '" + F.id + "';");
+  t.push('Te = ' + g(S.Te) + ' + 273.15;   Tc = ' + g(S.Tc) + ' + 273.15;   % K');
+  t.push('eta = ' + g(S.eta / 100) + ';' + (S.sh > 0 ? '   SH = ' + g(S.sh) + ';' : '') + (S.sc > 0 ? '   SC = ' + g(S.sc) + ';' : ''));
+  t.push("pe = P('P','T',Te,'Q',1,fluid);        % Pa");
+  t.push("pc = P('P','T',Tc,'Q',0,fluid);");
+  if (S.sh > 0) { t.push("h1 = P('H','P',pe,'T',Te+SH,fluid);    % J/kg"); t.push("s1 = P('S','P',pe,'T',Te+SH,fluid);"); }
+  else { t.push("h1 = P('H','P',pe,'Q',1,fluid);        % J/kg"); t.push("s1 = P('S','P',pe,'Q',1,fluid);"); }
+  t.push("h2s = P('H','P',pc,'S',s1,fluid);");
+  t.push('h2 = h1 + (h2s - h1)/eta;');
+  t.push(S.sc > 0 ? "h3 = P('H','P',pc,'T',Tc-SC,fluid);" : "h3 = P('H','P',pc,'Q',0,fluid);");
+  t.push('h4 = h3;');
+  t.push('beta  = (h1 - h4)/(h2 - h1)            % ' + fa(R.beta, 3));
+  t.push('gamma = (h2 - h3)/(h2 - h1)            % ' + fa(R.gamma, 3));
+  t.push("T2 = P('T','P',pc,'H',h2,fluid) - 273.15   % " + fa(R.T[2], 1) + ' C');
+  $('vc-matlab').textContent = t.join('\n');
+}
+
+/* ---------- controls ---------- */
+function mkCtl(id) {
+  var c = CTL[id];
+  $('ctl-' + id).innerHTML = '<div class="vc-ctl"><label for="n-' + id + '">' + c.label + (c.sym ? ' <span class="vc-sym">' + c.sym + '</span>' : '') + '</label><div class="vc-inrow"><input type="range" id="r-' + id + '" min="' + c.min + '" max="' + c.max + '" step="' + c.step + '" aria-label="' + c.label + '"><span class="vc-num"><input type="text" inputmode="decimal" id="n-' + id + '"><span class="vc-unit">' + c.unit + '</span></span></div></div>';
+  $('r-' + id).addEventListener('input', function () { S[id] = +this.value; exNote = ''; syncCtl(id, true); render(); });
+  $('n-' + id).addEventListener('input', function () {
+    var v = parseFloat(this.value.replace(',', '.').replace('−', '-'));
+    if (isFinite(v) && v >= c.min && v <= c.max && /^\s*[-−+]?\d*[.,]?\d*\s*$/.test(this.value)) { this.removeAttribute('aria-invalid'); S[id] = v; exNote = ''; $('r-' + id).value = v; render(); }
+    else this.setAttribute('aria-invalid', 'true');
+  });
+  $('n-' + id).addEventListener('blur', function () { syncCtl(id); });
+}
+function syncCtl(id, keepRange) {
+  var c = CTL[id], n = $('n-' + id);
+  if (!keepRange) $('r-' + id).value = S[id];
+  n.value = String(+S[id].toFixed(c.dec === 0 ? 1 : c.dec)); n.removeAttribute('aria-invalid');
+}
+function syncAll() {
+  var k;
+  for (k in CTL) syncCtl(k);
+  Array.prototype.forEach.call(document.querySelectorAll('input[name=mode]'), function (el) { el.checked = el.value === S.mode; });
+  $('vc-fluid').value = S.fluid;
+}
+function setState(o) { var k; for (k in DEF) S[k] = (o && o[k] !== undefined) ? o[k] : DEF[k]; }
+function readHash() {
+  var h = location.hash.slice(1), o = {}, any = false;
+  if (!h) return false;
+  h.split('&').forEach(function (kv) {
+    var p = kv.split('='), k = p[0], v = decodeURIComponent(p[1] || '');
+    if (k === 'm' && (v === 'ref' || v === 'hp')) { o.mode = v; any = true; }
+    else if (k === 'f' && fluidById(v)) { o.fluid = v; any = true; }
+    else if (CTL[k] && isFinite(parseFloat(v))) { o[k] = clamp(parseFloat(v), CTL[k].min, CTL[k].max); any = true; }
+  });
+  if (!any) return false;
+  setState(o); exNote = ''; return true;
+}
+function hashOf() { return '#f=' + S.fluid + '&m=' + S.mode + '&Te=' + S.Te + '&Tc=' + S.Tc + '&eta=' + S.eta + '&sh=' + S.sh + '&sc=' + S.sc + '&md=' + S.md; }
+
+/* ---------- render ---------- */
+function status(t, err) { var el = $('vc-status'); el.innerHTML = t || ''; el.className = 'vc-status' + (err ? ' err' : ''); el.hidden = !t; }
+function render() {
+  if (!CP) return;
+  setFluid(S.fluid);
+  $('vc-fl-note').innerHTML = F.kind + '.';
+  $('vc-chart-h').innerHTML = 'Pressure&ndash;enthalpy diagram, ' + F.name;
+  if (!CH[F.id]) {
+    /* first use of this refrigerant: compute its chart (a few hundred CoolProp calls) after the status paints */
+    status('Drawing the ' + F.name + ' chart&hellip;');
+    var id = F.id;
+    setTimeout(function () { if (!CH[id]) { setFluid(id); CH[id] = buildChart(); } status(''); render(); }, 30);
+    return;
+  }
+  R = solve();
+  if (!R.ok) {
+    status(R.err, true);
+    drawChart();
+    $('vc-tiles').innerHTML = ''; $('vc-states').innerHTML = ''; $('vc-more').innerHTML = ''; $('vc-steps').innerHTML = ''; $('vc-notes').innerHTML = ''; $('vc-matlab').textContent = ''; $('vc-svg').innerHTML = '';
+    return;
+  }
+  status('');
+  drawChart(); schematic(); outputs();
+  window.__vc = { state: S, result: R };
+}
+function legend() {
+  function key(col, dash, t) { return '<span><i class="vc-key' + (dash ? ' dash' : '') + '" style="border-color:' + col + '"></i>' + t + '</span>'; }
+  $('vc-legend').innerHTML = key('#1f6fb2', 0, '4 &rarr; 1 evaporator') + key('#14293d', 0, '1 &rarr; 2 compressor') + key('#7d5fb2', 1, '1 &rarr; 2s isentropic') + key('#c0392b', 0, '2 &rarr; 3 condenser') + key('#52606d', 1, '3 &rarr; 4 expansion valve') + key('#b0521a', 0, 'temperature (&deg;C)') + key('#7d5fb2', 0, 'entropy (kJ/kg&middot;K)') + key('#8c96a0', 0, 'quality x');
+}
+function init() {
+  var k, sel = $('vc-fluid');
+  for (k = 0; k < FLUIDS.length; k++) sel.insertAdjacentHTML('beforeend', '<option value="' + FLUIDS[k].id + '">' + FLUIDS[k].name + '</option>');
+  for (k in CTL) mkCtl(k);
+  setState(); readHash(); syncAll(); legend();
+  sel.addEventListener('change', function () { S.fluid = this.value; exNote = ''; render(); });
+  Array.prototype.forEach.call(document.querySelectorAll('input[name=mode]'), function (el) { el.addEventListener('change', function () { if (this.checked) { S.mode = this.value; render(); } }); });
+  $('vc-ex').addEventListener('change', function () { var v = this.value; if (!v) return; setState(EX[v]); exNote = EXNOTE[v] || ''; syncAll(); render(); this.value = ''; });
+  $('vc-reset').addEventListener('click', function () { setState(); exNote = ''; syncAll(); if (location.hash) history.replaceState(null, '', location.pathname + location.search); render(); });
+  $('vc-link').addEventListener('click', function () {
+    var b = this, url = location.origin + location.pathname + location.search + hashOf();
+    history.replaceState(null, '', hashOf());
+    function done(ok) { b.textContent = ok ? 'Link copied' : 'Link is in the address bar'; setTimeout(function () { b.textContent = 'Copy link to this setup'; }, 2200); }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(function () { done(true); }, function () { done(false); }); else done(false);
+  });
+  [['tg-T', 'noT'], ['tg-s', 'nos'], ['tg-x', 'nox']].forEach(function (p) { $(p[0]).addEventListener('change', function () { $('vc-chart').classList.toggle(p[1], !this.checked); }); });
+  var box = $('vc-chart');
+  box.addEventListener('mousemove', hover); box.addEventListener('mouseleave', hoverOff);
+  box.addEventListener('touchstart', hover, { passive: true }); box.addEventListener('touchmove', hover, { passive: true });
+  window.addEventListener('hashchange', function () { if (readHash()) { syncAll(); render(); } });
+  loadCoolProp(0).then(function (m) { CP = m; render(); }, function (e) {
+    status('The CoolProp property library could not be loaded, so the simulator cannot run. Check your internet connection and reload the page. (' + esc(e && e.message ? e.message : e) + ')', true);
+  });
+}
+init();
+
+function renderTex() {
+  if (!window.katex) return;
+  Array.prototype.forEach.call(document.querySelectorAll('.tex-d'), function (el) {
+    try { window.katex.render(el.getAttribute('data-tex'), el, { displayMode: true, throwOnError: false }); } catch (e) { /* keep the source text */ }
+  });
+}
+Array.prototype.forEach.call(document.querySelectorAll('.tex-d'), function (el) { if (!el.textContent) el.textContent = el.getAttribute('data-tex'); });
+if (window.katex) renderTex(); else window.addEventListener('load', renderTex);
+})();
+</script>
+{% endraw %}

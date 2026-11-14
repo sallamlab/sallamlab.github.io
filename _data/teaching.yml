@@ -54,6 +54,20 @@ tools:
       pressure drop (Type I), the flow rate (Type II) or the pipe diameter (Type III), with the
       trial-and-error path drawn on the chart, a step-by-step solution, a MATLAB check with
       Colebrook.m and a short write-up of the equations behind it.
+  - title: Vapor compression cycle simulator
+    label: Interactive tool
+    courses: MAE 3524 Thermal Fluids Design
+    url: /teaching/vapor-compression/
+    image: vapor-compression-simulator.svg
+    button: Open the simulator
+    text: >-
+      Follow a refrigerator, an air conditioner or a heat pump around the pressure-enthalpy diagram.
+      Set the evaporator and condenser temperatures, the isentropic efficiency of the compressor, the
+      superheat and the subcooling, and watch the four state points of the mechanical vapor compression
+      cycle move on the chart of R-410A, R-134a and seven other refrigerants. Read the coefficient of
+      performance for cooling and for heating, compare it with the Carnot limit, and check a
+      step-by-step solution, with refrigerant properties from the CoolProp library and a short
+      write-up of the equations behind it.
 
 asme:
   intro: >-
