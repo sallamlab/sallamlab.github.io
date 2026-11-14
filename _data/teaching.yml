@@ -126,15 +126,15 @@ facilities:
     - file: hydchannel2.jpg
       caption: Hydraulic channel
     - file: img-8197.jpg
-      caption: Experimental fluid dynamics lab session
+      caption: Pump lab session
     - file: img-8221.jpg
-      caption: Experimental fluid dynamics lab session
+      caption: Pump lab session
     - file: 24879584-379265712523588-4649124083859779295-o.jpg
-      caption: Students working with the flow visualization rig
-    - file: 24799518-379265729190253-8326328874715136504-o.jpg
       caption: Students working with the wind tunnel
+    - file: 24799518-379265729190253-8326328874715136504-o.jpg
+      caption: Students working with the hydraulic channel
     - file: 18033341-284044388712388-3195643136915961430-n.jpg
-      caption: Pump teardown
+      caption: Jet engine teardown
     - file: 70376526-747566169026872-4046617722711179264-n.jpg
       caption: Students on campus
 
