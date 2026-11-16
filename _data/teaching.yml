@@ -68,6 +68,19 @@ tools:
       performance for cooling and for heating, compare it with the Carnot limit, and check a
       step-by-step solution, with refrigerant properties from the CoolProp library and a short
       write-up of the equations behind it.
+  - title: Steam ejector simulator
+    label: Interactive tool
+    courses: MAE 3293 Compressible Flow · MAE 3524 Thermal Fluids Design
+    url: /teaching/steam-ejector/
+    image: steam-ejector-simulator.svg
+    button: Open the simulator
+    text: >-
+      Run a steam ejector, the vacuum pump with no moving parts used in thermal vapor compression
+      desalination. Change the motive steam pressure and flow rate, the suction pressure and the back
+      pressure, and watch the entrained vapor flow, the entrainment ratio and the operating mode
+      (double choking, single choking or back-flow) respond on an animated picture of the ejector and
+      on its performance curves, with a step-by-step solution of the one-dimensional model and a
+      short write-up of the equations behind it.
 
 asme:
   intro: >-
