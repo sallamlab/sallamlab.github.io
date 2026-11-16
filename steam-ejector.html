@@ -1,0 +1,1084 @@
+---
+layout: default
+title: Steam Ejector Simulator
+permalink: /teaching/steam-ejector/
+description: Interactive steam ejector simulator based on a one-dimensional model. Change the motive steam pressure and flow rate, the suction pressure and the back pressure, and watch the entrained flow, the entrainment ratio and the operating mode respond, with the equations behind it. MAE 3293 Compressible Flow and MAE 3524 Thermal Fluids Design, Oklahoma State University.
+---
+{% raw %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<style>
+/* Steam ejector simulator: page styles. Site tokens (colors, fonts) come from /assets/css/site.css. */
+.ej { --mot: #c8431f; --sec: #2a78d6; --mix: #7d5fb2; --wall: #42515e; }
+.ej-hero .ej-crumb { margin: 0 0 10px; font-size: .92rem; color: #c3cfdb; }
+.ej-hero .ej-crumb a { color: #ffb48f; }
+.ej-app { display: grid; gap: 24px; grid-template-columns: minmax(290px, 360px) minmax(0, 1fr); align-items: start; }
+.ej-panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px; min-width: 0; }
+.ej-controls { padding: 18px 18px 6px; }
+.ej-intro { font-size: .9rem; color: var(--ink-soft); margin: 0 0 14px; }
+.ej-group { border: 0; padding: 0; margin: 0 0 18px; min-width: 0; }
+.ej-group legend { font-family: var(--serif); font-weight: 600; color: var(--navy); font-size: 1.05rem; padding: 0; margin: 0 0 8px; display: flex; align-items: center; gap: 8px; }
+.ej-swatch { width: 12px; height: 12px; border-radius: 50%; display: inline-block; flex: none; }
+.ej-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0 0 12px; }
+.ej-seg label { position: relative; display: block; cursor: pointer; min-width: 0; }
+.ej-seg input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.ej-seg span { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; box-sizing: border-box; text-align: center; padding: 7px 4px; border: 1px solid var(--line); border-radius: 8px; font-size: .86rem; font-weight: 500; line-height: 1.25; background: #fff; color: var(--ink); transition: background .15s, border-color .15s; }
+.ej-seg span small { display: block; font-size: .74rem; font-weight: 400; color: var(--ink-soft); margin-top: 2px; }
+.ej-seg label:hover span { border-color: var(--ink-faint); }
+.ej-seg input:checked + span { background: var(--navy); border-color: var(--navy); color: #fff; }
+.ej-seg input:checked + span small { color: #c3cfdb; }
+.ej-seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ej-ctl { margin-bottom: 12px; }
+.ej-ctl[hidden] { display: none; }
+.ej-ctl > label { display: block; font-size: .9rem; margin-bottom: 1px; }
+.ej-sym { color: var(--ink-soft); margin-left: 3px; }
+.ej-inrow { display: flex; align-items: center; gap: 10px; }
+.ej-inrow input[type=range] { flex: 1; min-width: 0; margin: 0; height: 26px; accent-color: var(--accent); cursor: pointer; }
+.ej-num { display: inline-flex; align-items: center; gap: 5px; flex: none; }
+.ej-num input { width: 76px; font: inherit; font-size: .92rem; text-align: right; padding: 4px 6px; border: 1px solid #cbd2d9; border-radius: 6px; background: #fff; color: var(--ink); font-variant-numeric: tabular-nums; }
+.ej-num input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ej-num input[aria-invalid=true] { border-color: #d03b3b; background: #fdecec; }
+.ej-unit { font-size: .8rem; color: var(--ink-soft); width: 34px; }
+.ej-derived { font-size: .85rem; color: var(--ink-soft); margin: -4px 0 0; line-height: 1.45; }
+.ej-derived b { color: var(--navy); font-weight: 600; }
+.ej-field { display: block; font-size: .9rem; margin-bottom: 12px; }
+.ej-field select { display: block; width: 100%; margin-top: 4px; font: inherit; font-size: .9rem; padding: 7px 8px; border: 1px solid #cbd2d9; border-radius: 8px; background: #fff; color: var(--ink); }
+.ej-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.ej-btn { font: inherit; font-size: .86rem; font-weight: 600; padding: 6px 14px; border-radius: 999px; border: 2px solid var(--navy); background: #fff; color: var(--navy); cursor: pointer; }
+.ej-btn:hover { background: var(--navy); color: #fff; }
+.ej-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ej-btn.wide { width: 100%; margin: 2px 0 8px; }
+.ej-msg { font-size: .82rem; color: var(--ink-soft); margin: 0 0 6px; min-height: 0; }
+.ej-out { display: grid; gap: 18px; min-width: 0; transition: opacity .2s; }
+.ej-out.is-invalid > :not(.ej-alert) { opacity: .35; pointer-events: none; }
+.ej-alert { display: none; background: #fdecec; border-left: 4px solid #d03b3b; border-radius: 0 10px 10px 0; padding: 12px 16px; font-size: .95rem; }
+.ej-out.is-invalid .ej-alert { display: block; }
+.ej-card-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin-bottom: 8px; }
+.ej-card-head h2, .ej-card-head h3 { margin: 0; font-size: 1.22rem; }
+.ej-badge { font-size: .8rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.ej-badge.r3 { background: #e3f1e6; color: #1d6b35; }
+.ej-badge.r2 { background: #fdf0cf; color: #7a5200; }
+.ej-badge.r1 { background: #fbe1dd; color: #a02a1c; }
+.ej-svg { display: block; width: 100%; height: auto; }
+.ej-svg text { font-family: var(--sans); paint-order: stroke; stroke: #fff; stroke-width: 4px; stroke-linejoin: round; }
+.ej-svg .t-k { font-size: calc(13.5px * var(--fs, 1)); fill: var(--ink-soft); }
+.ej-svg .t-v { font-size: calc(17px * var(--fs, 1)); font-weight: 600; fill: var(--ink); }
+.ej-svg .t-s { font-size: calc(12.5px * var(--fs, 1)); fill: var(--ink-soft); }
+.ej-svg .t-m { font-size: calc(12.5px * var(--fs, 1)); font-weight: 600; fill: var(--navy); stroke-width: 3px; }
+.ej-svg .t-st { font-size: calc(13px * var(--fs, 1)); font-style: italic; fill: var(--ink-soft); }
+.ej-svg .wall { fill: none; stroke: var(--wall); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+.ej-svg .nzl { fill: #8b98a5; stroke: var(--wall); stroke-width: 1.2; stroke-linejoin: round; }
+.ej-svg .fl { fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 5 11; animation: ej-dash 1s linear infinite; }
+.ej-svg .fl.mot { stroke: #fff; opacity: .85; }
+.ej-svg .fl.sec { stroke: #1b5fb8; opacity: .8; }
+.ej-svg .fl.mix { stroke: #4f3a85; opacity: .7; }
+.ej-svg .fl.back { stroke: #a02a1c; opacity: .9; animation-direction: reverse; }
+.ej-svg .fl.still { animation: none; opacity: .25; }
+.ej-svg .yy { stroke: var(--ink-soft); stroke-width: 1; stroke-dasharray: 3 3; }
+.ej-svg .shock { stroke: var(--navy); stroke-width: 2.2; fill: none; stroke-linejoin: round; }
+.ej-svg .tickm { stroke: var(--ink-faint); stroke-width: 1; }
+@keyframes ej-dash { to { stroke-dashoffset: -16; } }
+@media (prefers-reduced-motion: reduce) { .ej-svg .fl { animation: none; } }
+.ej-notes { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.ej-notes li { font-size: .9rem; background: #f3f1ec; border-radius: 8px; padding: 8px 12px; }
+.ej-notes li b { color: var(--navy); }
+.ej-notes li.warn { background: #fdf0cf; }
+.ej-notes li.bad { background: #fbe1dd; }
+.ej-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.ej-tile { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 11px 14px 12px; min-width: 0; }
+.ej-tile.main { border-color: var(--sec); box-shadow: inset 0 3px 0 var(--sec); }
+.ej-tile .k { font-size: .82rem; color: var(--ink-soft); }
+.ej-tile .v { font-size: 1.5rem; font-weight: 600; color: var(--navy); line-height: 1.25; margin-top: 2px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ej-tile .v small { font-size: .62em; font-weight: 500; color: var(--ink-soft); }
+.ej-tile .v.txt { font-size: 1.18rem; white-space: normal; line-height: 1.3; padding: 3px 0 2px; }
+.ej-tile .s { font-size: .78rem; color: var(--ink-soft); line-height: 1.35; }
+.ej-chart { position: relative; touch-action: pan-y; }
+.ej-chart svg { display: block; width: 100%; height: auto; overflow: visible; -webkit-user-select: none; user-select: none; cursor: crosshair; }
+.ej-chart text { font-family: var(--sans); }
+.ej-grid { stroke: #eceef1; stroke-width: 1; }
+.ej-axis { stroke: #c3c2b7; stroke-width: 1; }
+.ej-tick { font-size: 11.5px; fill: #7b8794; font-variant-numeric: tabular-nums; }
+.ej-axlab { font-size: 12.5px; fill: var(--ink-soft); }
+.ej-band.b3 { fill: #eaf4ec; } .ej-band.b2 { fill: #fdf5df; } .ej-band.b1 { fill: #fbe9e6; } .ej-band.bf { fill: #eceef1; }
+.ej-blab { font-size: 11px; fill: var(--ink-soft); font-weight: 600; }
+.ej-curve { fill: none; stroke: var(--sec); stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.ej-curve.alt { stroke: #6b7682; stroke-width: 1.4; stroke-dasharray: 6 4; }
+.ej-vl { stroke: var(--navy); stroke-width: 1; stroke-dasharray: 4 3; opacity: .7; }
+.ej-vlab { font-size: 11px; fill: var(--navy); font-weight: 600; paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; }
+.ej-op { fill: var(--accent); stroke: #fff; stroke-width: 2; }
+.ej-opl { stroke: var(--accent); stroke-width: 1.2; stroke-dasharray: 5 4; }
+.ej-oplab { font-size: 12px; font-weight: 700; fill: #a3361a; paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; }
+.ej-cross { stroke: var(--navy); stroke-width: 1; opacity: .45; }
+.ej-tip { position: absolute; z-index: 5; pointer-events: none; background: #fff; border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: 8px 10px; font-size: .8rem; line-height: 1.45; min-width: 150px; display: none; }
+.ej-tip .hd { color: var(--ink-soft); }
+.ej-tip b { font-variant-numeric: tabular-nums; }
+.ej-key { display: inline-block; width: 16px; height: 0; border-top: 2.4px solid var(--sec); vertical-align: middle; flex: none; }
+.ej-key.alt { border-top: 1.4px dashed #6b7682; }
+.ej-key.dot { width: 10px; height: 10px; border: 0; border-radius: 50%; background: var(--accent); }
+.ej-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: .82rem; color: var(--ink-soft); margin-top: 6px; }
+.ej-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.ej-row2 { display: grid; gap: 18px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 18px; align-items: start; }
+.ej-col { display: grid; gap: 18px; min-width: 0; }
+.ej-sub-note { font-size: .82rem; color: var(--ink-soft); margin: 2px 0 6px; }
+.ej-scroll { overflow-x: auto; }
+.ej-table { width: 100%; border-collapse: collapse; font-size: .86rem; font-variant-numeric: tabular-nums; }
+.ej-table th, .ej-table td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.ej-table th:first-child, .ej-table td:first-child { text-align: left; white-space: normal; }
+.ej-table thead th { font-weight: 600; color: var(--ink-soft); font-size: .8rem; }
+.ej-table td:first-child i { color: var(--ink-soft); margin-right: 6px; }
+.ej-table tr.sep td { border-top: 2px solid var(--line); }
+.ej-steps { list-style: none; counter-reset: st; margin: 0; padding: 0; font-size: .9rem; }
+.ej-steps li { counter-increment: st; position: relative; padding: 7px 0 7px 30px; border-bottom: 1px dashed var(--line); }
+.ej-steps li::before { content: counter(st); position: absolute; left: 0; top: 8px; width: 21px; height: 21px; border-radius: 50%; background: var(--navy); color: #fff; font-size: .72rem; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+.ej-steps .lbl { display: block; font-size: .78rem; color: var(--ink-soft); }
+.ej-steps .eq { overflow-wrap: anywhere; }
+.ej-steps .res { font-weight: 600; color: var(--navy); white-space: nowrap; }
+.ej-check { font-size: .86rem; margin: 10px 0 0; color: var(--ink); }
+.ej-sticky { display: none; }
+.ej-doc .tex-d { overflow-x: auto; overflow-y: hidden; padding: 2px 0; }
+.ej-doc .tex-d .katex-display { margin: .4em 0; }
+.ej-eqs { width: 100%; border-collapse: collapse; margin: 8px 0 4px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
+.ej-eqs th, .ej-eqs td { text-align: left; vertical-align: middle; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.ej-eqs tr:last-child th, .ej-eqs tr:last-child td { border-bottom: 0; }
+.ej-eqs th { font-weight: 600; font-size: .92rem; color: var(--navy); width: 30%; }
+.ej-eqs th small { display: block; font-weight: 400; color: var(--ink-soft); }
+.ej-eqs td { font-size: .95rem; }
+.ej-steps-doc { padding-left: 1.4em; }
+.ej-steps-doc li { margin-bottom: 14px; }
+.ej-twocol { display: grid; gap: 8px 40px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); }
+.ej-twocol ul { margin: 0; }
+.ej-twocol li { margin-bottom: 10px; }
+.ej-try { counter-reset: tr; list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+.ej-try li { counter-increment: tr; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px 14px 52px; position: relative; font-size: .97rem; }
+.ej-try li::before { content: counter(tr); position: absolute; left: 14px; top: 13px; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: #9a3a0f; font-weight: 700; font-size: .85rem; display: flex; align-items: center; justify-content: center; }
+.ej-credit { font-size: .88rem; color: var(--ink-soft); margin-top: 28px; }
+@media (max-width: 1020px) { .ej-row2 { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 920px) {
+  .ej-app { grid-template-columns: minmax(0, 1fr); }
+  .ej-sticky { display: flex; position: sticky; top: 71px; z-index: 40; justify-content: space-between; gap: 10px; background: rgba(255,255,255,.97); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); padding: 7px 12px; font-size: .8rem; color: var(--ink-soft); }
+  .ej-sticky b { display: block; color: var(--navy); font-size: .95rem; font-variant-numeric: tabular-nums; }
+}
+@media (max-width: 560px) {
+  .ej-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ej-panel { padding: 14px; }
+  .ej-tile .v { font-size: 1.3rem; }
+  .ej-eqs, .ej-eqs tbody, .ej-eqs tr, .ej-eqs th, .ej-eqs td { display: block; width: 100%; max-width: none; }
+  .ej-eqs th { padding-bottom: 0; border-bottom: 0; }
+}
+</style>
+
+<section class="page-hero ej-hero">
+  <div class="container">
+    <p class="ej-crumb"><a href="/teaching/">Teaching</a> <span aria-hidden="true">&rsaquo;</span> MAE 3293 Compressible Flow &middot; MAE 3524 Thermal Fluids Design</p>
+    <h1>Steam ejector simulator</h1>
+    <p>A steam ejector is a vacuum pump with no moving parts: a supersonic jet of motive steam drags low-pressure vapor along and compresses it. Change the motive steam, the suction pressure and the back pressure, and watch how much vapor the ejector entrains.</p>
+  </div>
+</section>
+
+<section class="section ej" id="simulator" aria-label="Steam ejector simulator">
+  <div class="container">
+    <noscript><p class="callout">The simulator needs JavaScript. The equations it uses are explained <a href="#equations">below</a>.</p></noscript>
+    <div class="ej-app">
+      <div class="ej-sticky" id="ej-sticky" aria-hidden="true">
+        <span>Entrained<b id="sk-ms">&ndash;</b></span><span>&omega;<b id="sk-w">&ndash;</b></span><span>Mode<b id="sk-mode">&ndash;</b></span><span><i>P</i><sub>c</sub>*<b id="sk-pcs">&ndash;</b></span>
+      </div>
+
+      <form class="ej-panel ej-controls" id="ej-form" autocomplete="off" onsubmit="return false">
+        <p class="ej-intro">Drag a slider or type a value. Everything on the page updates as you go. All pressures are absolute.</p>
+        <fieldset class="ej-group">
+          <legend><span class="ej-swatch" style="background:var(--mot)"></span>Motive (primary) steam</legend>
+          <div class="ej-seg" id="seg-nz" role="radiogroup" aria-label="What sets the motive flow">
+            <label><input type="radio" name="nz" value="flow"><span>Set the flow rate<small>the nozzle is sized for it</small></span></label>
+            <label><input type="radio" name="nz" value="fixed"><span>Fixed nozzle<small>flow follows pressure</small></span></label>
+          </div>
+          <div id="ctl-mot"></div>
+          <p class="ej-derived" id="d-mot"></p>
+        </fieldset>
+        <fieldset class="ej-group">
+          <legend><span class="ej-swatch" style="background:var(--sec)"></span>Suction (secondary) vapor</legend>
+          <div id="ctl-suc"></div>
+          <p class="ej-derived" id="d-suc"></p>
+        </fieldset>
+        <fieldset class="ej-group">
+          <legend><span class="ej-swatch" style="background:var(--mix)"></span>Discharge</legend>
+          <div id="ctl-dis"></div>
+          <p class="ej-derived" id="d-dis"></p>
+        </fieldset>
+        <fieldset class="ej-group">
+          <legend>Ejector geometry</legend>
+          <div id="ctl-geo"></div>
+          <p class="ej-derived" id="d-geo" style="margin-bottom:10px"></p>
+          <button type="button" class="ej-btn wide" id="ej-size">Size the mixing tube for this duty</button>
+          <p class="ej-msg" id="ej-size-msg" aria-live="polite"></p>
+        </fieldset>
+        <fieldset class="ej-group">
+          <legend>Options</legend>
+          <label class="ej-field">Model above the critical back pressure
+            <select id="ej-cl">
+              <option value="shock">Shock closure: gradual fall (optimistic)</option>
+              <option value="mom">Momentum closure: steep break-down (conservative)</option>
+            </select>
+          </label>
+          <label class="ej-field">Load an example
+            <select id="ej-example">
+              <option value="">Choose an example&hellip;</option>
+              <option value="default">Desalination duty: 10 &rarr; 20 kPa (default)</option>
+              <option value="single">Back pressure too high: single choking</option>
+              <option value="back">Malfunction: back-flow</option>
+              <option value="boiler">Boiler pressure sags (fixed nozzle)</option>
+              <option value="filled">Oversized nozzle: the jet fills the tube</option>
+            </select>
+          </label>
+          <div class="ej-buttons">
+            <button type="button" class="ej-btn" id="ej-reset">Reset</button>
+            <button type="button" class="ej-btn" id="ej-link">Copy link to this setup</button>
+          </div>
+        </fieldset>
+      </form>
+
+      <div class="ej-out" id="ej-out">
+        <div class="ej-alert" role="alert" id="ej-alert"></div>
+        <div class="ej-panel">
+          <div class="ej-card-head"><h2>Inside the ejector</h2><span class="ej-badge" id="ej-badge"></span></div>
+          <svg class="ej-svg" id="ej-svg" viewBox="0 0 820 296" role="img" aria-labelledby="ej-svg-desc"><desc id="ej-svg-desc">Steam ejector schematic</desc></svg>
+          <ul class="ej-notes" id="ej-notes" aria-live="polite"></ul>
+        </div>
+        <div class="ej-tiles" id="ej-tiles" aria-live="polite"></div>
+        <div class="ej-panel">
+          <div class="ej-card-head"><h3>Performance curve: entrained flow against back pressure</h3></div>
+          <p class="ej-sub-note" id="pc-note">Same motive steam, suction pressure and geometry. Click or drag on the chart to move the back pressure.</p>
+          <div class="ej-chart" id="chart-pc"></div>
+          <div class="ej-legend" id="pc-legend"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ej-row2">
+      <div class="ej-col">
+        <div class="ej-panel">
+          <div class="ej-card-head"><h3>Suction curve: entrained flow against suction pressure</h3></div>
+          <p class="ej-sub-note">Same motive steam, back pressure and geometry: the ejector as a vacuum pump. Click or drag to move the suction pressure.</p>
+          <div class="ej-chart" id="chart-pe"></div>
+          <div class="ej-legend" id="pe-legend"></div>
+        </div>
+        <div class="ej-panel">
+          <div class="ej-card-head"><h3>Flow states along the ejector</h3></div>
+          <p class="ej-sub-note" id="st-note"></p>
+          <div class="ej-scroll"><table class="ej-table" id="ej-stations"></table></div>
+        </div>
+      </div>
+      <div class="ej-panel">
+        <div class="ej-card-head"><h3>Step-by-step solution</h3></div>
+        <ol class="ej-steps" id="ej-steps"></ol>
+        <p class="ej-check" id="ej-check"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt ej-doc" id="equations">
+  <div class="container">
+    <div class="section-head"><h2>How the simulator works</h2></div>
+    <p class="measure">The simulator uses the one-dimensional ejector model of Huang, Chang, Wang and Petrenko (1999), applied to steam treated as an ideal gas with &gamma; = 1.30 and <i>R</i> = 461.5 J/kg&middot;K. Both streams enter as saturated vapor. The motive steam expands through a converging-diverging nozzle to supersonic speed. Its jet forms a converging duct for the entrained vapor inside the constant-area mixing tube, and the entrained vapor accelerates until it reaches Mach 1 at a cross-section called the <em>hypothetical throat</em>, y&ndash;y. The two streams then mix at constant pressure, pass through a normal shock, and slow down in the diffuser. Four coefficients account for friction and mixing losses.</p>
+    <ol class="ej-steps-doc measure">
+      <li><strong>Motive nozzle.</strong> The nozzle is choked, so the flow rate depends only on the upstream state and the throat area <i>A</i><sub>t</sub>. This is why a motive pressure and a flow rate together fix the throat diameter.
+        <div class="tex-d" data-tex="\dot m_p=\frac{P_g A_t}{\sqrt{T_g}}\sqrt{\frac{\gamma}{R}\left(\frac{2}{\gamma+1}\right)^{\frac{\gamma+1}{\gamma-1}}}\;\sqrt{\eta_p}"></div></li>
+      <li><strong>Entrained vapor at the hypothetical throat.</strong> With the entrained stream choked (<i>M</i><sub>sy</sub> = 1), its pressure at y&ndash;y is a fixed fraction of the suction pressure, 0.546 for &gamma; = 1.30:
+        <div class="tex-d" data-tex="P_{sy}=P_e\left(1+\frac{\gamma-1}{2}M_{sy}^2\right)^{-\frac{\gamma}{\gamma-1}}"></div></li>
+      <li><strong>Primary core at y&ndash;y.</strong> The jet expands isentropically until its pressure equals that of the entrained stream, <i>P</i><sub>py</sub> = <i>P</i><sub>sy</sub>. The area-Mach relation, reduced by the coefficient &phi;<sub>p</sub>, gives the area the jet occupies:
+        <div class="tex-d" data-tex="M_{py}=\sqrt{\frac{2}{\gamma-1}\left[\left(\frac{P_g}{P_{py}}\right)^{\frac{\gamma-1}{\gamma}}-1\right]}"></div>
+        <div class="tex-d" data-tex="\frac{A_{py}}{A_t}=\frac{\phi_p}{M_{py}}\left[\frac{2}{\gamma+1}\left(1+\frac{\gamma-1}{2}M_{py}^2\right)\right]^{\frac{\gamma+1}{2(\gamma-1)}}"></div></li>
+      <li><strong>Entrained flow.</strong> The vapor passes through what is left of the mixing tube, <i>A</i><sub>sy</sub> = <i>A</i><sub>3</sub> &minus; <i>A</i><sub>py</sub>. The entrainment ratio is &omega; = <i>m&#775;</i><sub>s</sub>/<i>m&#775;</i><sub>p</sub>.
+        <div class="tex-d" data-tex="\dot m_s=\frac{P_e A_{sy}}{\sqrt{T_e}}\sqrt{\frac{\gamma}{R}}\;M_{sy}\left(1+\frac{\gamma-1}{2}M_{sy}^2\right)^{-\frac{\gamma+1}{2(\gamma-1)}}\sqrt{\eta_s}"></div></li>
+      <li><strong>Mixing.</strong> A momentum balance with the loss coefficient &phi;<sub>m</sub> and an energy balance give the velocity, temperature and Mach number of the mixed stream:
+        <div class="tex-d" data-tex="V_m=\phi_m\,\frac{\dot m_p V_{py}+\dot m_s V_{sy}}{\dot m_p+\dot m_s}"></div>
+        <div class="tex-d" data-tex="\dot m_p\left(c_pT_{py}+\tfrac{1}{2}V_{py}^2\right)+\dot m_s\left(c_pT_{sy}+\tfrac{1}{2}V_{sy}^2\right)=\left(\dot m_p+\dot m_s\right)\left(c_pT_m+\tfrac{1}{2}V_m^2\right)"></div></li>
+      <li><strong>Shock and diffuser.</strong> A normal shock brings the mixed stream to subsonic speed and the diffuser recovers the rest of the kinetic energy. The result is the highest back pressure the ejector can hold while both streams stay choked, the <em>critical back pressure</em> <i>P</i><sub>c</sub>*:
+        <div class="tex-d" data-tex="\frac{P_3}{P_m}=1+\frac{2\gamma}{\gamma+1}\left(M_m^2-1\right),\qquad M_3^2=\frac{1+\frac{\gamma-1}{2}M_m^2}{\gamma M_m^2-\frac{\gamma-1}{2}}"></div>
+        <div class="tex-d" data-tex="P_c^{*}=P_3\left(1+\frac{\gamma-1}{2}M_3^2\right)^{\frac{\gamma}{\gamma-1}}"></div></li>
+    </ol>
+
+    <h3 style="margin-top:28px">Three operating modes</h3>
+    <table class="ej-eqs">
+      <tr><th>Double choking<small><i>P</i><sub>c</sub> &le; <i>P</i><sub>c</sub>*, critical mode</small></th><td>Both streams are choked. The entrained flow is set by steps 1 to 4 and does not change with the back pressure; only the shock moves along the mixing tube. Ejectors are designed to run here.</td></tr>
+      <tr><th>Single choking<small><i>P</i><sub>c</sub>* &lt; <i>P</i><sub>c</sub> &lt; <i>P</i><sub>co</sub></small></th><td>Only the motive nozzle is choked. The entrained stream is subsonic and its flow falls as the back pressure rises. The simulator solves the same equations with <i>M</i><sub>sy</sub> &lt; 1, chosen so that the diffuser exit pressure equals <i>P</i><sub>c</sub>, keeping the area <i>A</i><sub>sy</sub> of the critical mode.</td></tr>
+      <tr><th>Back-flow<small><i>P</i><sub>c</sub> &ge; <i>P</i><sub>co</sub>, malfunction</small></th><td>The back pressure is too high for the jet to overcome. The entrained flow stops and steam flows back into the suction line.</td></tr>
+    </table>
+    <p class="small muted measure">Huang et al. treat only the critical mode. The single-choking branch is an extension of the same equations, and how fast the entrained flow falls depends on how the pressure recovery of the mixed stream is modeled. The <em>shock closure</em> applies the normal-shock relations of step 6 and gives a gradual fall; the <em>momentum closure</em> uses a momentum balance over the full mixing-tube area and gives a steep break-down. Measured break-down pressures usually lie between the two, 10 to 30% above <i>P</i><sub>c</sub>*, so treat <i>P</i><sub>c</sub>* as the design limit.</p>
+
+    <h3 style="margin-top:28px">Loss coefficients</h3>
+    <table class="ej-eqs">
+      <tr><th>&eta;<sub>p</sub> = 0.95</th><td>Isentropic coefficient of the motive nozzle (step 1).</td></tr>
+      <tr><th>&eta;<sub>s</sub> = 0.85</th><td>Isentropic coefficient of the entrained flow (step 4).</td></tr>
+      <tr><th>&phi;<sub>p</sub> = 0.88</th><td>Loss of the primary core between the nozzle exit and y&ndash;y (step 3).</td></tr>
+      <tr><th>&phi;<sub>m</sub> = 0.91 to 0.95<small>by area ratio <i>A</i><sub>3</sub>/<i>A</i><sub>t</sub></small></th><td>Mixing loss in the momentum balance (step 5): 0.80/&phi;<sub>p</sub> for <i>A</i><sub>3</sub>/<i>A</i><sub>t</sub> &gt; 8.3, 0.82/&phi;<sub>p</sub> between 6.9 and 8.3, and 0.84/&phi;<sub>p</sub> below 6.9. With these values the model reproduces both the entrainment ratios and the critical back pressures reported by Huang et al.</td></tr>
+    </table>
+
+    <h3 style="margin-top:28px">Limits of the model</h3>
+    <div class="ej-twocol">
+      <ul>
+        <li><strong>Calibrated on a refrigerant.</strong> The coefficients were fitted to 11 ejectors running on R141b. For steam they have not been re-tuned, so expect the entrainment ratio to be within about &plusmn;20% and the critical back pressure within a few percent.</li>
+        <li><strong>Ideal gas, no condensation.</strong> Real steam partly condenses as it expands in the nozzle (wet steam). The ideal-gas model ignores this, which is why the jet temperatures in the table of flow states are far below freezing.</li>
+        <li><strong>Nozzle area ratio.</strong> In this model the jet expands isentropically from the nozzle inlet state to the pressure at y&ndash;y whatever the nozzle exit area, so the exit-to-throat area ratio changes the nozzle exit state but not the entrained flow. A real nozzle that is far from matched loses efficiency through shocks.</li>
+      </ul>
+      <ul>
+        <li><strong>One-dimensional.</strong> The lengths of the mixing tube and diffuser, the nozzle position and the shape of the suction chamber do not appear. They matter in a real ejector and are studied with CFD and experiments.</li>
+        <li><strong>The shock in the picture is illustrative.</strong> The model gives the states before and after the shock at the critical point, not its position. The picture moves it upstream as the back pressure approaches <i>P</i><sub>c</sub>*, as CFD and experiments show.</li>
+        <li><strong>The jet can fill the tube.</strong> If the expanded jet is as large as the mixing tube (<i>A</i><sub>py</sub> &ge; <i>A</i><sub>3</sub>) there is no room for vapor and the entrained flow is zero at any back pressure.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="section ej-doc" id="activities">
+  <div class="container">
+    <div class="section-head"><h2>Try it yourself</h2></div>
+    <ol class="ej-try">
+      <li>Start from the default and raise the back pressure slowly. At what pressure does the entrained flow start to fall? Compare it with <i>P</i><sub>c</sub>* and explain why the flow did not change before that.</li>
+      <li>Lower the suction pressure from 10 to 8 kPa. By what percentage does the entrained flow fall? Which term of the equation in step 4 explains most of it?</li>
+      <li>Keep the flow rate at 50 kg/h and raise the motive pressure from 300 to 1000 kPa. Watch the throat diameter, the entrained flow and <i>P</i><sub>c</sub>*. Is high-pressure steam worth more than low-pressure steam?</li>
+      <li>Switch to <em>Fixed nozzle</em> and lower the motive pressure until the ejector leaves double choking. Why is a sagging boiler pressure dangerous for a vacuum system?</li>
+      <li>Make the mixing tube larger, then smaller. One change raises the entrained flow and the other raises <i>P</i><sub>c</sub>*. Explain the trade-off, then press <em>Size the mixing tube for this duty</em>.</li>
+      <li>Switch between the shock and momentum closures with the back pressure 10% above <i>P</i><sub>c</sub>*. How different are the two answers, and which would you trust for a design?</li>
+      <li>Check one row of the step-by-step solution by hand: use the isentropic relations to find the Mach number of the jet at y&ndash;y from <i>P</i><sub>g</sub> and <i>P</i><sub>py</sub>.</li>
+    </ol>
+    <p class="ej-credit">Calculation engine: a JavaScript port of the lab&rsquo;s MATLAB implementation of the 1-D model in B.&nbsp;J. Huang, J.&nbsp;M. Chang, C.&nbsp;P. Wang and V.&nbsp;A. Petrenko, &ldquo;A 1-D analysis of ejector performance,&rdquo; <i>International Journal of Refrigeration</i>, Vol. 22, 1999, pp. 354&ndash;364. Saturation temperatures: Wagner and Pruss vapor-pressure equation. Questions or suggestions: <a href="mailto:sallam@okstate.edu">sallam@okstate.edu</a>.</p>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous" defer></script>
+<script>
+(function () {
+'use strict';
+/* 1-D ejector model: JavaScript port of ejector1D_huang.m / ejector_fluid.m / ejector1D_design.m
+   (Sallam Research Lab), after Huang, Chang, Wang & Petrenko, Int. J. Refrigeration 22 (1999) 354-364.
+   Pressures in Pa, temperatures in K, areas in m^2, mass flows in kg/s. */
+var EJ = (function () {
+  'use strict';
+
+  function bisect(f, a, b, tol) {
+    var fa = f(a), fb = f(b), m, fm, i;
+    if (fa === 0) return a;
+    if (fb === 0) return b;
+    for (i = 0; i < 200; i++) {
+      m = 0.5 * (a + b); fm = f(m);
+      if (fm === 0 || Math.abs(b - a) < (tol || 1e-12) * Math.max(1, Math.abs(m))) return m;
+      if ((fa < 0) === (fm < 0)) { a = m; fa = fm; } else { b = m; fb = fm; }
+    }
+    return 0.5 * (a + b);
+  }
+
+  /* ---- fluids ---- */
+  function psatWater(T) {            // Wagner & Pruss (1993), 273.16 K <= T <= 647.096 K
+    var Tc = 647.096, Pc = 22.064e6, t = 1 - T / Tc;
+    return Pc * Math.exp(Tc / T * (-7.85951783 * t + 1.84408259 * Math.pow(t, 1.5) - 11.7866497 * Math.pow(t, 3) +
+      22.6807411 * Math.pow(t, 3.5) - 15.9618719 * Math.pow(t, 4) + 1.80122502 * Math.pow(t, 7.5)));
+  }
+  function tsatWater(P) { return bisect(function (t) { return psatWater(t) - P; }, 273.16, 647.0, 1e-13); }
+  var WATER = { name: 'water', gamma: 1.30, R: 8314.46 / 18.015, Psat: psatWater, Tsat: tsatWater };
+
+  /* ---- isentropic relations ---- */
+  function areaMach(M, g) { return (1 / M) * Math.pow((2 / (g + 1)) * (1 + (g - 1) / 2 * M * M), (g + 1) / (2 * (g - 1))); }
+  function machFromArea(ratio, g) {
+    if (ratio <= 1) return 1;
+    return bisect(function (m) { return areaMach(m, g) - ratio; }, 1 + 1e-9, 50, 1e-13);
+  }
+  /* choked mass flux per unit throat area and unit Pg/sqrt(Tg), Eq. (1) without eta_p */
+  function chokeConst(g, R) { return Math.sqrt(g / R * Math.pow(2 / (g + 1), (g + 1) / (g - 1))); }
+
+  function phiM(A3_At, o) {
+    var pm = A3_At > 8.3 ? 0.80 : (A3_At > 6.9 ? 0.82 : 0.84);       // Eq. (19)
+    return o.phi_m_mode === 'paper' ? pm : pm / o.phi_p;             // calibrated: phi_m/phi_p
+  }
+
+  /* one pass through Eqs. (3)-(18) for a given Mach number Msy of the entrained stream at y-y */
+  function chain(Msy, S, AsyFixed) {
+    var g = S.g, R = S.R, gm1 = g - 1, gp1 = g + 1, st = {};
+    st.Msy = Msy;
+    st.Psy = S.Pe / Math.pow(1 + gm1 / 2 * Msy * Msy, g / gm1);                         // Eq. (6)
+    st.Ppy = st.Psy;
+    st.Mpy = Math.sqrt(2 / gm1 * (Math.pow(S.Pg / st.Ppy, gm1 / g) - 1));               // Eqs. (3)+(4)
+    st.Apy = S.Ap1 * S.phi_p * areaMach(st.Mpy, g) / areaMach(S.Mp1, g);                // Eq. (5)
+    st.Asy = (AsyFixed === null || AsyFixed === undefined) ? S.A3 - st.Apy : AsyFixed;  // Eq. (8)
+    var Asy = Math.max(st.Asy, 0);
+    st.ms = S.Pe * Asy / Math.sqrt(S.Te) * Math.sqrt(g / R) * Msy *
+      Math.pow(1 + gm1 / 2 * Msy * Msy, -gp1 / (2 * gm1)) * Math.sqrt(S.eta_s);         // Eq. (7), general Msy
+    st.mp = S.mp;
+    st.w = st.ms / st.mp;
+    st.Tpy = S.Tg / (1 + gm1 / 2 * st.Mpy * st.Mpy);                                    // Eq. (9)
+    st.Tsy = S.Te / (1 + gm1 / 2 * Msy * Msy);                                          // Eq. (10)
+    st.Vpy = st.Mpy * Math.sqrt(g * R * st.Tpy);                                        // Eq. (13)
+    st.Vsy = Msy * Math.sqrt(g * R * st.Tsy);                                           // Eq. (14)
+    st.Vm = S.phi_m * (st.mp * st.Vpy + st.ms * st.Vsy) / (st.mp + st.ms);              // Eq. (11)
+    var Cp = g * R / gm1;
+    st.Tm = (st.mp * (Cp * st.Tpy + st.Vpy * st.Vpy / 2) + st.ms * (Cp * st.Tsy + st.Vsy * st.Vsy / 2)) /
+      (st.mp + st.ms) / Cp - st.Vm * st.Vm / (2 * Cp);                                  // Eq. (12)
+    st.Mm = st.Vm / Math.sqrt(g * R * st.Tm);                                           // Eq. (15)
+    st.Pm = st.Psy;
+    if (st.Mm > 1) {
+      st.P3 = st.Pm * (1 + 2 * g / gp1 * (st.Mm * st.Mm - 1));                          // Eq. (16)
+      st.M3 = Math.sqrt((1 + gm1 / 2 * st.Mm * st.Mm) / (g * st.Mm * st.Mm - gm1 / 2)); // Eq. (17)
+    } else { st.P3 = st.Pm; st.M3 = st.Mm; }
+    st.Pc = st.P3 * Math.pow(1 + gm1 / 2 * st.M3 * st.M3, g / gm1);                     // Eq. (18)
+    st.T3 = st.Tm * (1 + gm1 / 2 * st.Mm * st.Mm) / (1 + gm1 / 2 * st.M3 * st.M3);
+    st.Tc = st.Tm * (1 + gm1 / 2 * st.Mm * st.Mm);
+    st.Mp1 = S.Mp1; st.Pp1 = S.Pp1;
+    // alternative recovery: constant-area momentum balance to a uniform state filling A3
+    var mt = st.mp + st.ms, h0 = Cp * st.Tm + st.Vm * st.Vm / 2, J = (st.Pm * S.A3 + mt * st.Vm) / mt;
+    var a = gp1 / (2 * g), b = -J, c0 = gm1 / g * h0, disc = b * b - 4 * a * c0;
+    if (disc >= 0) {
+      var V3 = (-b - Math.sqrt(disc)) / (2 * a), T3 = (h0 - V3 * V3 / 2) / Cp;
+      var P3m = mt * R * T3 / (V3 * S.A3), M3m = V3 / Math.sqrt(g * R * T3);
+      st.Pc_mom = P3m * Math.pow(1 + gm1 / 2 * M3m * M3m, g / gm1);
+    } else { st.Pc_mom = NaN; }
+    return st;
+  }
+
+  /* geom: {At, Ap1, A3};  opts: {eta_p, eta_s, phi_p, phi_m, phi_m_mode, subcritical, Tg, Te, Msy_min} */
+  function solve(Pg, Pe, Pc, geom, fluid, opts) {
+    var o = { eta_p: 0.95, eta_s: 0.85, phi_p: 0.88, phi_m_mode: 'calibrated', subcritical: 'shock', Msy_min: 1e-4 }, k;
+    for (k in (opts || {})) if (opts[k] !== undefined && opts[k] !== null) o[k] = opts[k];
+    if (o.phi_m === undefined) o.phi_m = phiM(geom.A3 / geom.At, o);
+    if (o.Tg === undefined) o.Tg = fluid.Tsat(Pg);
+    if (o.Te === undefined) o.Te = fluid.Tsat(Pe);
+    var g = fluid.gamma, R = fluid.R;
+    var S = { g: g, R: R, A3: geom.A3, Ap1: geom.Ap1, Pg: Pg, Tg: o.Tg, Pe: Pe, Te: o.Te,
+      eta_s: o.eta_s, phi_p: o.phi_p, phi_m: o.phi_m };
+    S.mp = Pg * geom.At / Math.sqrt(o.Tg) * chokeConst(g, R) * Math.sqrt(o.eta_p);      // Eq. (1)
+    S.Mp1 = machFromArea(geom.Ap1 / geom.At, g);                                        // Eq. (2)
+    S.Pp1 = Pg / Math.pow(1 + (g - 1) / 2 * S.Mp1 * S.Mp1, g / (g - 1));                // Eq. (3)
+
+    var crit = chain(1.0, S, null);
+    var filled = crit.Asy <= 0;
+    function PcII(M, cl) {
+      var st = chain(M, S, crit.Asy);
+      if (cl === 'shock' || isNaN(st.Pc_mom) || isNaN(crit.Pc_mom)) return st.Pc;
+      return crit.Pc * st.Pc_mom / crit.Pc_mom;
+    }
+    var PcoShock = PcII(o.Msy_min, 'shock'), PcoMom = PcII(o.Msy_min, 'momentum');
+    var Pco = o.subcritical === 'shock' ? PcoShock : PcoMom;
+    var regime, Msy, op;
+    if (Pc <= crit.Pc) { regime = 3; Msy = 1; op = crit; }
+    else if (Pc < Pco) {
+      regime = 2;
+      var f = function (M) { return PcII(M, o.subcritical) - Pc; };
+      var n = 81, i, Mprev = 1, fprev = f(1), Mi, fi, found = false;
+      for (i = 1; i < n; i++) {
+        Mi = 1 + (o.Msy_min - 1) * i / (n - 1); fi = f(Mi);
+        if (fprev * fi <= 0) { Msy = bisect(f, Mi, Mprev, 1e-12); found = true; break; }
+        Mprev = Mi; fprev = fi;
+      }
+      if (!found) Msy = o.Msy_min;
+      op = chain(Msy, S, crit.Asy);
+    } else {
+      regime = 1; Msy = 0; op = chain(o.Msy_min, S, crit.Asy); op.ms = 0; op.w = 0;
+    }
+    return { omega: op.w, regime: regime, filled: filled, Pc_star: crit.Pc, Pco: Pco, Pco_shock: PcoShock,
+      Pco_momentum: PcoMom, omega_star: crit.w, Msy: Msy, mp: S.mp, ms: op.ms, crit: crit, op: op,
+      Tg: o.Tg, Te: o.Te, phi_m: o.phi_m, S: S, opts: o };
+  }
+
+  /* Design (Fig. 3 of the paper): A3/At for which the critical back pressure equals PcStar. Returns NaN if none. */
+  function designA3(Pg, Pe, PcStar, geom, fluid, opts) {
+    var resid = function (r) {
+      return solve(Pg, Pe, PcStar, { At: geom.At, Ap1: geom.Ap1, A3: r * geom.At }, fluid, opts).Pc_star - PcStar;
+    };
+    var o0 = solve(Pg, Pe, PcStar, { At: geom.At, Ap1: geom.Ap1, A3: 1e3 * geom.At }, fluid, opts);
+    var rmin = o0.crit.Apy / geom.At * 1.02, rmax = 2000, n = 400, i, rp = rmin, fp = resid(rmin), r, fr;
+    for (i = 1; i < n; i++) {
+      r = rmin * Math.pow(rmax / rmin, i / (n - 1)); fr = resid(r);
+      if (fp * fr <= 0) return bisect(resid, rp, r, 1e-10);
+      rp = r; fp = fr;
+    }
+    return NaN;
+  }
+
+  /* single-choking branch as a parametric curve [Pc, ms, Msy] for Msy = 1 ... Msy_min (monotonic part) */
+  function branch(sol, closure, n) {
+    var S = sol.S, crit = sol.crit, out = [], i, M, st, Pc, last = -Infinity;
+    for (i = 0; i <= n; i++) {
+      M = 1 + (sol.opts.Msy_min - 1) * i / n;
+      st = chain(M, S, crit.Asy);
+      Pc = (closure === 'shock' || isNaN(st.Pc_mom) || isNaN(crit.Pc_mom)) ? st.Pc : crit.Pc * st.Pc_mom / crit.Pc_mom;
+      if (Pc >= last) { out.push([Pc, st.ms, M]); last = Pc; }
+    }
+    return out;
+  }
+
+  return { branch: branch, solve: solve, designA3: designA3, chain: chain, WATER: WATER, areaMach: areaMach,
+    machFromArea: machFromArea, chokeConst: chokeConst, phiM: phiM, bisect: bisect };
+})();
+
+
+/* ===== Simulator ===== */
+var W = EJ.WATER, ETA_P = 0.95;
+var $ = function (id) { return document.getElementById(id); };
+function clamp(v, a, b) { return Math.min(b, Math.max(a, v)); }
+function fx(v, d) { return isFinite(v) ? v.toFixed(d).replace('-', '−') : '–'; }
+function sig(v, n) { return isFinite(v) ? String(parseFloat(v.toPrecision(n))) : '–'; }
+function flow(v) { return v === 0 ? '0' : v >= 100 ? fx(v, 0) : (v >= 10 ? fx(v, 1) : fx(v, 2)); }      // kg/h
+function kpa(v) { return v >= 100 ? fx(v, 0) : fx(v, 1); }
+function degC(K) { return fx(K - 273.15, 1); }
+function areaOf(dmm) { return Math.PI * dmm * dmm / 4e6; }                                // m^2
+function diaOf(A) { return Math.sqrt(4 * A / Math.PI) * 1e3; }                            // mm
+
+var DEF = { nz: 'flow', cl: 'shock', pg: 700, mp: 50, dt: 4.18, pe: 10, pc: 20, d3: 36, ar: 10 };
+var st = {}, k0;
+for (k0 in DEF) st[k0] = DEF[k0];
+
+var P = [
+  { id: 'pg', g: 'mot', label: 'Motive steam pressure', sym: '<i>P</i><sub>g</sub>', unit: 'kPa', min: 150, max: 1500, step: 5, dec: 0 },
+  { id: 'mp', g: 'mot', label: 'Motive steam flow rate', sym: '<i>m&#775;</i><sub>p</sub>', unit: 'kg/h', min: 5, max: 200, step: 0.5, dec: 1 },
+  { id: 'dt', g: 'mot', label: 'Nozzle throat diameter', sym: '<i>d</i><sub>t</sub>', unit: 'mm', min: 0.5, max: 20, step: 0.01, dec: 2 },
+  { id: 'pe', g: 'suc', label: 'Suction pressure', sym: '<i>P</i><sub>e</sub>', unit: 'kPa', min: 2, max: 60, step: 0.1, dec: 1 },
+  { id: 'pc', g: 'dis', label: 'Back pressure', sym: '<i>P</i><sub>c</sub>', unit: 'kPa', min: 5, max: 120, step: 0.1, dec: 1 },
+  { id: 'd3', g: 'geo', label: 'Mixing tube diameter', sym: '<i>d</i><sub>3</sub>', unit: 'mm', min: 8, max: 80, step: 0.1, dec: 1 },
+  { id: 'ar', g: 'geo', label: 'Nozzle exit-to-throat area ratio', sym: '<i>A</i><sub>p1</sub>/<i>A</i><sub>t</sub>', unit: '', min: 1.5, max: 25, step: 0.1, dec: 1 }
+];
+var PBY = {};
+P.forEach(function (p) { PBY[p.id] = p; });
+function show(p, v) { return v.toFixed(p.dec); }
+function snap(p, v) { return clamp(Math.round(v / p.step) * p.step, p.min, p.max); }
+
+/* ---- model call ---- */
+function massFlux(PgPa) { return PgPa / Math.sqrt(W.Tsat(PgPa)) * EJ.chokeConst(W.gamma, W.R) * Math.sqrt(ETA_P); }  // kg/(s m^2)
+function closure() { return st.cl === 'mom' ? 'momentum' : 'shock'; }
+function geomNow() {
+  var G = massFlux(st.pg * 1e3), At;
+  if (st.nz === 'flow') { At = (st.mp / 3600) / G; st.dt = diaOf(At); }
+  else { At = areaOf(st.dt); st.mp = G * At * 3600; }
+  return { At: At, Ap1: st.ar * At, A3: areaOf(st.d3), G: G };
+}
+function modeOf(sol) { return sol.filled ? 'F' : String(sol.regime); }
+var MODE = { '3': 'Double choking', '2': 'Single choking', '1': 'Back-flow', 'F': 'Jet fills the tube' };
+function compute() {
+  var g = geomNow();
+  var sol = EJ.solve(st.pg * 1e3, st.pe * 1e3, st.pc * 1e3, g, W, { subcritical: closure() });
+  var R = { sol: sol, g: g, mode: modeOf(sol), dt: st.dt, d1: st.dt * Math.sqrt(st.ar) };
+  R.ms = sol.filled ? 0 : sol.ms * 3600;            // kg/h
+  R.msStar = sol.filled ? 0 : sol.crit.ms * 3600;
+  R.mp = sol.mp * 3600;
+  R.w = R.ms / R.mp;
+  R.wStar = R.msStar / R.mp;
+  R.dpy = diaOf(sol.op.Apy);
+  R.filled = sol.filled;
+  R.invalid = R.d1 >= st.d3;
+  R.Tsc = W.Tsat(st.pc * 1e3);
+  return R;
+}
+
+/* ---- controls ---- */
+function buildControls() {
+  P.forEach(function (p) {
+    var d = document.createElement('div');
+    d.className = 'ej-ctl'; d.id = 'c-' + p.id;
+    d.innerHTML = '<label for="n-' + p.id + '">' + p.label + '<span class="ej-sym">' + p.sym + '</span></label>' +
+      '<div class="ej-inrow"><input type="range" id="r-' + p.id + '" min="' + p.min + '" max="' + p.max + '" step="' + p.step + '" aria-label="' + p.label + '">' +
+      '<span class="ej-num"><input type="number" id="n-' + p.id + '" min="' + p.min + '" max="' + p.max + '" step="any" inputmode="decimal">' +
+      '<span class="ej-unit">' + p.unit + '</span></span></div>';
+    $('ctl-' + p.g).appendChild(d);
+    var rg = $('r-' + p.id), nb = $('n-' + p.id);
+    rg.addEventListener('input', function () {
+      st[p.id] = parseFloat(rg.value); nb.value = show(p, st[p.id]); nb.removeAttribute('aria-invalid'); changed(p.id);
+    });
+    nb.addEventListener('input', function () {
+      var v = parseFloat(nb.value);
+      if (isFinite(v) && v >= p.min && v <= p.max) { st[p.id] = v; rg.value = v; nb.removeAttribute('aria-invalid'); changed(p.id); }
+      else nb.setAttribute('aria-invalid', 'true');
+    });
+    nb.addEventListener('change', function () {
+      var v = parseFloat(nb.value);
+      if (!isFinite(v)) v = st[p.id];
+      v = clamp(v, p.min, p.max); st[p.id] = v; nb.value = show(p, v); rg.value = v; nb.removeAttribute('aria-invalid'); changed(p.id);
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="nz"]'), function (el) {
+    el.addEventListener('change', function () {
+      if (!el.checked) return;
+      geomNow();                                    // freeze the current nozzle or flow before switching
+      st.nz = el.value;
+      if (st.nz === 'fixed') st.dt = clamp(parseFloat(st.dt.toFixed(2)), PBY.dt.min, PBY.dt.max);
+      else st.mp = snap(PBY.mp, st.mp);
+      syncInputs(); changed();
+    });
+  });
+  $('ej-cl').addEventListener('change', function () { st.cl = this.value; changed(); });
+  $('ej-example').addEventListener('change', function () {
+    var ex = { 'default': {}, single: { pc: 26 }, back: { cl: 'mom', pc: 25 }, boiler: { nz: 'fixed', pg: 450 }, filled: { mp: 200, d3: 22, ar: 4 } }[this.value];
+    if (ex) apply(ex);
+    this.value = '';
+  });
+  $('ej-reset').addEventListener('click', function () { apply({}); });
+  $('ej-link').addEventListener('click', function () {
+    var b = this; writeHash();
+    var done = function (ok) { b.textContent = ok ? 'Link copied' : 'Copy the address-bar link'; setTimeout(function () { b.textContent = 'Copy link to this setup'; }, 2200); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(location.href).then(function () { done(true); }, function () { done(false); });
+    else done(false);
+  });
+  $('ej-size').addEventListener('click', sizeTube);
+}
+function apply(over) {
+  var k;
+  for (k in DEF) st[k] = DEF[k];
+  for (k in over) st[k] = over[k];
+  $('ej-size-msg').textContent = '';
+  syncInputs(); changed();
+}
+function syncInputs() {
+  geomNow();
+  P.forEach(function (p) {
+    var nb = $('n-' + p.id), v = st[p.id];
+    nb.value = show(p, v); nb.removeAttribute('aria-invalid'); $('r-' + p.id).value = v;
+  });
+  var el = document.querySelector('input[name="nz"][value="' + st.nz + '"]'); if (el) el.checked = true;
+  $('c-mp').hidden = st.nz !== 'flow';
+  $('c-dt').hidden = st.nz !== 'fixed';
+  $('ej-cl').value = st.cl;
+}
+function sizeTube() {
+  var g = geomNow(), msg = $('ej-size-msg'), target = 1.05 * st.pc * 1e3;
+  var r = EJ.designA3(st.pg * 1e3, st.pe * 1e3, target, g, W, { subcritical: closure() });
+  if (!isFinite(r)) {
+    msg.textContent = 'No mixing tube reaches this back pressure with this motive steam and suction pressure. Lower the back pressure or raise the motive pressure.';
+    return;
+  }
+  var d = Math.round(st.dt * Math.sqrt(r) * 10) / 10;
+  if (d > PBY.d3.max || d < PBY.d3.min) {
+    msg.textContent = 'The duty needs a ' + fx(d, 0) + ' mm mixing tube, outside the range of the slider (' + PBY.d3.min + ' to ' + PBY.d3.max + ' mm).';
+    return;
+  }
+  st.d3 = d; syncInputs(); changed();
+  msg.textContent = 'Mixing tube set to ' + fx(d, 1) + ' mm, which puts the critical back pressure 5% above the back pressure.';
+}
+
+/* ---- address-bar state ---- */
+var KEYS = ['nz', 'cl', 'pg', 'mp', 'dt', 'pe', 'pc', 'd3', 'ar'];
+var CHOICES = { nz: ['flow', 'fixed'], cl: ['shock', 'mom'] };
+function writeHash() {
+  try {
+    history.replaceState(null, '', '#' + KEYS.filter(function (k) { return !(k === 'dt' && st.nz === 'flow') && !(k === 'mp' && st.nz === 'fixed'); })
+      .map(function (k) { return k + '=' + encodeURIComponent(typeof st[k] === 'number' ? sig(st[k], 6) : st[k]); }).join('&'));
+  } catch (e) { /* ignore */ }
+}
+function readHash() {
+  var h = location.hash.slice(1);
+  if (h.indexOf('=') < 0) return;
+  h.split('&').forEach(function (kv) {
+    var i = kv.indexOf('='), k = kv.slice(0, i), v = decodeURIComponent(kv.slice(i + 1));
+    if (KEYS.indexOf(k) < 0) return;
+    if (CHOICES[k]) { if (CHOICES[k].indexOf(v) >= 0) st[k] = v; return; }
+    var x = parseFloat(v), p = PBY[k];
+    if (isFinite(x)) st[k] = clamp(x, p.min, p.max);
+  });
+}
+
+/* ---- schematic ---- */
+function schematic(R) {
+  var s3 = R.sol, op = s3.op, mode = R.mode;
+  var svgEl = $('ej-svg'), wpx = svgEl.getBoundingClientRect().width || 760, narrow = wpx < 560;
+  var VW = narrow ? 560 : 820, VH = narrow ? 336 : 296, Hc = 66;
+  var cy = narrow ? 172 : 178, xP0 = narrow ? 10 : 14, xC0 = narrow ? 100 : 150, xB0 = narrow ? 130 : 196, xB1 = narrow ? 172 : 256, yB = narrow ? 10 : 36,
+    xN0 = narrow ? 116 : 176, xT = narrow ? 146 : 216, xN1 = narrow ? 184 : 270, xC1 = narrow ? 208 : 306, xM0 = narrow ? 250 : 366, xY = narrow ? 276 : 404,
+    xM1 = narrow ? 400 : 590, xD1 = narrow ? 496 : 730, xO = narrow ? 550 : 806, kx = narrow ? 0.66 : 1;
+  var fs = clamp(11 / (12.5 * wpx / VW), 1, 1.6);                 // keeps the smallest text near 11 px on screen
+  svgEl.setAttribute('viewBox', '0 0 ' + VW + ' ' + VH);
+  svgEl.style.setProperty('--fs', fs.toFixed(3));
+  var r3 = clamp(34 * Math.sqrt(st.d3 / 36), 20, 50), s = r3 / (st.d3 / 2);
+  var rt = Math.max(s * R.dt / 2, 1.5), r1 = clamp(s * R.d1 / 2, rt + 0.6, 50);
+  var rpy = R.filled ? r3 : clamp(s * R.dpy / 2, 1.5, r3 - 1);
+  var rp = clamp(r1 + 4, 13, 54), ro = rp + 5, rD = clamp(r3 * 1.9, r3 + 12, 64);
+  var n = function (v) { return (Math.round(v * 10) / 10); };
+  var pts = function (a) { return a.map(function (p) { return n(p[0]) + ',' + n(p[1]); }).join(' '); };
+  var hAt = function (x) { return x <= xM1 ? r3 : r3 + (rD - r3) * Math.min(1, (x - xM1) / (xD1 - xM1)); };
+
+  // shock position (illustrative)
+  var xs = null, t;
+  if (mode === '3') {
+    t = clamp((st.pc * 1e3 / s3.Pc_star - 0.45) / 0.55, 0, 1);
+    var xSd = xM1 + (xD1 - xM1) / 2;
+    xs = xSd - (xSd - (xY + 26 * kx)) * t * t * t;
+  } else if (mode === '2' && op.Mm > 1) {
+    xs = Math.max(xM0 + 8, xY + (26 - 44 * (1 - s3.Msy)) * kx);
+  }
+  var LjMax = narrow ? 100 : 150, Lj = xs === null ? LjMax : clamp(xs - xY - 6, 16, LjMax);
+  var now = (typeof performance !== 'undefined' ? performance.now() : 0) / 1000;
+  var anim = function (dur) { return ' style="animation-duration:' + dur.toFixed(2) + 's;animation-delay:-' + (now % dur).toFixed(3) + 's"'; };
+
+  var D = [[xC0, cy - Hc], [xB0, cy - Hc], [xB0, yB], [xB1, yB], [xB1, cy - Hc], [xC1, cy - Hc], [xM0, cy - r3], [xM1, cy - r3], [xD1, cy - rD], [xO, cy - rD],
+    [xO, cy + rD], [xD1, cy + rD], [xM1, cy + r3], [xM0, cy + r3], [xC1, cy + Hc], [xC0, cy + Hc]];
+  var h = '';
+  h += '<desc id="ej-svg-desc">Steam ejector in ' + MODE[mode].toLowerCase() + ': ' + flow(R.mp) + ' kg/h of motive steam at ' + kpa(st.pg) + ' kPa entrains ' + flow(R.ms) +
+    ' kg/h of vapor at ' + kpa(st.pe) + ' kPa and discharges at ' + kpa(st.pc) + ' kPa.</desc>';
+  h += '<defs>' +
+    '<linearGradient id="ej-gd" gradientUnits="userSpaceOnUse" x1="' + (xY - 20) + '" y1="0" x2="' + (xY + 140) + '" y2="0"><stop offset="0" stop-color="#bcd5f4"/><stop offset="1" stop-color="#d3c5ec"/></linearGradient>' +
+    '<linearGradient id="ej-gm" gradientUnits="userSpaceOnUse" x1="' + xN0 + '" y1="0" x2="' + xN1 + '" y2="0"><stop offset="0" stop-color="#cf4a22"/><stop offset="1" stop-color="#ee9a70"/></linearGradient>' +
+    '<linearGradient id="ej-gj" gradientUnits="userSpaceOnUse" x1="' + xN1 + '" y1="0" x2="' + n(xY + Lj) + '" y2="0"><stop offset="0" stop-color="#ee9a70"/><stop offset="' +
+      ((xY - xN1) / (xY + Lj - xN1)).toFixed(3) + '" stop-color="#ecab8f"/><stop offset="1" stop-color="#d3c5ec" stop-opacity=".35"/></linearGradient>' +
+    '<clipPath id="ej-clip"><polygon points="' + pts(D) + '"/></clipPath></defs>';
+
+  // fluid: entrained and mixed streams
+  h += '<polygon points="' + pts(D) + '" fill="url(#ej-gd)"/>';
+  if (mode === '1') h += '<rect x="' + xC0 + '" y="' + yB + '" width="' + (xO - xC0) + '" height="' + (2 * (cy - yB)) + '" fill="#b98fc9" opacity=".5" clip-path="url(#ej-clip)"/>';
+  else if (xs !== null) h += '<rect x="' + n(xs) + '" y="' + (cy - 70) + '" width="' + n(xO - xs) + '" height="140" fill="#9a82d0" opacity=".55" clip-path="url(#ej-clip)"/>';
+  // primary jet
+  if (mode === 'F') h += '<rect x="' + xY + '" y="' + (cy - 70) + '" width="' + (xO - xY) + '" height="140" fill="#ecab8f" opacity=".8" clip-path="url(#ej-clip)"/>' +
+    '<polygon points="' + pts([[xN1, cy - r1], [xY, cy - r3], [xY, cy + r3], [xN1, cy + r1]]) + '" fill="#ecab8f"/>';
+  else h += '<path d="M' + xN1 + ',' + n(cy - r1) + ' L' + xY + ',' + n(cy - rpy) + ' Q' + n(xY + Lj * 0.6) + ',' + n(cy - rpy * 0.5) + ' ' + n(xY + Lj) + ',' + cy +
+    ' Q' + n(xY + Lj * 0.6) + ',' + n(cy + rpy * 0.5) + ' ' + xY + ',' + n(cy + rpy) + ' L' + xN1 + ',' + n(cy + r1) + ' Z" fill="url(#ej-gj)"/>';
+  // motive steam in the pipe and nozzle
+  h += '<polygon points="' + pts([[xP0, cy - rp], [xN0, cy - rp], [xT, cy - rt], [xN1, cy - r1], [xN1, cy + r1], [xT, cy + rt], [xN0, cy + rp], [xP0, cy + rp]]) + '" fill="url(#ej-gm)"/>';
+  // y-y section
+  h += '<line class="yy" x1="' + xY + '" y1="' + n(cy - r3) + '" x2="' + xY + '" y2="' + n(cy + r3) + '"/>';
+
+  // moving dashes
+  var yA = cy - (ro + Hc) / 2, yAn = cy - (rpy + r3) / 2, xb = (xB0 + xB1) / 2;
+  var secCls = mode === '1' ? 'fl sec back' : (R.ms > 0 ? 'fl sec' : 'fl sec still');
+  var secDur = mode === '1' ? 1.2 : clamp(0.55 / Math.max(s3.Msy, 0.05), 0.55, 4);
+  var secA = (R.ms > 0 || mode === '1') ? anim(secDur) : '';
+  h += '<path class="fl mot"' + anim(1.3) + ' d="M' + (xP0 + 6) + ',' + cy + ' L' + xT + ',' + cy + '"/>';
+  h += '<path class="fl mot"' + anim(0.3) + ' d="M' + xT + ',' + cy + ' L' + n(xY + Lj - 8) + ',' + cy + '"/>';
+  if (r3 - rpy > 3) {
+    h += '<path class="' + secCls + '"' + secA + ' d="M' + xb + ',' + (yB + 8) + ' L' + xb + ',' + n(yA - 10) + ' Q' + xb + ',' + n(yA) + ' ' + (xb + 14) + ',' + n(yA) + ' L' + (xC1 - 12) + ',' + n(yA) +
+      ' C' + (xC1 + 22) + ',' + n(yA) + ' ' + (xM0 - 26) + ',' + n(yAn) + ' ' + (xM0 + 4) + ',' + n(yAn) + ' L' + (xY + 8) + ',' + n(yAn) + '"/>';
+    h += '<path class="' + secCls + '"' + secA + ' d="M' + (xC0 + 14) + ',' + n(2 * cy - yA) + ' L' + (xC1 - 12) + ',' + n(2 * cy - yA) +
+      ' C' + (xC1 + 22) + ',' + n(2 * cy - yA) + ' ' + (xM0 - 26) + ',' + n(2 * cy - yAn) + ' ' + (xM0 + 4) + ',' + n(2 * cy - yAn) + ' L' + (xY + 8) + ',' + n(2 * cy - yAn) + '"/>';
+  }
+  var mixPath = function (x0, x1, f) {            // f = fraction of the duct half-height, signed
+    var a = [[x0, cy + f * hAt(x0)]];
+    if (x0 < xM1 && x1 > xM1) a.push([xM1, cy + f * r3]);
+    if (x0 < xD1 && x1 > xD1) a.push([xD1, cy + f * rD]);
+    a.push([x1, cy + f * hAt(x1)]);
+    return 'M' + a.map(function (p) { return n(p[0]) + ',' + n(p[1]); }).join(' L');
+  };
+  var x0m = xY + 14, fAn = (rpy + r3) / 2 / r3;
+  if (mode !== '1' && mode !== 'F') {
+    if (xs !== null && xs > x0m + 12) {
+      [-fAn, fAn].forEach(function (f) { h += '<path class="fl mix"' + anim(0.5) + ' d="' + mixPath(x0m, xs - 3, f * 0.92) + '"/>'; });
+      [-0.55, 0, 0.55].forEach(function (f) { h += '<path class="fl mix"' + anim(1.5) + ' d="' + mixPath(xs + 5, xO - 6, f) + '"/>'; });
+    } else {
+      [-0.55, 0, 0.55].forEach(function (f) { h += '<path class="fl mix"' + anim(1.5) + ' d="' + mixPath(Math.max(x0m, f === 0 ? xY + Lj : x0m), xO - 6, f) + '"/>'; });
+    }
+  } else {
+    [-0.55, 0, 0.55].forEach(function (f) { h += '<path class="fl mix"' + anim(2.2) + ' d="' + mixPath(f === 0 ? xY + Lj : x0m, xO - 6, f) + '"/>'; });
+  }
+
+  // shock
+  if (xs !== null) {
+    var hs = hAt(xs) - 2;
+    h += '<path class="shock" d="M' + n(xs) + ',' + n(cy - hs) + ' L' + n(xs) + ',' + n(cy + hs) + '"/>';
+    h += '<text class="t-s" x="' + n(xs) + '" y="' + n(cy - hs - 9) + '" text-anchor="middle">shock</text>';
+  }
+
+  // walls
+  h += '<polygon class="nzl" points="' + pts([[xP0, cy - ro], [xN0 + 6, cy - ro], [xN1, cy - r1 - 2.2], [xN1, cy - r1], [xT, cy - rt], [xN0, cy - rp], [xP0, cy - rp]]) + '"/>';
+  h += '<polygon class="nzl" points="' + pts([[xP0, cy + ro], [xN0 + 6, cy + ro], [xN1, cy + r1 + 2.2], [xN1, cy + r1], [xT, cy + rt], [xN0, cy + rp], [xP0, cy + rp]]) + '"/>';
+  h += '<polyline class="wall" points="' + pts([[xB0, yB], [xB0, cy - Hc], [xC0, cy - Hc], [xC0, cy - ro]]) + '"/>';
+  h += '<polyline class="wall" points="' + pts([[xC0, cy + ro], [xC0, cy + Hc], [xC1, cy + Hc], [xM0, cy + r3], [xM1, cy + r3], [xD1, cy + rD], [xO, cy + rD]]) + '"/>';
+  h += '<polyline class="wall" points="' + pts([[xB1, yB], [xB1, cy - Hc], [xC1, cy - Hc], [xM0, cy - r3], [xM1, cy - r3], [xD1, cy - rD], [xO, cy - rD]]) + '"/>';
+
+  // direction arrows
+  h += '<polygon points="' + pts([[xP0 + 22, cy - 6], [xP0 + 34, cy], [xP0 + 22, cy + 6]]) + '" fill="#fff"/>';
+  if (mode === '1') h += '<polygon points="' + pts([[xb - 7, yB + 24], [xb, yB + 10], [xb + 7, yB + 24]]) + '" fill="#a02a1c"/>';
+  else if (R.ms > 0) h += '<polygon points="' + pts([[xb - 7, yB + 10], [xb, yB + 24], [xb + 7, yB + 10]]) + '" fill="#1b5fb8"/>';
+  h += '<polygon points="' + pts([[xO - 26, cy - 7], [xO - 12, cy], [xO - 26, cy + 7]]) + '" fill="#4f3a85"/>';
+
+  // port labels
+  var port = function (x, y0, anchor, k, v, sub, bad) {
+    var a = anchor === 'end' ? ' text-anchor="end"' : '';
+    return '<text class="t-k" x="' + x + '" y="' + n(y0) + '"' + a + '>' + k + '</text><text class="t-v" x="' + x + '" y="' + n(y0 + 20 * fs) + '"' + a + (bad ? ' style="fill:#a02a1c"' : '') + '>' + v + '</text>' +
+      '<text class="t-s" x="' + x + '" y="' + n(y0 + 36 * fs) + '"' + a + '>' + sub + '</text>';
+  };
+  var yTop = narrow ? 13 * fs + 2 : 49, yMot = narrow ? cy + Hc + 24 + 13 * fs : yTop;
+  h += port(xP0, yMot, 'start', 'Motive steam', flow(R.mp) + ' kg/h', kpa(st.pg) + ' kPa · ' + degC(s3.Tg) + ' °C');
+  h += port(xB1 + (narrow ? 9 : 12), yTop, 'start', mode === '1' ? 'Suction: back-flow' : 'Suction vapor', mode === '1' ? 'no entrainment' : flow(R.ms) + ' kg/h', kpa(st.pe) + ' kPa · ' + degC(s3.Te) + ' °C', mode === '1');
+  h += port(xO, yTop, 'end', 'Discharge', flow(R.mp + R.ms) + ' kg/h', kpa(st.pc) + ' kPa · ' + fx(op.Tc - 273.15, 0) + ' °C');
+
+  // Mach numbers
+  h += '<text class="t-m" x="' + n((xN1 + xY) / 2 + 6) + '" y="' + (cy + 4) + '" text-anchor="middle">M ' + fx(op.Mpy, 2) + '</text>';
+  if (mode !== '1' && mode !== 'F' && r3 - rpy >= 11) h += '<text class="t-m" x="' + (xY - 5) + '" y="' + n(yAn + 4) + '" text-anchor="end">M ' + fx(s3.Msy, 2) + '</text>';
+  if (mode !== '1' && mode !== 'F') {
+    if (xs !== null) {
+      if (xs - xY > 150 * fs) h += '<text class="t-m" x="' + n((xY + 60 + xs) / 2) + '" y="' + (cy + 4) + '" text-anchor="middle">M ' + fx(op.Mm, 2) + '</text>';
+      if (xO - xs > 80 * fs) h += '<text class="t-m" x="' + n(xs + 12) + '" y="' + (cy + 4) + '">M ' + fx(op.M3, 2) + '</text>';
+    } else h += '<text class="t-m" x="' + (xY + Lj + 30) + '" y="' + (cy + 4) + '">M ' + fx(op.Mm, 2) + '</text>';
+  }
+
+  // station letters and dimensions
+  var yS = cy + Hc + 17;
+  h += '<line class="tickm" x1="' + xT + '" y1="' + (cy + Hc + 3) + '" x2="' + xT + '" y2="' + (cy + Hc + 7) + '"/><text class="t-st" x="' + xT + '" y="' + (yS + 2) + '" text-anchor="middle">t</text>';
+  h += '<line class="tickm" x1="' + xN1 + '" y1="' + (cy + Hc + 3) + '" x2="' + xN1 + '" y2="' + (cy + Hc + 7) + '"/><text class="t-st" x="' + xN1 + '" y="' + (yS + 2) + '" text-anchor="middle">1</text>';
+  h += '<text class="t-st" x="' + xY + '" y="' + n(cy + r3 + 16) + '" text-anchor="middle">y</text>';
+  h += '<text class="t-st" x="' + (xO - 6) + '" y="' + n(cy + rD + 17) + '" text-anchor="end">c</text>';
+  if (!narrow) h += '<text class="t-s" x="' + xP0 + '" y="282">Nozzle: throat ' + fx(R.dt, 2) + ' mm, exit ' + fx(R.d1, 1) + ' mm</text>';
+  if (!narrow) h += '<text class="t-s" x="' + n((xM0 + xM1) / 2) + '" y="282" text-anchor="middle">Mixing tube ' + fx(st.d3, 1) + ' mm, jet ' + (R.filled ? 'fills it' : fx(R.dpy, 1) + ' mm at y') + '</text>';
+  if (!narrow) h += '<text class="t-s" x="' + xO + '" y="282" text-anchor="end">Diffuser</text>';
+  $('ej-svg').innerHTML = h;
+}
+
+/* ---- charts ---- */
+function niceTicks(a, b, nmax) {
+  var span = b - a, raw = span / nmax, mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10)), f = raw / mag;
+  var step = (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * mag, out = [], v;
+  for (v = Math.ceil(a / step - 1e-9) * step; v <= b + 1e-9; v += step) out.push(parseFloat(v.toPrecision(12)));
+  return out;
+}
+function niceMax(v) {
+  if (!(v > 0)) return 1;
+  var mag = Math.pow(10, Math.floor(Math.log(v) / Math.LN10)), f = v / mag;
+  return (f <= 1 ? 1 : f <= 1.5 ? 1.5 : f <= 2 ? 2 : f <= 3 ? 3 : f <= 4 ? 4 : f <= 5 ? 5 : f <= 6 ? 6 : f <= 8 ? 8 : 10) * mag;
+}
+var CW = 640, CH = 310, CL = 56, CR = 16, CT = 22, CB = 44;
+function sizeChart(host) { var w = host.clientWidth || 640; return { W: clamp(Math.round(w), 320, 860), H: clamp(Math.round(w * 0.48), 250, 330) }; }
+var BL = { '3': ['Double choking', 'Double'], '2': ['Single choking', 'Single'], '1': ['Back-flow', 'Back'], 'F': ['Jet fills the tube', 'Full'] };
+var BC = { '3': 'b3', '2': 'b2', '1': 'b1', 'F': 'bf' };
+function drawChart(host, c) {
+  host._c = c;
+  var sz = sizeChart(host), CW = sz.W, CH = sz.H; c.W = CW;
+  var pw = CW - CL - CR, ph = CH - CT - CB;
+  var X = function (x) { return CL + (x - c.x0) / (c.x1 - c.x0) * pw; }, Y = function (y) { return CT + ph - (y / c.ymax) * ph; };
+  var n = function (v) { return Math.round(v * 10) / 10; };
+  var h = '<svg viewBox="0 0 ' + CW + ' ' + CH + '" role="img" aria-label="' + c.aria + '">';
+  c.bands.forEach(function (b) {
+    var xa = X(Math.max(b.x0, c.x0)), xb = X(Math.min(b.x1, c.x1)), w = xb - xa;
+    if (w <= 0) return;
+    h += '<rect class="ej-band ' + BC[b.m] + '" x="' + n(xa) + '" y="' + CT + '" width="' + n(w) + '" height="' + ph + '"/>';
+    var lab = w > BL[b.m][0].length * 6.4 + 10 ? BL[b.m][0] : (w > BL[b.m][1].length * 6.6 + 6 ? BL[b.m][1] : '');
+    if (lab) h += '<text class="ej-blab" x="' + n(xa + w / 2) + '" y="' + (CT + 14) + '" text-anchor="middle">' + lab + '</text>';
+  });
+  niceTicks(0, c.ymax, 5).forEach(function (v) {
+    h += '<line class="ej-grid" x1="' + CL + '" x2="' + (CW - CR) + '" y1="' + n(Y(v)) + '" y2="' + n(Y(v)) + '"/><text class="ej-tick" x="' + (CL - 7) + '" y="' + n(Y(v) + 4) + '" text-anchor="end">' + sig(v, 4) + '</text>';
+  });
+  niceTicks(c.x0, c.x1, CW < 480 ? 5 : 8).forEach(function (v) {
+    h += '<line class="ej-axis" x1="' + n(X(v)) + '" x2="' + n(X(v)) + '" y1="' + (CT + ph) + '" y2="' + (CT + ph + 4) + '"/><text class="ej-tick" x="' + n(X(v)) + '" y="' + (CT + ph + 17) + '" text-anchor="middle">' + sig(v, 4) + '</text>';
+  });
+  h += '<line class="ej-axis" x1="' + CL + '" x2="' + (CW - CR) + '" y1="' + (CT + ph) + '" y2="' + (CT + ph) + '"/>';
+  h += '<text class="ej-axlab" x="' + (CL + pw / 2) + '" y="' + (CH - 6) + '" text-anchor="middle">' + c.xlabel + '</text>';
+  h += '<text class="ej-axlab" transform="translate(14,' + (CT + ph / 2) + ') rotate(-90)" text-anchor="middle">' + c.ylabel + '</text>';
+  (c.vlines || []).forEach(function (v, i) {
+    if (v.x <= c.x0 || v.x >= c.x1) return;
+    var end = X(v.x) > CW - CR - 90;
+    h += '<line class="ej-vl" x1="' + n(X(v.x)) + '" x2="' + n(X(v.x)) + '" y1="' + (CT + 20) + '" y2="' + (CT + ph) + '"/>' +
+      '<text class="ej-vlab" x="' + n(X(v.x) + (end ? -5 : 5)) + '" y="' + (CT + 34 + 14 * (i % 2)) + '"' + (end ? ' text-anchor="end"' : '') + '>' + v.label + '</text>';
+  });
+  c.series.forEach(function (s) {
+    if (s.pts.length < 2) return;
+    h += '<path class="ej-curve' + (s.alt ? ' alt' : '') + '" d="M' + s.pts.map(function (p) { return n(X(clamp(p[0], c.x0, c.x1))) + ',' + n(Y(Math.min(p[1], c.ymax))); }).join(' L') + '"/>';
+  });
+  if (c.op) {
+    var ox = X(clamp(c.op.x, c.x0, c.x1)), oy = Y(c.op.y), right = ox > CW - CR - 120;
+    h += '<line class="ej-opl" x1="' + n(ox) + '" x2="' + n(ox) + '" y1="' + n(oy) + '" y2="' + (CT + ph) + '"/><line class="ej-opl" x1="' + CL + '" x2="' + n(ox) + '" y1="' + n(oy) + '" y2="' + n(oy) + '"/>';
+    h += '<circle class="ej-op" cx="' + n(ox) + '" cy="' + n(oy) + '" r="6"/>';
+    h += '<text class="ej-oplab" x="' + n(ox + (right ? -10 : 10)) + '" y="' + n(Math.max(oy - 10, CT + 44)) + '"' + (right ? ' text-anchor="end"' : '') + '>' + c.op.label + '</text>';
+  }
+  h += '<line class="ej-cross" x1="0" x2="0" y1="' + CT + '" y2="' + (CT + ph) + '" visibility="hidden"/></svg>';
+  host.querySelector('.ej-plot').innerHTML = h;
+}
+function initChart(host, key) {
+  host.innerHTML = '<div class="ej-plot"></div><div class="ej-tip"></div>';
+  var tip = host.querySelector('.ej-tip'), drag = false, p = PBY[key];
+  var xAt = function (e) {
+    var c = host._c, svg = host.querySelector('svg'), r = svg.getBoundingClientRect();
+    var px = (e.clientX - r.left) / r.width * c.W;
+    return { v: c.x0 + (px - CL) / (c.W - CL - CR) * (c.x1 - c.x0), px: px, r: r, W: c.W };
+  };
+  var set = function (e) {
+    var a = xAt(e), v = snap(p, a.v);
+    if (v !== st[key]) { st[key] = v; syncInputs(); changed(key); }
+  };
+  var hover = function (e) {
+    var c = host._c; if (!c) return;
+    var a = xAt(e), cross = host.querySelector('.ej-cross');
+    if (a.px < CL || a.px > a.W - CR) { tip.style.display = 'none'; if (cross) cross.setAttribute('visibility', 'hidden'); return; }
+    var v = clamp(a.v, Math.max(c.x0, p.min), c.x1);
+    if (cross) { cross.setAttribute('x1', a.px); cross.setAttribute('x2', a.px); cross.setAttribute('visibility', 'visible'); }
+    tip.innerHTML = c.tip(v); tip.style.display = 'block';
+    var hr = host.getBoundingClientRect(), left = e.clientX - hr.left + 14;
+    if (left + tip.offsetWidth > hr.width) left = e.clientX - hr.left - tip.offsetWidth - 14;
+    tip.style.left = Math.max(0, left) + 'px'; tip.style.top = '30px';
+  };
+  host.addEventListener('pointerdown', function (e) {
+    if (e.button !== undefined && e.button !== 0) return;
+    drag = true; try { host.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    set(e); hover(e);
+  });
+  host.addEventListener('pointermove', function (e) { if (drag) set(e); hover(e); });
+  var end = function () { drag = false; };
+  host.addEventListener('pointerup', end); host.addEventListener('pointercancel', end);
+  host.addEventListener('pointerleave', function () { if (!drag) { tip.style.display = 'none'; var cr = host.querySelector('.ej-cross'); if (cr) cr.setAttribute('visibility', 'hidden'); } });
+}
+function solveAt(over) {
+  var g = geomNow();
+  return EJ.solve((over.pg || st.pg) * 1e3, (over.pe || st.pe) * 1e3, (over.pc || st.pc) * 1e3, g, W, { subcritical: closure() });
+}
+function tipHtml(head, sol) {
+  var ms = sol.filled ? 0 : sol.ms * 3600;
+  return '<div class="hd">' + head + '</div><div><b>' + flow(ms) + ' kg/h</b> entrained</div><div>ω = <b>' + fx(ms / (sol.mp * 3600), 3) + '</b></div><div class="hd">' + MODE[modeOf(sol)] + '</div>';
+}
+function chartPc(R) {
+  var s = R.sol, cl = closure(), alt = cl === 'shock' ? 'momentum' : 'shock';
+  var PcS = s.Pc_star / 1e3, Pco = s.Pco / 1e3, PcoAlt = (cl === 'shock' ? s.Pco_momentum : s.Pco_shock) / 1e3;
+  var x1 = Math.ceil(Math.max(1.1 * Math.max(s.Pco_shock, s.Pco_momentum) / 1e3, 1.15 * st.pc) / 10) * 10;
+  var main = [[0, R.msStar]], altp = [], bands, vl = [];
+  if (R.filled) {
+    main.push([x1, 0]); main[0][1] = 0; bands = [{ x0: 0, x1: x1, m: 'F' }];
+  } else {
+    EJ.branch(s, cl, 70).forEach(function (p) { main.push([p[0] / 1e3, p[1] * 3600]); });
+    main.push([Pco, 0]); main.push([Math.max(x1, Pco), 0]);
+    EJ.branch(s, alt, 70).forEach(function (p) { altp.push([p[0] / 1e3, p[1] * 3600]); });
+    altp.push([PcoAlt, 0]);
+    bands = [{ x0: 0, x1: PcS, m: '3' }, { x0: PcS, x1: Pco, m: '2' }, { x0: Pco, x1: x1, m: '1' }];
+    vl = [{ x: PcS, label: 'P<tspan dy="3" font-size="8.5">c</tspan><tspan dy="-3">* = ' + kpa(PcS) + ' kPa</tspan>' }, { x: Pco, label: 'P<tspan dy="3" font-size="8.5">co</tspan><tspan dy="-3"> = ' + kpa(Pco) + ' kPa</tspan>' }];
+  }
+  drawChart($('chart-pc'), {
+    x0: 0, x1: x1, ymax: niceMax(Math.max(R.msStar * 1.2, 1)), bands: bands, vlines: vl,
+    series: [{ pts: altp, alt: true }, { pts: main }], op: { x: st.pc, y: R.ms, label: flow(R.ms) + ' kg/h' },
+    xlabel: 'Back pressure, kPa', ylabel: 'Entrained flow, kg/h',
+    aria: 'Entrained flow against back pressure. Now ' + flow(R.ms) + ' kg/h at ' + kpa(st.pc) + ' kPa; critical back pressure ' + kpa(PcS) + ' kPa.',
+    tip: function (v) { return tipHtml('Back pressure ' + kpa(v) + ' kPa', solveAt({ pc: v })); }
+  });
+  $('pc-legend').innerHTML = '<span><i class="ej-key"></i>' + (cl === 'shock' ? 'Shock closure (selected)' : 'Momentum closure (selected)') + '</span>' +
+    (R.filled ? '' : '<span><i class="ej-key alt"></i>' + (cl === 'shock' ? 'Momentum closure' : 'Shock closure') + '</span>') + '<span><i class="ej-key dot"></i>Operating point</span>';
+}
+function chartPe(R) {
+  var x1 = Math.min(66, Math.ceil(Math.max(2.2 * st.pe, 30) / 10) * 10), x0 = 0, lo = 1, N = 120, i, pe, sol, m, ms, pts = [], bands = [], ymax = 0, vl = [], prev = null;
+  for (i = 0; i <= N; i++) {
+    pe = lo + (x1 - lo) * i / N;
+    sol = solveAt({ pe: pe }); m = modeOf(sol); ms = sol.filled ? 0 : sol.ms * 3600;
+    pts.push([pe, ms]); ymax = Math.max(ymax, ms);
+    if (!bands.length || bands[bands.length - 1].m !== m) {
+      if (bands.length) {
+        var xm = (prev + pe) / 2; bands[bands.length - 1].x1 = xm; bands.push({ x0: xm, x1: pe, m: m });
+        if (m === '3') vl.push({ x: xm, label: 'double choking from ' + kpa(xm) + ' kPa' });
+      } else bands.push({ x0: x0, x1: pe, m: m });
+    }
+    bands[bands.length - 1].x1 = pe; prev = pe;
+  }
+  drawChart($('chart-pe'), {
+    x0: x0, x1: x1, ymax: niceMax(Math.max(ymax * 1.08, R.ms * 1.08, 1)), bands: bands, vlines: vl,
+    series: [{ pts: pts }], op: { x: st.pe, y: R.ms, label: flow(R.ms) + ' kg/h' },
+    xlabel: 'Suction pressure, kPa', ylabel: 'Entrained flow, kg/h',
+    aria: 'Entrained flow against suction pressure. Now ' + flow(R.ms) + ' kg/h at ' + kpa(st.pe) + ' kPa.',
+    tip: function (v) { return tipHtml('Suction pressure ' + kpa(v) + ' kPa', solveAt({ pe: v })); }
+  });
+  $('pe-legend').innerHTML = '<span><i class="ej-key"></i>' + (st.cl === 'shock' ? 'Shock closure' : 'Momentum closure') + '</span><span><i class="ej-key dot"></i>Operating point</span>';
+}
+
+/* ---- text outputs ---- */
+function tiles(R) {
+  var s = R.sol, PcS = s.Pc_star / 1e3, marg = PcS - st.pc, cl = closure();
+  var t = function (cls, k, v, sub) { return '<div class="ej-tile' + cls + '"><div class="k">' + k + '</div><div class="v' + (cls === ' txt' ? ' txt' : '') + '">' + v + '</div><div class="s">' + sub + '</div></div>'; };
+  var modeSub = { '3': 'Critical mode: the design condition', '2': 'Entrained stream subsonic, <i>M</i><sub>sy</sub> = ' + fx(s.Msy, 2), '1': 'Malfunction: no vacuum', 'F': 'No room left for vapor' }[R.mode];
+  $('ej-tiles').innerHTML =
+    t(' main', 'Entrained (secondary) flow <i>m&#775;</i><sub>s</sub>', flow(R.ms) + ' <small>kg/h</small>', fx(R.ms / 3.6, 2) + ' g/s' + (R.mode === '2' ? ' · ' + fx(100 * R.ms / R.msStar, 0) + '% of double choking' : '')) +
+    t('', 'Entrainment ratio &omega; = <i>m&#775;</i><sub>s</sub>/<i>m&#775;</i><sub>p</sub>', fx(R.w, 3), 'kg of vapor per kg of motive steam') +
+    '<div class="ej-tile"><div class="k">Operating mode</div><div class="v txt">' + MODE[R.mode] + '</div><div class="s">' + modeSub + '</div></div>' +
+    t('', 'Critical back pressure <i>P</i><sub>c</sub>*', kpa(PcS) + ' <small>kPa</small>', (marg >= 0 ? 'Margin ' + fx(marg, 1) + ' kPa (' + fx(100 * marg / PcS, 0) + '%)' : 'Exceeded by ' + fx(-marg, 1) + ' kPa') + ' · saturation ' + degC(W.Tsat(s.Pc_star)) + ' °C') +
+    t('', 'Break-down pressure <i>P</i><sub>co</sub>', kpa(s.Pco / 1e3) + ' <small>kPa</small>', (cl === 'shock' ? 'Shock closure; momentum closure ' + kpa(s.Pco_momentum / 1e3) : 'Momentum closure; shock closure ' + kpa(s.Pco_shock / 1e3)) + ' kPa') +
+    t('', 'Compression ratio <i>P</i><sub>c</sub>/<i>P</i><sub>e</sub>', fx(st.pc / st.pe, 2), 'Expansion ratio <i>P</i><sub>g</sub>/<i>P</i><sub>e</sub> = ' + sig(st.pg / st.pe, 3));
+  $('sk-ms').textContent = flow(R.ms) + ' kg/h'; $('sk-w').textContent = fx(R.w, 2);
+  $('sk-mode').textContent = { '3': 'Double', '2': 'Single', '1': 'Back-flow', 'F': 'Jet fills' }[R.mode]; $('sk-pcs').textContent = kpa(PcS) + ' kPa';
+  var b = $('ej-badge'); b.textContent = MODE[R.mode]; b.className = 'ej-badge ' + ({ '3': 'r3', '2': 'r2', '1': 'r1', 'F': 'r1' }[R.mode]);
+}
+function notes(R) {
+  var s = R.sol, op = s.op, PcS = s.Pc_star / 1e3, a = [], cl = closure();
+  if (R.mode === '3') a.push(['', '<b>Double choking.</b> The entrained vapor reaches Mach 1 inside the mixing tube, so the back pressure cannot influence it: the entrained flow stays at ' + flow(R.ms) + ' kg/h until the back pressure passes <i>P</i><sub>c</sub>* = ' + kpa(PcS) + ' kPa.']);
+  if (R.mode === '2') a.push(['warn', '<b>Single choking.</b> The back pressure is above <i>P</i><sub>c</sub>* = ' + kpa(PcS) + ' kPa. The entrained vapor is now subsonic (<i>M</i> = ' + fx(s.Msy, 2) + ' at y) and its flow falls as the back pressure rises. How fast it falls depends on the closure chosen under Options (' + (cl === 'shock' ? 'shock: optimistic' : 'momentum: conservative') + ').']);
+  if (R.mode === '1') a.push(['bad', '<b>Back-flow.</b> The back pressure is above the break-down pressure <i>P</i><sub>co</sub> = ' + kpa(s.Pco / 1e3) + ' kPa. The jet cannot push the flow out, the ejector entrains nothing, and motive steam flows back into the suction line.']);
+  if (R.mode === 'F') a.push(['bad', '<b>The motive jet fills the mixing tube.</b> At this suction pressure the jet would expand to ' + fx(diaOf(s.crit.Apy), 1) + ' mm, wider than the ' + fx(st.d3, 1) + ' mm tube allows, so no vapor can enter. Use a larger mixing tube, less motive steam or a higher suction pressure.']);
+  if (st.pc <= st.pe) a.push(['', 'The back pressure is not above the suction pressure, so there is nothing to compress: vapor would flow through without the motive steam.']);
+  var pchamb = op.Ppy;
+  if (R.mode !== '3' && R.mode !== '2') { /* no nozzle note when the ejector is not entraining */ }
+  else if (s.crit.Pp1 > 1.4 * pchamb) a.push(['', '<b>Under-expanded nozzle.</b> The steam leaves the nozzle at ' + kpa(s.crit.Pp1 / 1e3) + ' kPa and keeps expanding to ' + kpa(pchamb / 1e3) + ' kPa outside it. A larger area ratio would match the nozzle to this duty.']);
+  else if (s.crit.Pp1 < 0.7 * pchamb) a.push(['', '<b>Over-expanded nozzle.</b> The steam leaves the nozzle at ' + kpa(s.crit.Pp1 / 1e3) + ' kPa, below the ' + kpa(pchamb / 1e3) + ' kPa around it. The model lets the jet recompress without loss; a real nozzle would form shocks. A smaller area ratio would match the nozzle to this duty.']);
+  $('ej-notes').innerHTML = a.map(function (x) { return '<li' + (x[0] ? ' class="' + x[0] + '"' : '') + '>' + x[1] + '</li>'; }).join('');
+}
+function derived(R) {
+  var s = R.sol;
+  $('d-mot').innerHTML = 'Saturated steam at <b>' + degC(s.Tg) + ' °C</b>. ' + (st.nz === 'flow' ? 'Nozzle throat <i>d</i><sub>t</sub> = <b>' + fx(R.dt, 2) + ' mm</b>.' : 'Motive flow <i>m&#775;</i><sub>p</sub> = <b>' + flow(R.mp) + ' kg/h</b>.');
+  $('d-suc').innerHTML = 'Saturated vapor at <b>' + degC(s.Te) + ' °C</b>.';
+  $('d-dis').innerHTML = 'Steam condenses at <b>' + degC(R.Tsc) + ' °C</b> at this pressure.';
+  $('d-geo').innerHTML = 'Area ratio <i>A</i><sub>3</sub>/<i>A</i><sub>t</sub> = <b>' + sig(R.g.A3 / R.g.At, 3) + '</b>. Nozzle exit ' + fx(R.d1, 1) + ' mm, Mach ' + fx(s.crit.Mp1, 2) + ', ' + kpa(s.crit.Pp1 / 1e3) + ' kPa.';
+}
+function stations(R) {
+  var s = R.sol, op = s.op, g = W.gamma, Rg = W.R, C = function (K) { return fx(K - 273.15, 0); };
+  var Tt = s.Tg * 2 / (g + 1), Pt = st.pg * Math.pow(2 / (g + 1), g / (g - 1));
+  var T1 = s.Tg / (1 + (g - 1) / 2 * op.Mp1 * op.Mp1);
+  var row = function (st2, name, M, Pk, T, V, cls) { return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td><i>' + st2 + '</i>' + name + '</td><td>' + M + '</td><td>' + Pk + '</td><td>' + T + '</td><td>' + V + '</td></tr>'; };
+  var h = '<thead><tr><th>Station</th><th>Mach</th><th>Pressure, kPa</th><th>Temperature, &deg;C</th><th>Velocity, m/s</th></tr></thead><tbody>';
+  h += row('g', 'Motive steam, inlet', '0', kpa(st.pg), C(s.Tg), '0');
+  h += row('t', 'Nozzle throat', '1.00', kpa(Pt), C(Tt), fx(Math.sqrt(g * Rg * Tt), 0));
+  h += row('1', 'Nozzle exit', fx(op.Mp1, 2), kpa(op.Pp1 / 1e3), C(T1), fx(op.Mp1 * Math.sqrt(g * Rg * T1), 0));
+  h += row('y', 'Primary core', fx(op.Mpy, 2), kpa(op.Ppy / 1e3), C(op.Tpy), fx(op.Vpy, 0));
+  h += row('e', 'Suction vapor, inlet', '0', kpa(st.pe), C(s.Te), '0', 'sep');
+  var live = R.mode === '3' || R.mode === '2';
+  h += live ? row('y', 'Entrained stream', fx(s.Msy, 2), kpa(op.Psy / 1e3), C(op.Tsy), fx(op.Vsy, 0)) : row('y', 'Entrained stream', 'no flow', '–', '–', '–');
+  if (live) {
+    h += row('m', 'Mixed stream', fx(op.Mm, 2), kpa(op.Pm / 1e3), C(op.Tm), fx(op.Vm, 0), 'sep');
+    if (st.cl === 'shock' || R.mode === '3') {
+      h += row('3', 'After the shock' + (R.mode === '3' ? ' *' : ''), fx(op.M3, 2), kpa(op.P3 / 1e3), C(op.T3), fx(op.M3 * Math.sqrt(g * Rg * op.T3), 0));
+      h += row('c', 'Diffuser exit' + (R.mode === '3' ? ' *' : ''), '0', kpa(op.Pc / 1e3), C(op.Tc), '0');
+    } else h += row('c', 'Diffuser exit', '0', kpa(st.pc), C(op.Tc), '0');
+  }
+  $('ej-stations').innerHTML = h + '</tbody>';
+  $('st-note').innerHTML = 'Ideal-gas values from the 1-D model. Stations g, e and c are stagnation states.' +
+    (R.mode === '3' ? ' * At the critical point: with the back pressure below <i>P</i><sub>c</sub>* the shock sits farther downstream and is stronger, and the exit pressure is ' + kpa(st.pc) + ' kPa.' : '') +
+    ' The very low jet temperatures show where real steam would condense.';
+}
+function steps(R) {
+  var s = R.sol, c = s.crit, op = s.op, g = W.gamma, mm2 = function (A) { return sig(A * 1e6, 4); };
+  var li = function (lbl, eq, res) { return '<li><span class="lbl">' + lbl + '</span><span class="eq">' + eq + '</span> <span class="res">' + res + '</span></li>'; };
+  var h = '';
+  h += li('Saturation temperatures of the two streams', '<i>T</i><sub>g</sub> = <i>T</i><sub>sat</sub>(' + kpa(st.pg) + ' kPa), <i>T</i><sub>e</sub> = <i>T</i><sub>sat</sub>(' + kpa(st.pe) + ' kPa)', '= ' + fx(s.Tg, 1) + ' K, ' + fx(s.Te, 1) + ' K');
+  h += li('Choked mass flux of the motive nozzle', '<i>m&#775;</i><sub>p</sub>/<i>A</i><sub>t</sub> = (<i>P</i><sub>g</sub>/&radic;<i>T</i><sub>g</sub>) &middot; ' + sig(EJ.chokeConst(g, W.R), 4) + ' &middot; &radic;0.95', '= ' + sig(R.g.G, 4) + ' kg/s&middot;m&sup2;');
+  if (st.nz === 'flow') h += li('Throat sized for the motive flow', '<i>A</i><sub>t</sub> = (' + flow(R.mp) + '/3600)/' + sig(R.g.G, 4) + ' = ' + mm2(R.g.At) + ' mm&sup2;', '&rarr; <i>d</i><sub>t</sub> = ' + fx(R.dt, 2) + ' mm');
+  else h += li('Motive flow through the fixed throat', '<i>A</i><sub>t</sub> = &pi;(' + fx(R.dt, 2) + ' mm)&sup2;/4 = ' + mm2(R.g.At) + ' mm&sup2;', '&rarr; <i>m&#775;</i><sub>p</sub> = ' + flow(R.mp) + ' kg/h');
+  h += li('Entrained stream choked at y (<i>M</i><sub>sy</sub> = 1)', '<i>P</i><sub>sy</sub> = <i>P</i><sub>e</sub>/(1 + 0.15)<sup>4.333</sup> = 0.546 &times; ' + kpa(st.pe), '= ' + fx(c.Psy / 1e3, 2) + ' kPa');
+  h += li('Primary core expands to the same pressure', '<i>M</i><sub>py</sub> from <i>P</i><sub>g</sub>/<i>P</i><sub>py</sub> = ' + sig(st.pg * 1e3 / c.Ppy, 4), '= ' + fx(c.Mpy, 2));
+  h += li('Area of the primary core at y', '<i>A</i><sub>py</sub> = 0.88 <i>A</i><sub>t</sub> (<i>A</i>/<i>A</i>*)<sub>M=' + fx(c.Mpy, 2) + '</sub> = 0.88 &times; ' + mm2(R.g.At) + ' &times; ' + sig(EJ.areaMach(c.Mpy, g), 4), '= ' + mm2(c.Apy) + ' mm&sup2; (' + fx(diaOf(c.Apy), 1) + ' mm)');
+  h += li('Area left for the entrained vapor', '<i>A</i><sub>sy</sub> = <i>A</i><sub>3</sub> &minus; <i>A</i><sub>py</sub> = ' + mm2(R.g.A3) + ' &minus; ' + mm2(c.Apy), '= ' + (c.Asy > 0 ? mm2(c.Asy) + ' mm&sup2;' : 'none: the jet fills the tube'));
+  if (!R.filled) {
+    h += li('Entrained flow in double choking', '<i>m&#775;</i><sub>s</sub>* = (<i>P</i><sub>e</sub><i>A</i><sub>sy</sub>/&radic;<i>T</i><sub>e</sub>) &middot; ' + sig(EJ.chokeConst(g, W.R), 4) + ' &middot; &radic;0.85', '= ' + flow(R.msStar) + ' kg/h, &omega;* = ' + fx(R.wStar, 3));
+    h += li('Mixing: momentum with &phi;<sub>m</sub> = ' + fx(s.phi_m, 3) + ', then energy', '<i>V</i><sub>py</sub> = ' + fx(c.Vpy, 0) + ' m/s, <i>V</i><sub>sy</sub> = ' + fx(c.Vsy, 0) + ' m/s &rarr; <i>V</i><sub>m</sub> = ' + fx(c.Vm, 0) + ' m/s, <i>T</i><sub>m</sub> = ' + fx(c.Tm, 0) + ' K', '&rarr; <i>M</i><sub>m</sub> = ' + fx(c.Mm, 2));
+    h += li('Normal shock, then diffuser', '<i>P</i><sub>3</sub> = ' + fx(c.P3 / 1e3, 1) + ' kPa, <i>M</i><sub>3</sub> = ' + fx(c.M3, 2), '&rarr; <i>P</i><sub>c</sub>* = ' + kpa(c.Pc / 1e3) + ' kPa');
+    if (R.mode === '3') h += li('Compare with the back pressure', '<i>P</i><sub>c</sub> = ' + kpa(st.pc) + ' kPa &le; <i>P</i><sub>c</sub>*: double choking, <i>m&#775;</i><sub>s</sub> = <i>m&#775;</i><sub>s</sub>*', '= ' + flow(R.ms) + ' kg/h');
+    else if (R.mode === '2') h += li('Compare with the back pressure', '<i>P</i><sub>c</sub> = ' + kpa(st.pc) + ' kPa &gt; <i>P</i><sub>c</sub>*: single choking. Repeat with <i>M</i><sub>sy</sub> &lt; 1 until the exit pressure equals <i>P</i><sub>c</sub>: <i>M</i><sub>sy</sub> = ' + fx(s.Msy, 3), '&rarr; <i>m&#775;</i><sub>s</sub> = ' + flow(R.ms) + ' kg/h');
+    else h += li('Compare with the back pressure', '<i>P</i><sub>c</sub> = ' + kpa(st.pc) + ' kPa &ge; <i>P</i><sub>co</sub> = ' + kpa(s.Pco / 1e3) + ' kPa: back-flow', '&rarr; <i>m&#775;</i><sub>s</sub> = 0');
+  }
+  $('ej-steps').innerHTML = h;
+  $('ej-check').innerHTML = R.filled || R.mode === '1' ? '' :
+    '<b>Check.</b> Mass balance: ' + flow(R.mp) + ' + ' + flow(R.ms) + ' = ' + flow(R.mp + R.ms) + ' kg/h leaves the diffuser. Energy balance: the mixed stream leaves at a stagnation temperature of ' +
+    fx(op.Tc - 273.15, 0) + ' &deg;C, ' + (op.Tc > R.Tsc ? 'superheated by ' + fx(op.Tc - R.Tsc, 0) + ' K at the back pressure.' : 'below saturation at the back pressure, so some of it condenses.');
+}
+
+/* ---- render loop ---- */
+var pending = false, dirty = false;
+function changed() { dirty = true; if (pending) return; pending = true; (window.requestAnimationFrame || setTimeout)(function () { pending = false; render(); }); }
+function render() {
+  var R = compute();
+  var out = $('ej-out');
+  out.classList.toggle('is-invalid', R.invalid);
+  if (R.invalid) $('ej-alert').innerHTML = 'The nozzle exit (' + fx(R.d1, 1) + ' mm) does not fit inside the mixing tube (' + fx(st.d3, 1) + ' mm). Use a larger mixing tube, a smaller nozzle area ratio or less motive steam.';
+  derived(R); schematic(R); tiles(R); notes(R); chartPc(R); chartPe(R); stations(R); steps(R);
+  if (dirty) writeHash();
+}
+
+buildControls();
+initChart($('chart-pc'), 'pc');
+initChart($('chart-pe'), 'pe');
+var lastW = 0, rsT = null;
+window.addEventListener('resize', function () { clearTimeout(rsT); rsT = setTimeout(function () { var w = $('chart-pc').clientWidth; if (w !== lastW) { lastW = w; render(); } }, 120); });
+window.addEventListener('hashchange', function () { readHash(); syncInputs(); render(); });
+readHash();
+syncInputs();
+render();
+
+function renderTex() {
+  if (!window.katex) return;
+  Array.prototype.forEach.call(document.querySelectorAll('.tex-d'), function (el) {
+    try { window.katex.render(el.getAttribute('data-tex'), el, { displayMode: true, throwOnError: false }); } catch (e) { /* keep the source text */ }
+  });
+}
+Array.prototype.forEach.call(document.querySelectorAll('.tex-d'), function (el) { if (!el.textContent) el.textContent = el.getAttribute('data-tex'); });
+if (window.katex) renderTex(); else window.addEventListener('load', renderTex);
+})();
+</script>
+{% endraw %}
